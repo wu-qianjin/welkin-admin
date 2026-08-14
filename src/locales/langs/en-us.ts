@@ -1,6 +1,6 @@
 const local: App.I18n.Schema = {
   system: {
-    title: 'SoybeanAdmin',
+    title: 'WelkinAdmin',
     updateTitle: 'System Version Update Notification',
     updateContent: 'A new version of the system has been detected. Do you want to refresh the page immediately?',
     updateConfirm: 'Refresh immediately',
@@ -318,7 +318,10 @@ const local: App.I18n.Schema = {
         back: 'Back',
         validateSuccess: 'Verification passed',
         loginSuccess: 'Login successfully',
-        welcomeBack: 'Welcome back, {userName} !'
+        welcomeBack: 'Welcome back, {userName} !',
+        welcome: 'Welcome back 👋',
+        welcomeDesc: 'Please enter your account information to manage your project',
+        copyright: 'Copyright © 2026 WelkinAdmin · Based on soybean-admin (MIT)'
       },
       pwdLogin: {
         title: 'Password Login',
@@ -329,7 +332,20 @@ const local: App.I18n.Schema = {
         otherLoginMode: 'Other Login Mode',
         superAdmin: 'Super Admin',
         admin: 'Admin',
-        user: 'User'
+        user: 'User',
+        phoneLogin: 'Phone Login',
+        scanLogin: 'Scan Login',
+        noAccount: "Don't have an account?",
+        createAccount: 'Create Account',
+        wechat: 'WeChat',
+        qq: 'QQ',
+        github: 'GitHub',
+        google: 'Google',
+        sliderHint: 'Hold the slider and drag'
+      },
+      banner: {
+        title: 'Out-of-the-box large admin platform',
+        subtitle: 'Engineered, high-performance, easy to maintain'
       },
       codeLogin: {
         title: 'Verification Code Login',

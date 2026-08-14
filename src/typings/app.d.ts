@@ -495,6 +495,9 @@ declare namespace App {
             validateSuccess: string;
             loginSuccess: string;
             welcomeBack: string;
+            welcome: string;
+            welcomeDesc: string;
+            copyright: string;
           };
           pwdLogin: {
             title: string;
@@ -506,6 +509,15 @@ declare namespace App {
             superAdmin: string;
             admin: string;
             user: string;
+            phoneLogin: string;
+            scanLogin: string;
+            noAccount: string;
+            createAccount: string;
+            wechat: string;
+            qq: string;
+            github: string;
+            google: string;
+            sliderHint: string;
           };
           codeLogin: {
             title: string;
@@ -525,6 +537,10 @@ declare namespace App {
           };
           bindWeChat: {
             title: string;
+          };
+          banner: {
+            title: string;
+            subtitle: string;
           };
         };
         about: {

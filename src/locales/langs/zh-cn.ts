@@ -1,6 +1,6 @@
 const local: App.I18n.Schema = {
   system: {
-    title: 'Soybean 管理系统',
+    title: 'Welkin 管理系统',
     updateTitle: '系统版本更新通知',
     updateContent: '检测到系统有新版本发布，是否立即刷新页面？',
     updateConfirm: '立即刷新',
@@ -314,18 +314,34 @@ const local: App.I18n.Schema = {
         back: '返回',
         validateSuccess: '验证成功',
         loginSuccess: '登录成功',
-        welcomeBack: '欢迎回来，{userName} ！'
+        welcomeBack: '欢迎回来，{userName} ！',
+        welcome: '欢迎回来 👋',
+        welcomeDesc: '请输入您的账户信息以开始管理您的项目',
+        copyright: 'Copyright © 2026 WelkinAdmin · 基于 soybean-admin (MIT)'
       },
       pwdLogin: {
         title: '密码登录',
-        rememberMe: '记住我',
+        rememberMe: '记住账号',
         forgetPassword: '忘记密码？',
         register: '注册账号',
         otherAccountLogin: '其他账号登录',
         otherLoginMode: '其他登录方式',
         superAdmin: '超级管理员',
         admin: '管理员',
-        user: '普通用户'
+        user: '普通用户',
+        phoneLogin: '手机号登录',
+        scanLogin: '扫码登录',
+        noAccount: '还没有账号？',
+        createAccount: '创建账号',
+        wechat: '微信',
+        qq: 'QQ',
+        github: 'GitHub',
+        google: 'Google',
+        sliderHint: '请按住滑块拖动'
+      },
+      banner: {
+        title: '开箱即用的大型中后台管理系统',
+        subtitle: '工程化、高性能、易维护的前端模板'
       },
       codeLogin: {
         title: '验证码登录',
