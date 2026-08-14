@@ -70,9 +70,9 @@ const rules: Record<RuleKey, App.Global.FormRule> = {
 const roleOptions = ref<CommonType.Option<string>[]>([]);
 
 async function getRoleOptions() {
-  const { error, data } = await fetchGetAllRoles();
+  try {
+    const data = await fetchGetAllRoles();
 
-  if (!error) {
     const options = data.map(item => ({
       label: item.roleName,
       value: item.roleCode
@@ -87,6 +87,8 @@ async function getRoleOptions() {
     // end
 
     roleOptions.value = [...userRoleOptions, ...options];
+  } catch {
+    // request errors are surfaced by the request layer
   }
 }
 

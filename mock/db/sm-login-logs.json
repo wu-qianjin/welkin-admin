@@ -1,0 +1,172 @@
+{
+  "records": [
+    {
+      "id": 1,
+      "userName": "Super",
+      "ipaddr": "192.168.1.8",
+      "loginLocation": "北京市 北京市",
+      "browser": "Chrome 150",
+      "os": "Windows 11",
+      "status": "1",
+      "msg": "登录成功",
+      "loginTime": "2025-08-14 09:15:22"
+    },
+    {
+      "id": 2,
+      "userName": "admin",
+      "ipaddr": "192.168.1.23",
+      "loginLocation": "北京市 北京市",
+      "browser": "Chrome 150",
+      "os": "Windows 11",
+      "status": "1",
+      "msg": "登录成功",
+      "loginTime": "2025-08-14 09:02:47"
+    },
+    {
+      "id": 3,
+      "userName": "Super",
+      "ipaddr": "192.168.1.8",
+      "loginLocation": "北京市 北京市",
+      "browser": "Chrome 150",
+      "os": "Windows 11",
+      "status": "1",
+      "msg": "登录成功",
+      "loginTime": "2025-08-14 08:40:10"
+    },
+    {
+      "id": 4,
+      "userName": "user01",
+      "ipaddr": "10.30.120.45",
+      "loginLocation": "广东省 深圳市",
+      "browser": "Edge 150",
+      "os": "Windows 10",
+      "status": "2",
+      "msg": "密码错误，连续第 1 次失败",
+      "loginTime": "2025-08-13 18:22:31"
+    },
+    {
+      "id": 5,
+      "userName": "user01",
+      "ipaddr": "10.30.120.45",
+      "loginLocation": "广东省 深圳市",
+      "browser": "Edge 150",
+      "os": "Windows 10",
+      "status": "1",
+      "msg": "登录成功",
+      "loginTime": "2025-08-13 18:23:05"
+    },
+    {
+      "id": 6,
+      "userName": "test",
+      "ipaddr": "172.16.8.101",
+      "loginLocation": "上海市 上海市",
+      "browser": "Firefox 141",
+      "os": "macOS 15",
+      "status": "2",
+      "msg": "账号不存在",
+      "loginTime": "2025-08-13 16:10:44"
+    },
+    {
+      "id": 7,
+      "userName": "admin",
+      "ipaddr": "192.168.1.23",
+      "loginLocation": "北京市 北京市",
+      "browser": "Chrome 149",
+      "os": "Windows 11",
+      "status": "1",
+      "msg": "登录成功",
+      "loginTime": "2025-08-13 09:00:03"
+    },
+    {
+      "id": 8,
+      "userName": "user02",
+      "ipaddr": "192.168.1.56",
+      "loginLocation": "北京市 北京市",
+      "browser": "Chrome 149",
+      "os": "Windows 10",
+      "status": "1",
+      "msg": "登录成功",
+      "loginTime": "2025-08-13 10:35:19"
+    },
+    {
+      "id": 9,
+      "userName": "user02",
+      "ipaddr": "192.168.1.56",
+      "loginLocation": "北京市 北京市",
+      "browser": "Chrome 149",
+      "os": "Windows 10",
+      "status": "2",
+      "msg": "验证码错误",
+      "loginTime": "2025-08-13 10:33:58"
+    },
+    {
+      "id": 10,
+      "userName": "Super",
+      "ipaddr": "192.168.1.8",
+      "loginLocation": "北京市 北京市",
+      "browser": "Chrome 149",
+      "os": "Windows 11",
+      "status": "1",
+      "msg": "登录成功",
+      "loginTime": "2025-08-12 09:12:40"
+    },
+    {
+      "id": 11,
+      "userName": "audit",
+      "ipaddr": "10.30.120.88",
+      "loginLocation": "浙江省 杭州市",
+      "browser": "Chrome 149",
+      "os": "Windows 10",
+      "status": "1",
+      "msg": "登录成功",
+      "loginTime": "2025-08-12 14:20:15"
+    },
+    {
+      "id": 12,
+      "userName": "admin",
+      "ipaddr": "221.192.33.10",
+      "loginLocation": "境外 IP",
+      "browser": "Unknown",
+      "os": "Unknown",
+      "status": "2",
+      "msg": "异地登录已拦截",
+      "loginTime": "2025-08-11 23:45:02"
+    },
+    {
+      "id": 13,
+      "userName": "user03",
+      "ipaddr": "192.168.2.77",
+      "loginLocation": "北京市 北京市",
+      "browser": "Safari 18",
+      "os": "macOS 15",
+      "status": "1",
+      "msg": "登录成功",
+      "loginTime": "2025-08-11 10:05:36"
+    },
+    {
+      "id": 14,
+      "userName": "test",
+      "ipaddr": "172.16.8.101",
+      "loginLocation": "上海市 上海市",
+      "browser": "Firefox 141",
+      "os": "macOS 15",
+      "status": "2",
+      "msg": "账号已锁定，请 30 分钟后重试",
+      "loginTime": "2025-08-11 16:12:20"
+    },
+    {
+      "id": 15,
+      "userName": "Super",
+      "ipaddr": "192.168.1.8",
+      "loginLocation": "北京市 北京市",
+      "browser": "Chrome 148",
+      "os": "Windows 11",
+      "status": "1",
+      "msg": "登录成功",
+      "loginTime": "2025-08-10 08:58:11"
+    }
+  ],
+  "current": 1,
+  "size": 10,
+  "total": 15
+}

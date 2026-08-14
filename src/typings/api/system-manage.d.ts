@@ -129,11 +129,336 @@ declare namespace Api {
     /** menu list */
     type MenuList = Common.PaginatingQueryRecord<Menu>;
 
+    /** menu search params */
+    type MenuSearchParams = CommonType.RecordNullable<
+      Pick<Api.SystemManage.Menu, 'menuName' | 'menuType' | 'status'> & CommonSearchParams
+    >;
+
     type MenuTree = {
       id: number;
       label: string;
       pId: number;
       children?: MenuTree[];
     };
+
+    /** system config */
+    type SystemConfig = Common.CommonRecord<{
+      /** config name */
+      paramName: string;
+      /** config key */
+      paramKey: string;
+      /** config value */
+      paramValue: string;
+      /** whether it is built-in, built-in config cannot be deleted */
+      builtIn: CommonType.YesOrNo;
+      /** remark */
+      remark?: string;
+    }>;
+
+    /** system config list */
+    type SystemConfigList = Common.PaginatingQueryRecord<SystemConfig>;
+
+    /** system config search params */
+    type SystemConfigSearchParams = CommonType.RecordNullable<
+      Pick<Api.SystemManage.SystemConfig, 'paramName' | 'paramKey' | 'status'> & CommonSearchParams
+    >;
+
+    /**
+     * file type
+     *
+     * - "1": image
+     * - "2": document
+     * - "3": archive
+     * - "4": other
+     */
+    type FileType = '1' | '2' | '3' | '4';
+
+    /** system file */
+    type SystemFile = {
+      /** file id */
+      id: number;
+      /** file name with extension */
+      fileName: string;
+      /** file type */
+      fileType: FileType;
+      /** file size in bytes */
+      fileSize: number;
+      /** biz source of the file */
+      bizType?: string | null;
+      /** uploader */
+      createBy: string;
+      /** upload time */
+      createTime: string;
+    };
+
+    /** system file list */
+    type SystemFileList = Common.PaginatingQueryRecord<SystemFile>;
+
+    /** system file search params */
+    type SystemFileSearchParams = CommonType.RecordNullable<
+      Pick<Api.SystemManage.SystemFile, 'fileName' | 'fileType'> & CommonSearchParams
+    >;
+
+    /**
+     * notice type
+     *
+     * - "1": notice
+     * - "2": announcement
+     */
+    type NoticeType = '1' | '2';
+
+    /**
+     * notice status
+     *
+     * - "1": draft
+     * - "2": published
+     * - "3": withdrawn
+     */
+    type NoticeStatus = '1' | '2' | '3';
+
+    /** system notice */
+    type SystemNotice = Common.CommonRecord<{
+      /** notice title */
+      title: string;
+      /** notice type */
+      noticeType: NoticeType;
+      /** notice status */
+      noticeStatus: NoticeStatus;
+      /** whether the notice is pinned to the top */
+      isTop: boolean;
+      /** rich text content */
+      content: string;
+    }>;
+
+    /** system notice list */
+    type SystemNoticeList = Common.PaginatingQueryRecord<SystemNotice>;
+
+    /** system notice search params */
+    type SystemNoticeSearchParams = CommonType.RecordNullable<
+      Pick<Api.SystemManage.SystemNotice, 'title' | 'noticeType' | 'noticeStatus'> & CommonSearchParams
+    >;
+
+    /** dict type */
+    type DictType = Common.CommonRecord<{
+      /** dict name */
+      dictName: string;
+      /** dict type key, unique */
+      dictType: string;
+      /** remark */
+      remark?: string;
+    }>;
+
+    /** dict type list */
+    type DictTypeList = Common.PaginatingQueryRecord<DictType>;
+
+    /** dict type search params */
+    type DictTypeSearchParams = CommonType.RecordNullable<
+      Pick<Api.SystemManage.DictType, 'dictName' | 'dictType' | 'status'> & CommonSearchParams
+    >;
+
+    /** tag color of a dict option, mapped to NTag type */
+    type DictColorTag = 'default' | 'primary' | 'info' | 'success' | 'warning' | 'error';
+
+    /** dict option, belongs to a dict type */
+    type DictOption = Common.CommonRecord<{
+      /** the dict type this option belongs to */
+      dictType: string;
+      /** option label */
+      optionLabel: string;
+      /** option value */
+      optionValue: string;
+      /** sort number, asc */
+      sort: number;
+      /** tag color */
+      colorTag?: DictColorTag | null;
+      /** remark */
+      remark?: string;
+    }>;
+
+    /** dict option list */
+    type DictOptionList = Common.PaginatingQueryRecord<DictOption>;
+
+    /** dict option search params */
+    type DictOptionSearchParams = CommonType.RecordNullable<
+      Pick<Api.SystemManage.DictOption, 'dictType' | 'optionLabel' | 'status'> & CommonSearchParams
+    >;
+
+    /** department, children are only populated in list responses */
+    type Dept = Common.CommonRecord<{
+      /** dept name */
+      deptName: string;
+      /** parent dept id, 0 for root */
+      parentId: number;
+      /** leader name */
+      leader?: string | null;
+      /** contact phone */
+      phone?: string | null;
+      /** contact email */
+      email?: string | null;
+      /** sort number, asc */
+      order: number;
+      /** children depts */
+      children?: Dept[] | null;
+    }>;
+
+    /** dept list */
+    type DeptList = Common.PaginatingQueryRecord<Dept>;
+
+    /** dept search params */
+    type DeptSearchParams = CommonType.RecordNullable<
+      Pick<Api.SystemManage.Dept, 'deptName' | 'status'> & CommonSearchParams
+    >;
+
+    /** http method of an api resource */
+    type ApiMethod = 'GET' | 'POST' | 'PUT' | 'DELETE';
+
+    /** api resource */
+    type ApiResource = Common.CommonRecord<{
+      /** api name */
+      apiName: string;
+      /** request path */
+      apiPath: string;
+      /** request method */
+      apiMethod: ApiMethod;
+      /** the module the api belongs to */
+      apiModule: string;
+      /** remark */
+      remark?: string;
+    }>;
+
+    /** api resource list */
+    type ApiResourceList = Common.PaginatingQueryRecord<ApiResource>;
+
+    /** api resource search params */
+    type ApiResourceSearchParams = CommonType.RecordNullable<
+      Pick<Api.SystemManage.ApiResource, 'apiName' | 'apiPath' | 'apiMethod' | 'apiModule' | 'status'> &
+        CommonSearchParams
+    >;
+
+    /** button permission resource */
+    type ButtonResource = Common.CommonRecord<{
+      /** permission code, e.g. B_USER_ADD */
+      buttonCode: string;
+      /** button name */
+      buttonName: string;
+      /** the menu the button belongs to */
+      menuName: string;
+      /** remark */
+      remark?: string;
+    }>;
+
+    /** button resource list */
+    type ButtonResourceList = Common.PaginatingQueryRecord<ButtonResource>;
+
+    /** button resource search params */
+    type ButtonResourceSearchParams = CommonType.RecordNullable<
+      Pick<Api.SystemManage.ButtonResource, 'buttonCode' | 'buttonName' | 'menuName' | 'status'> & CommonSearchParams
+    >;
+
+    /** login log */
+    type LoginLog = {
+      id: number;
+      /** login account */
+      userName: string;
+      /** login ip */
+      ipaddr: string;
+      /** login location */
+      loginLocation: string;
+      /** browser */
+      browser: string;
+      /** operating system */
+      os: string;
+      /**
+       * login result
+       *
+       * - "1": success
+       * - "2": fail
+       */
+      status: '1' | '2';
+      /** fail message or "登录成功" */
+      msg: string;
+      /** login time */
+      loginTime: string;
+    };
+
+    /** login log list */
+    type LoginLogList = Common.PaginatingQueryRecord<LoginLog>;
+
+    /** login log search params */
+    type LoginLogSearchParams = CommonType.RecordNullable<
+      Pick<Api.SystemManage.LoginLog, 'userName' | 'ipaddr' | 'status'> & CommonSearchParams
+    >;
+
+    /**
+     * operation business type
+     *
+     * - "1": add
+     * - "2": update
+     * - "3": delete
+     * - "4": export
+     * - "5": import
+     * - "6": other
+     */
+    type OperateType = '1' | '2' | '3' | '4' | '5' | '6';
+
+    /** operation log */
+    type OperateLog = {
+      id: number;
+      /** operated module, e.g. 用户管理 */
+      title: string;
+      /** operation type */
+      businessType: OperateType;
+      /** operator */
+      userName: string;
+      /** request method */
+      method: string;
+      /** request url */
+      url: string;
+      /** request params (json string) */
+      params?: string | null;
+      /** result code */
+      code: string;
+      /** cost time in ms */
+      costTime: number;
+      /** operator ip */
+      ipaddr: string;
+      /** operate time */
+      operateTime: string;
+    };
+
+    /** operation log list */
+    type OperateLogList = Common.PaginatingQueryRecord<OperateLog>;
+
+    /** operation log search params */
+    type OperateLogSearchParams = CommonType.RecordNullable<
+      Pick<Api.SystemManage.OperateLog, 'title' | 'userName' | 'businessType'> & CommonSearchParams
+    >;
+
+    /** online user session */
+    type OnlineUser = {
+      id: number;
+      /** session token id */
+      tokenId: string;
+      /** login account */
+      userName: string;
+      /** client ip */
+      ipaddr: string;
+      /** login location */
+      loginLocation: string;
+      /** browser */
+      browser: string;
+      /** operating system */
+      os: string;
+      /** login time */
+      loginTime: string;
+    };
+
+    /** online user list */
+    type OnlineUserList = Common.PaginatingQueryRecord<OnlineUser>;
+
+    /** online user search params */
+    type OnlineUserSearchParams = CommonType.RecordNullable<
+      Pick<Api.SystemManage.OnlineUser, 'userName' | 'ipaddr'> & CommonSearchParams
+    >;
   }
 }

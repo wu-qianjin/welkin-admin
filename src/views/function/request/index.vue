@@ -3,34 +3,54 @@ import { fetchCustomBackendError } from '@/service/api';
 import { $t } from '@/locales';
 
 async function logout() {
-  await fetchCustomBackendError('8888', $t('request.logoutMsg'));
+  try {
+    await fetchCustomBackendError('8888', $t('request.logoutMsg'));
+  } catch {
+    // expected: the global request layer shows the message / handles logout
+  }
 }
 
 async function logoutWithModal() {
-  await fetchCustomBackendError('7777', $t('request.logoutWithModalMsg'));
+  try {
+    await fetchCustomBackendError('7777', $t('request.logoutWithModalMsg'));
+  } catch {
+    // expected: the global request layer shows the modal
+  }
 }
 
 async function refreshToken() {
-  await fetchCustomBackendError('9999', $t('request.tokenExpired'));
+  try {
+    await fetchCustomBackendError('9999', $t('request.tokenExpired'));
+  } catch {
+    // expected: the global request layer refreshes the token and retries
+  }
 }
 
 async function handleRepeatedMessageError() {
-  await Promise.all([
-    fetchCustomBackendError('2222', $t('page.function.request.repeatedErrorMsg1')),
-    fetchCustomBackendError('2222', $t('page.function.request.repeatedErrorMsg1')),
-    fetchCustomBackendError('2222', $t('page.function.request.repeatedErrorMsg1')),
-    fetchCustomBackendError('3333', $t('page.function.request.repeatedErrorMsg2')),
-    fetchCustomBackendError('3333', $t('page.function.request.repeatedErrorMsg2')),
-    fetchCustomBackendError('3333', $t('page.function.request.repeatedErrorMsg2'))
-  ]);
+  try {
+    await Promise.all([
+      fetchCustomBackendError('2222', $t('page.function.request.repeatedErrorMsg1')),
+      fetchCustomBackendError('2222', $t('page.function.request.repeatedErrorMsg1')),
+      fetchCustomBackendError('2222', $t('page.function.request.repeatedErrorMsg1')),
+      fetchCustomBackendError('3333', $t('page.function.request.repeatedErrorMsg2')),
+      fetchCustomBackendError('3333', $t('page.function.request.repeatedErrorMsg2')),
+      fetchCustomBackendError('3333', $t('page.function.request.repeatedErrorMsg2'))
+    ]);
+  } catch {
+    // expected: identical messages are deduplicated by the request layer
+  }
 }
 
 async function handleRepeatedModalError() {
-  await Promise.all([
-    fetchCustomBackendError('7777', $t('request.logoutWithModalMsg')),
-    fetchCustomBackendError('7777', $t('request.logoutWithModalMsg')),
-    fetchCustomBackendError('7777', $t('request.logoutWithModalMsg'))
-  ]);
+  try {
+    await Promise.all([
+      fetchCustomBackendError('7777', $t('request.logoutWithModalMsg')),
+      fetchCustomBackendError('7777', $t('request.logoutWithModalMsg')),
+      fetchCustomBackendError('7777', $t('request.logoutWithModalMsg'))
+    ]);
+  } catch {
+    // expected: identical modals are deduplicated by the request layer
+  }
 }
 </script>
 

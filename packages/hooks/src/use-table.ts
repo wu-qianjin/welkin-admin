@@ -103,6 +103,9 @@ export default function useTable<ResponseData, ApiData, Column, Pagination exten
       setEmpty(data.value.length === 0);
 
       await onFetched?.(transformed);
+    } catch (error) {
+      // request errors are surfaced by the request layer, keep the previous table data
+      console.error(error);
     } finally {
       endLoading();
     }

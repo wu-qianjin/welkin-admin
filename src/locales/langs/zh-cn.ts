@@ -265,6 +265,14 @@ const local: App.I18n.Schema = {
     'manage_user-detail': '用户详情',
     manage_role: '角色管理',
     manage_menu: '菜单管理',
+    manage_config: '参数配置',
+    manage_file: '文件管理',
+    manage_notice: '通知公告',
+    manage_dept: '部门管理',
+    manage_dict: '字典管理',
+    manage_resource: '资源管理',
+    manage_log: '日志管理',
+    manage_online: '在线用户',
     'multi-menu': '多级菜单',
     'multi-menu_first': '菜单一',
     'multi-menu_first_child': '菜单一子菜单',
@@ -337,7 +345,9 @@ const local: App.I18n.Schema = {
         qq: 'QQ',
         github: 'GitHub',
         google: 'Google',
-        sliderHint: '请按住滑块拖动'
+        sliderHint: '请按住滑块拖动',
+        sliderSuccess: '验证通过',
+        sliderRequired: '请拖动滑块完成验证'
       },
       banner: {
         title: '开箱即用的大型中后台管理系统',
@@ -649,6 +659,243 @@ const local: App.I18n.Schema = {
         iconType: {
           iconify: 'iconify图标',
           local: '本地图标'
+        }
+      },
+      config: {
+        title: '参数列表',
+        paramName: '参数名称',
+        paramKey: '参数键',
+        paramValue: '参数值',
+        paramStatus: '状态',
+        builtIn: '内置',
+        remark: '备注',
+        updateTime: '更新时间',
+        addConfig: '新增参数',
+        editConfig: '编辑参数',
+        form: {
+          paramName: '请输入参数名称',
+          paramKey: '请输入参数键',
+          paramValue: '请输入参数值',
+          paramStatus: '请选择状态',
+          remark: '请输入备注'
+        }
+      },
+      file: {
+        title: '文件列表',
+        fileName: '文件名称',
+        fileType: '文件类型',
+        fileSize: '文件大小',
+        bizType: '所属业务',
+        createBy: '上传人',
+        createTime: '上传时间',
+        upload: '上传文件',
+        uploadSource: '文件管理',
+        uploadSuccess: '上传成功',
+        preview: '预览',
+        previewPlaceholder: '演示环境展示占位图，接入真实存储服务后显示原文件',
+        download: '下载',
+        type: {
+          image: '图片',
+          document: '文档',
+          archive: '压缩包',
+          other: '其他'
+        },
+        form: {
+          fileName: '请输入文件名称',
+          fileType: '请选择文件类型'
+        }
+      },
+      notice: {
+        title: '公告列表',
+        noticeTitle: '公告标题',
+        noticeType: '公告类型',
+        noticeStatus: '公告状态',
+        top: '置顶',
+        content: '公告内容',
+        createBy: '创建人',
+        createTime: '创建时间',
+        updateTime: '更新时间',
+        view: '查看',
+        publish: '发布',
+        withdraw: '撤回',
+        confirmPublish: '确认发布该公告？',
+        confirmWithdraw: '确认撤回该公告？',
+        publishSuccess: '发布成功',
+        withdrawSuccess: '撤回成功',
+        addNotice: '新增公告',
+        editNotice: '编辑公告',
+        type: {
+          notice: '通知',
+          announcement: '公告'
+        },
+        status: {
+          draft: '草稿',
+          published: '已发布',
+          withdrawn: '已撤回'
+        },
+        form: {
+          noticeTitle: '请输入公告标题',
+          noticeType: '请选择公告类型',
+          noticeStatus: '请选择公告状态'
+        }
+      },
+      dept: {
+        title: '部门列表',
+        deptName: '部门名称',
+        parentDept: '上级部门',
+        rootDept: '顶级部门',
+        leader: '负责人',
+        phone: '联系电话',
+        email: '邮箱',
+        order: '排序',
+        status: '状态',
+        createTime: '创建时间',
+        addDept: '新增部门',
+        editDept: '编辑部门',
+        addChildDept: '新增子部门',
+        confirmDelete: '若该部门存在子部门将无法删除，确认删除？',
+        form: {
+          deptName: '请输入部门名称',
+          parentDept: '请选择上级部门',
+          leader: '请输入负责人',
+          phone: '请输入联系电话',
+          email: '请输入邮箱',
+          status: '请选择状态'
+        }
+      },
+      dict: {
+        title: '字典列表',
+        dictName: '字典名称',
+        dictType: '字典类型',
+        status: '状态',
+        remark: '备注',
+        updateTime: '更新时间',
+        dictOptions: '字典选项',
+        addDictType: '新增字典类型',
+        editDictType: '编辑字典类型',
+        form: {
+          dictName: '请输入字典名称',
+          dictType: '请输入字典类型',
+          status: '请选择状态',
+          remark: '请输入备注'
+        },
+        option: {
+          optionLabel: '选项标签',
+          optionValue: '选项值',
+          sort: '排序',
+          colorTag: '标签颜色',
+          addOption: '新增选项',
+          editOption: '编辑选项',
+          form: {
+            optionLabel: '请输入选项标签',
+            optionValue: '请输入选项值'
+          }
+        }
+      },
+      resource: {
+        title: '资源管理',
+        apiTab: 'API 管理',
+        buttonTab: '按钮权限',
+        status: '状态',
+        remark: '备注',
+        form: {
+          remark: '请输入备注'
+        },
+        api: {
+          apiName: '接口名称',
+          apiPath: '接口路径',
+          apiMethod: '请求方式',
+          apiModule: '所属模块',
+          addApi: '新增接口',
+          editApi: '编辑接口',
+          form: {
+            apiName: '请输入接口名称',
+            apiPath: '请输入接口路径，如 /systemManage/getUserList',
+            apiMethod: '请选择请求方式',
+            apiModule: '请输入所属模块'
+          }
+        },
+        button: {
+          buttonCode: '权限编码',
+          buttonName: '按钮名称',
+          menuName: '所属菜单',
+          createTime: '创建时间',
+          addButton: '新增按钮',
+          editButton: '编辑按钮',
+          form: {
+            buttonCode: '请输入权限编码，如 B_USER_ADD',
+            buttonName: '请输入按钮名称',
+            menuName: '请输入所属菜单名称'
+          }
+        }
+      },
+      log: {
+        title: '日志管理',
+        loginTab: '登录日志',
+        operateTab: '操作日志',
+        detail: '详情',
+        clear: '清空',
+        confirmClear: '确认清空全部日志？该操作不可恢复',
+        clearSuccess: '清空成功',
+        login: {
+          userName: '登录账号',
+          ipaddr: '登录 IP',
+          loginLocation: '登录地点',
+          browser: '浏览器',
+          os: '操作系统',
+          loginStatus: '登录状态',
+          success: '成功',
+          fail: '失败',
+          msg: '提示消息',
+          loginTime: '登录时间',
+          form: {
+            userName: '请输入登录账号',
+            ipaddr: '请输入登录 IP',
+            status: '请选择登录状态'
+          }
+        },
+        operate: {
+          title: '操作模块',
+          businessType: '操作类型',
+          userName: '操作人员',
+          method: '请求方式',
+          url: '请求地址',
+          params: '请求参数',
+          code: '结果码',
+          costTime: '耗时',
+          ipaddr: '操作 IP',
+          operateTime: '操作时间',
+          type: {
+            add: '新增',
+            update: '修改',
+            delete: '删除',
+            export: '导出',
+            import: '导入',
+            other: '其他'
+          },
+          form: {
+            title: '请输入操作模块',
+            userName: '请输入操作人员',
+            businessType: '请选择操作类型'
+          }
+        }
+      },
+      online: {
+        title: '在线用户列表',
+        userName: '登录账号',
+        tokenId: '会话编号',
+        ipaddr: '登录 IP',
+        loginLocation: '登录地点',
+        browser: '浏览器',
+        os: '操作系统',
+        loginTime: '登录时间',
+        forceLogout: '强制下线',
+        batchForceLogout: '批量下线',
+        confirmForceLogout: '确认将该用户强制下线？',
+        forceLogoutSuccess: '已强制下线',
+        form: {
+          userName: '请输入登录账号',
+          ipaddr: '请输入登录 IP'
         }
       }
     }

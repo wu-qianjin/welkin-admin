@@ -11,34 +11,24 @@ export function getAuthorization() {
 }
 
 /** refresh token */
-async function handleRefreshToken() {
+export async function handleRefreshToken() {
   const { resetStore } = useAuthStore();
 
   const rToken = localStg.get('refreshToken') || '';
-  const { error, data } = await fetchRefreshToken(rToken);
-  if (!error) {
+
+  const refreshTokenMethod = fetchRefreshToken(rToken);
+
+  // set the refreshToken role, so that the request will not be intercepted
+  refreshTokenMethod.meta.authRole = 'refreshToken';
+
+  try {
+    const data = await refreshTokenMethod;
     localStg.set('token', data.token);
     localStg.set('refreshToken', data.refreshToken);
-    return true;
+  } catch (error) {
+    resetStore();
+    throw error;
   }
-
-  resetStore();
-
-  return false;
-}
-
-export async function handleExpiredRequest(state: RequestInstanceState) {
-  if (!state.refreshTokenPromise) {
-    state.refreshTokenPromise = handleRefreshToken();
-  }
-
-  const success = await state.refreshTokenPromise;
-
-  setTimeout(() => {
-    state.refreshTokenPromise = null;
-  }, 1000);
-
-  return success;
 }
 
 export function showErrorMsg(state: RequestInstanceState, message: string) {

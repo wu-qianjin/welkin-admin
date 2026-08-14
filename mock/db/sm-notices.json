@@ -1,0 +1,85 @@
+{
+  "records": [
+    {
+      "id": 1,
+      "createBy": "Super",
+      "createTime": "2025-08-01 09:00:00",
+      "updateBy": "Super",
+      "updateTime": "2025-08-01 09:00:00",
+      "status": "1",
+      "title": "系统将于本周六 22:00-24:00 升级维护",
+      "noticeType": "1",
+      "noticeStatus": "2",
+      "isTop": true,
+      "content": "<p>为提升系统性能与稳定性，平台将于 <strong>本周六 22:00 - 24:00</strong> 进行升级维护，期间系统将暂停访问。</p><p>升级内容包括：</p><ul><li>权限模块性能优化</li><li>新增字典管理能力</li><li>修复若干已知问题</li></ul><p>请提前保存工作内容，由此带来的不便敬请谅解。</p>"
+    },
+    {
+      "id": 2,
+      "createBy": "admin",
+      "createTime": "2025-08-03 14:20:00",
+      "updateBy": "admin",
+      "updateTime": "2025-08-03 14:20:00",
+      "status": "1",
+      "title": "V2.4.0 版本更新公告",
+      "noticeType": "2",
+      "noticeStatus": "2",
+      "isTop": false,
+      "content": "<h3>V2.4.0 更新日志</h3><ol><li>新增<strong>参数配置</strong>模块，运营参数在线可调；</li><li>新增<strong>文件管理</strong>模块，统一管理上传文件；</li><li>登录页滑块验证交互优化；</li><li>本地 Mock 服务上线，开发环境不再依赖外部网络。</li></ol><p>如有问题请联系系统管理员。</p>"
+    },
+    {
+      "id": 3,
+      "createBy": "Super",
+      "createTime": "2025-08-06 10:30:00",
+      "updateBy": "Super",
+      "updateTime": "2025-08-06 10:30:00",
+      "status": "1",
+      "title": "关于规范账号密码的通知",
+      "noticeType": "1",
+      "noticeStatus": "2",
+      "isTop": false,
+      "content": "<p>近期将启用密码强度校验，请各位用户在 <strong>8 月 31 日前</strong> 登录系统并按提示修改密码。</p><p>密码要求：长度不少于 8 位，包含大小写字母与数字。</p>"
+    },
+    {
+      "id": 4,
+      "createBy": "admin",
+      "createTime": "2025-08-09 16:45:00",
+      "updateBy": "admin",
+      "updateTime": "2025-08-09 16:45:00",
+      "status": "1",
+      "title": "中秋福利发放安排（草稿）",
+      "noticeType": "2",
+      "noticeStatus": "1",
+      "isTop": false,
+      "content": "<p>草稿内容：待行政部确认后发布。</p>"
+    },
+    {
+      "id": 5,
+      "createBy": "Super",
+      "createTime": "2025-07-15 11:00:00",
+      "updateBy": "Super",
+      "updateTime": "2025-08-10 09:20:00",
+      "status": "1",
+      "title": "老版本浏览器兼容支持停止公告",
+      "noticeType": "2",
+      "noticeStatus": "3",
+      "isTop": false,
+      "content": "<p>自 2025-09-01 起，平台将不再支持 IE11 及以下浏览器，请使用 Chrome、Edge 等现代浏览器访问。</p><p><em>本公告已撤回，等待重新发布。</em></p>"
+    },
+    {
+      "id": 6,
+      "createBy": "admin",
+      "createTime": "2025-08-11 08:10:00",
+      "updateBy": "admin",
+      "updateTime": "2025-08-11 08:10:00",
+      "status": "1",
+      "title": "新员工入职系统操作指引",
+      "noticeType": "1",
+      "noticeStatus": "2",
+      "isTop": false,
+      "content": "<p>欢迎加入！请先完成以下三步：</p><ol><li>首次登录后立即修改初始密码；</li><li>在个人中心补全联系方式；</li><li>阅读操作手册（公告附件可下载）。</li></ol>"
+    }
+  ],
+  "current": 1,
+  "size": 10,
+  "total": 6
+}

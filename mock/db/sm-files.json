@@ -1,0 +1,97 @@
+{
+  "records": [
+    {
+      "id": 1,
+      "fileName": "logo-primary.png",
+      "fileType": "1",
+      "fileSize": 28544,
+      "bizType": "系统设置",
+      "createBy": "Super",
+      "createTime": "2025-07-02 10:15:33"
+    },
+    {
+      "id": 2,
+      "fileName": "用户导入模板.xlsx",
+      "fileType": "2",
+      "fileSize": 12288,
+      "bizType": "用户管理",
+      "createBy": "admin",
+      "createTime": "2025-07-08 09:40:11"
+    },
+    {
+      "id": 3,
+      "fileName": "组织架构导入模板.xlsx",
+      "fileType": "2",
+      "fileSize": 10240,
+      "bizType": "部门管理",
+      "createBy": "admin",
+      "createTime": "2025-07-08 09:41:26"
+    },
+    {
+      "id": 4,
+      "fileName": "avatar-default.png",
+      "fileType": "1",
+      "fileSize": 5120,
+      "bizType": "用户管理",
+      "createBy": "admin",
+      "createTime": "2025-07-12 14:03:59"
+    },
+    {
+      "id": 5,
+      "fileName": "产品需求说明书-v2.3.docx",
+      "fileType": "2",
+      "fileSize": 1048576,
+      "bizType": "公告附件",
+      "createBy": "Super",
+      "createTime": "2025-07-19 16:22:40"
+    },
+    {
+      "id": 6,
+      "fileName": "首页横幅素材.jpg",
+      "fileType": "1",
+      "fileSize": 471859,
+      "bizType": "系统设置",
+      "createBy": "Super",
+      "createTime": "2025-07-23 11:08:15"
+    },
+    {
+      "id": 7,
+      "fileName": "系统操作手册.pdf",
+      "fileType": "2",
+      "fileSize": 3145728,
+      "bizType": "公告附件",
+      "createBy": "admin",
+      "createTime": "2025-08-01 08:30:05"
+    },
+    {
+      "id": 8,
+      "fileName": "数据库初始化脚本.zip",
+      "fileType": "3",
+      "fileSize": 2097152,
+      "bizType": "其他",
+      "createBy": "Super",
+      "createTime": "2025-08-05 15:47:52"
+    },
+    {
+      "id": 9,
+      "fileName": "主题色配置备份.json",
+      "fileType": "4",
+      "fileSize": 2048,
+      "bizType": "系统设置",
+      "createBy": "admin",
+      "createTime": "2025-08-09 10:12:28"
+    },
+    {
+      "id": 10,
+      "fileName": "错误日志-0809.tar.gz",
+      "fileType": "3",
+      "fileSize": 5242880,
+      "bizType": "日志管理",
+      "createBy": "Super",
+      "createTime": "2025-08-10 09:55:41"
+    }
+  ],
+  "current": 1,
+  "size": 10,
+  "total": 10
+}

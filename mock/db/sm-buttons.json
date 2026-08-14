@@ -1,0 +1,127 @@
+{
+  "records": [
+    {
+      "id": 1,
+      "createBy": "admin",
+      "createTime": "2025-02-02 09:00:00",
+      "updateBy": "admin",
+      "updateTime": "2025-02-02 09:00:00",
+      "status": "1",
+      "buttonCode": "B_USER_ADD",
+      "buttonName": "新增用户",
+      "menuName": "用户管理",
+      "remark": ""
+    },
+    {
+      "id": 2,
+      "createBy": "admin",
+      "createTime": "2025-02-02 09:01:00",
+      "updateBy": "admin",
+      "updateTime": "2025-02-02 09:01:00",
+      "status": "1",
+      "buttonCode": "B_USER_EDIT",
+      "buttonName": "编辑用户",
+      "menuName": "用户管理",
+      "remark": ""
+    },
+    {
+      "id": 3,
+      "createBy": "admin",
+      "createTime": "2025-02-02 09:02:00",
+      "updateBy": "admin",
+      "updateTime": "2025-02-02 09:02:00",
+      "status": "1",
+      "buttonCode": "B_USER_DELETE",
+      "buttonName": "删除用户",
+      "menuName": "用户管理",
+      "remark": ""
+    },
+    {
+      "id": 4,
+      "createBy": "admin",
+      "createTime": "2025-02-04 10:00:00",
+      "updateBy": "admin",
+      "updateTime": "2025-02-04 10:00:00",
+      "status": "1",
+      "buttonCode": "B_ROLE_AUTH",
+      "buttonName": "角色授权",
+      "menuName": "角色管理",
+      "remark": "菜单+API 授权入口"
+    },
+    {
+      "id": 5,
+      "createBy": "admin",
+      "createTime": "2025-02-06 11:30:00",
+      "updateBy": "admin",
+      "updateTime": "2025-02-06 11:30:00",
+      "status": "1",
+      "buttonCode": "B_MENU_ADD_CHILD",
+      "buttonName": "新增子菜单",
+      "menuName": "菜单管理",
+      "remark": ""
+    },
+    {
+      "id": 6,
+      "createBy": "Super",
+      "createTime": "2025-03-09 14:00:00",
+      "updateBy": "Super",
+      "updateTime": "2025-03-09 14:00:00",
+      "status": "1",
+      "buttonCode": "B_DICT_OPTION",
+      "buttonName": "字典选项配置",
+      "menuName": "字典管理",
+      "remark": ""
+    },
+    {
+      "id": 7,
+      "createBy": "Super",
+      "createTime": "2025-04-11 09:10:00",
+      "updateBy": "Super",
+      "updateTime": "2025-04-11 09:10:00",
+      "status": "1",
+      "buttonCode": "B_LOG_CLEAR",
+      "buttonName": "清空日志",
+      "menuName": "日志管理",
+      "remark": "高危操作，仅超级管理员"
+    },
+    {
+      "id": 8,
+      "createBy": "Super",
+      "createTime": "2025-05-21 15:00:00",
+      "updateBy": "Super",
+      "updateTime": "2025-05-21 15:00:00",
+      "status": "1",
+      "buttonCode": "B_ONLINE_KICKOUT",
+      "buttonName": "强制下线",
+      "menuName": "在线用户",
+      "remark": ""
+    },
+    {
+      "id": 9,
+      "createBy": "admin",
+      "createTime": "2025-06-15 10:40:00",
+      "updateBy": "admin",
+      "updateTime": "2025-06-15 10:40:00",
+      "status": "1",
+      "buttonCode": "B_FILE_DOWNLOAD",
+      "buttonName": "文件下载",
+      "menuName": "文件管理",
+      "remark": ""
+    },
+    {
+      "id": 10,
+      "createBy": "admin",
+      "createTime": "2025-07-19 17:25:00",
+      "updateBy": "admin",
+      "updateTime": "2025-07-19 17:25:00",
+      "status": "2",
+      "buttonCode": "B_USER_EXPORT",
+      "buttonName": "导出用户（停用）",
+      "menuName": "用户管理",
+      "remark": "数据安全审批中"
+    }
+  ],
+  "current": 1,
+  "size": 10,
+  "total": 10
+}

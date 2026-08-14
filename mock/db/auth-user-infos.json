@@ -1,0 +1,20 @@
+{
+  "Super": {
+    "userId": "1",
+    "userName": "Super",
+    "roles": ["R_SUPER"],
+    "buttons": ["B_CODE1", "B_CODE2", "B_CODE3"]
+  },
+  "Admin": {
+    "userId": "2",
+    "userName": "Admin",
+    "roles": ["R_ADMIN"],
+    "buttons": ["B_CODE2", "B_CODE3"]
+  },
+  "User01": {
+    "userId": "3",
+    "userName": "User01",
+    "roles": ["R_USER_COMMON"],
+    "buttons": ["B_CODE3"]
+  }
+}

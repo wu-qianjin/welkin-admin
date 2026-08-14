@@ -10,5 +10,13 @@
     "unicorn/no-array-sort": "off",
     "unicorn/no-array-reverse": "off",
     "unicorn/require-module-specifiers": "off"
-  }
+  },
+  "overrides": [
+    {
+      "files": ["src/components/custom/rich-text-editor.vue"],
+      "rules": {
+        "unicorn/prefer-add-event-listener": "off"
+      }
+    }
+  ]
 }

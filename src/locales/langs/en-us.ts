@@ -269,6 +269,14 @@ const local: App.I18n.Schema = {
     'manage_user-detail': 'User Detail',
     manage_role: 'Role Manage',
     manage_menu: 'Menu Manage',
+    manage_config: 'System Config',
+    manage_file: 'File Manage',
+    manage_notice: 'Notice',
+    manage_dept: 'Department',
+    manage_dict: 'Dict',
+    manage_resource: 'Resource',
+    manage_log: 'Log',
+    manage_online: 'Online User',
     'multi-menu': 'Multi Menu',
     'multi-menu_first': 'Menu One',
     'multi-menu_first_child': 'Menu One Child',
@@ -341,7 +349,9 @@ const local: App.I18n.Schema = {
         qq: 'QQ',
         github: 'GitHub',
         google: 'Google',
-        sliderHint: 'Hold the slider and drag'
+        sliderHint: 'Hold the slider and drag',
+        sliderSuccess: 'Verified successfully',
+        sliderRequired: 'Please complete the slider verification'
       },
       banner: {
         title: 'Out-of-the-box large admin platform',
@@ -653,6 +663,243 @@ const local: App.I18n.Schema = {
         iconType: {
           iconify: 'Iconify Icon',
           local: 'Local Icon'
+        }
+      },
+      config: {
+        title: 'Config List',
+        paramName: 'Config Name',
+        paramKey: 'Config Key',
+        paramValue: 'Config Value',
+        paramStatus: 'Status',
+        builtIn: 'Built-in',
+        remark: 'Remark',
+        updateTime: 'Update Time',
+        addConfig: 'Add Config',
+        editConfig: 'Edit Config',
+        form: {
+          paramName: 'Please enter config name',
+          paramKey: 'Please enter config key',
+          paramValue: 'Please enter config value',
+          paramStatus: 'Please select status',
+          remark: 'Please enter remark'
+        }
+      },
+      file: {
+        title: 'File List',
+        fileName: 'File Name',
+        fileType: 'File Type',
+        fileSize: 'File Size',
+        bizType: 'Biz Source',
+        createBy: 'Uploader',
+        createTime: 'Upload Time',
+        upload: 'Upload',
+        uploadSource: 'File Manage',
+        uploadSuccess: 'Uploaded successfully',
+        preview: 'Preview',
+        previewPlaceholder: 'A placeholder is shown in the demo env; the real file displays once storage is connected',
+        download: 'Download',
+        type: {
+          image: 'Image',
+          document: 'Document',
+          archive: 'Archive',
+          other: 'Other'
+        },
+        form: {
+          fileName: 'Please enter file name',
+          fileType: 'Please select file type'
+        }
+      },
+      notice: {
+        title: 'Notice List',
+        noticeTitle: 'Title',
+        noticeType: 'Notice Type',
+        noticeStatus: 'Status',
+        top: 'Top',
+        content: 'Content',
+        createBy: 'Creator',
+        createTime: 'Create Time',
+        updateTime: 'Update Time',
+        view: 'View',
+        publish: 'Publish',
+        withdraw: 'Withdraw',
+        confirmPublish: 'Confirm to publish this notice?',
+        confirmWithdraw: 'Confirm to withdraw this notice?',
+        publishSuccess: 'Published successfully',
+        withdrawSuccess: 'Withdrawn successfully',
+        addNotice: 'Add Notice',
+        editNotice: 'Edit Notice',
+        type: {
+          notice: 'Notice',
+          announcement: 'Announcement'
+        },
+        status: {
+          draft: 'Draft',
+          published: 'Published',
+          withdrawn: 'Withdrawn'
+        },
+        form: {
+          noticeTitle: 'Please enter notice title',
+          noticeType: 'Please select notice type',
+          noticeStatus: 'Please select notice status'
+        }
+      },
+      dept: {
+        title: 'Department List',
+        deptName: 'Dept Name',
+        parentDept: 'Parent Dept',
+        rootDept: 'Root',
+        leader: 'Leader',
+        phone: 'Phone',
+        email: 'Email',
+        order: 'Order',
+        status: 'Status',
+        createTime: 'Create Time',
+        addDept: 'Add Department',
+        editDept: 'Edit Department',
+        addChildDept: 'Add Child Dept',
+        confirmDelete: 'Deletion fails if the dept has children, confirm?',
+        form: {
+          deptName: 'Please enter dept name',
+          parentDept: 'Please select parent dept',
+          leader: 'Please enter leader',
+          phone: 'Please enter phone',
+          email: 'Please enter email',
+          status: 'Please select status'
+        }
+      },
+      dict: {
+        title: 'Dict List',
+        dictName: 'Dict Name',
+        dictType: 'Dict Type',
+        status: 'Status',
+        remark: 'Remark',
+        updateTime: 'Update Time',
+        dictOptions: 'Dict Options',
+        addDictType: 'Add Dict Type',
+        editDictType: 'Edit Dict Type',
+        form: {
+          dictName: 'Please enter dict name',
+          dictType: 'Please enter dict type',
+          status: 'Please select status',
+          remark: 'Please enter remark'
+        },
+        option: {
+          optionLabel: 'Option Label',
+          optionValue: 'Option Value',
+          sort: 'Sort',
+          colorTag: 'Tag Color',
+          addOption: 'Add Option',
+          editOption: 'Edit Option',
+          form: {
+            optionLabel: 'Please enter option label',
+            optionValue: 'Please enter option value'
+          }
+        }
+      },
+      resource: {
+        title: 'Resource Manage',
+        apiTab: 'API Manage',
+        buttonTab: 'Button Permission',
+        status: 'Status',
+        remark: 'Remark',
+        form: {
+          remark: 'Please enter remark'
+        },
+        api: {
+          apiName: 'API Name',
+          apiPath: 'API Path',
+          apiMethod: 'Method',
+          apiModule: 'Module',
+          addApi: 'Add API',
+          editApi: 'Edit API',
+          form: {
+            apiName: 'Please enter api name',
+            apiPath: 'Please enter api path, e.g. /systemManage/getUserList',
+            apiMethod: 'Please select method',
+            apiModule: 'Please enter module'
+          }
+        },
+        button: {
+          buttonCode: 'Permission Code',
+          buttonName: 'Button Name',
+          menuName: 'Menu',
+          createTime: 'Create Time',
+          addButton: 'Add Button',
+          editButton: 'Edit Button',
+          form: {
+            buttonCode: 'Please enter permission code, e.g. B_USER_ADD',
+            buttonName: 'Please enter button name',
+            menuName: 'Please enter menu name'
+          }
+        }
+      },
+      log: {
+        title: 'Log Manage',
+        loginTab: 'Login Log',
+        operateTab: 'Operate Log',
+        detail: 'Detail',
+        clear: 'Clear',
+        confirmClear: 'Clear all logs? This cannot be undone',
+        clearSuccess: 'Cleared successfully',
+        login: {
+          userName: 'Account',
+          ipaddr: 'Login IP',
+          loginLocation: 'Location',
+          browser: 'Browser',
+          os: 'OS',
+          loginStatus: 'Status',
+          success: 'Success',
+          fail: 'Fail',
+          msg: 'Message',
+          loginTime: 'Login Time',
+          form: {
+            userName: 'Please enter account',
+            ipaddr: 'Please enter login IP',
+            status: 'Please select status'
+          }
+        },
+        operate: {
+          title: 'Module',
+          businessType: 'Operate Type',
+          userName: 'Operator',
+          method: 'Method',
+          url: 'URL',
+          params: 'Params',
+          code: 'Code',
+          costTime: 'Cost Time',
+          ipaddr: 'IP',
+          operateTime: 'Operate Time',
+          type: {
+            add: 'Add',
+            update: 'Update',
+            delete: 'Delete',
+            export: 'Export',
+            import: 'Import',
+            other: 'Other'
+          },
+          form: {
+            title: 'Please enter module',
+            userName: 'Please enter operator',
+            businessType: 'Please select operate type'
+          }
+        }
+      },
+      online: {
+        title: 'Online Users',
+        userName: 'Account',
+        tokenId: 'Session ID',
+        ipaddr: 'Login IP',
+        loginLocation: 'Location',
+        browser: 'Browser',
+        os: 'OS',
+        loginTime: 'Login Time',
+        forceLogout: 'Force Logout',
+        batchForceLogout: 'Batch Logout',
+        confirmForceLogout: 'Force logout this user?',
+        forceLogoutSuccess: 'Forced logout',
+        form: {
+          userName: 'Please enter account',
+          ipaddr: 'Please enter login IP'
         }
       }
     }

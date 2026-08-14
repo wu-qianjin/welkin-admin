@@ -251,6 +251,71 @@ export const generatedRoutes: GeneratedRoute[] = [
     },
     children: [
       {
+        name: 'manage_config',
+        path: '/manage/config',
+        component: 'view.manage_config',
+        meta: {
+          title: 'manage_config',
+          i18nKey: 'route.manage_config',
+          icon: 'mdi:cog-outline',
+          order: 6,
+          roles: ['R_SUPER'],
+          keepAlive: true
+        }
+      },
+      {
+        name: 'manage_dept',
+        path: '/manage/dept',
+        component: 'view.manage_dept',
+        meta: {
+          title: 'manage_dept',
+          i18nKey: 'route.manage_dept',
+          icon: 'mdi:account-group-outline',
+          order: 4,
+          roles: ['R_ADMIN'],
+          keepAlive: true
+        }
+      },
+      {
+        name: 'manage_dict',
+        path: '/manage/dict',
+        component: 'view.manage_dict',
+        meta: {
+          title: 'manage_dict',
+          i18nKey: 'route.manage_dict',
+          icon: 'mdi:bookshelf',
+          order: 9,
+          roles: ['R_SUPER'],
+          keepAlive: true
+        }
+      },
+      {
+        name: 'manage_file',
+        path: '/manage/file',
+        component: 'view.manage_file',
+        meta: {
+          title: 'manage_file',
+          i18nKey: 'route.manage_file',
+          icon: 'mdi:folder-file-outline',
+          order: 7,
+          roles: ['R_ADMIN'],
+          keepAlive: true
+        }
+      },
+      {
+        name: 'manage_log',
+        path: '/manage/log',
+        component: 'view.manage_log',
+        meta: {
+          title: 'manage_log',
+          i18nKey: 'route.manage_log',
+          icon: 'mdi:file-document-multiple-outline',
+          order: 11,
+          roles: ['R_SUPER'],
+          keepAlive: true
+        }
+      },
+      {
         name: 'manage_menu',
         path: '/manage/menu',
         component: 'view.manage_menu',
@@ -260,6 +325,45 @@ export const generatedRoutes: GeneratedRoute[] = [
           icon: 'material-symbols:route',
           order: 3,
           roles: ['R_ADMIN'],
+          keepAlive: true
+        }
+      },
+      {
+        name: 'manage_notice',
+        path: '/manage/notice',
+        component: 'view.manage_notice',
+        meta: {
+          title: 'manage_notice',
+          i18nKey: 'route.manage_notice',
+          icon: 'mdi:bullhorn-outline',
+          order: 8,
+          roles: ['R_ADMIN'],
+          keepAlive: true
+        }
+      },
+      {
+        name: 'manage_online',
+        path: '/manage/online',
+        component: 'view.manage_online',
+        meta: {
+          title: 'manage_online',
+          i18nKey: 'route.manage_online',
+          icon: 'mdi:monitor-account',
+          order: 12,
+          roles: ['R_SUPER'],
+          keepAlive: true
+        }
+      },
+      {
+        name: 'manage_resource',
+        path: '/manage/resource',
+        component: 'view.manage_resource',
+        meta: {
+          title: 'manage_resource',
+          i18nKey: 'route.manage_resource',
+          icon: 'mdi:shield-key-outline',
+          order: 10,
+          roles: ['R_SUPER'],
           keepAlive: true
         }
       },

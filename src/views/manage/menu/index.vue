@@ -11,6 +11,7 @@ import { defaultTransform, useNaivePaginatedTable, useTableOperate } from '@/hoo
 import { $t } from '@/locales';
 import SvgIcon from '@/components/custom/svg-icon.vue';
 import MenuOperateModal, { type OperateType } from './modules/menu-operate-modal.vue';
+import MenuSearch from './modules/menu-search.vue';
 
 const appStore = useAppStore();
 
@@ -18,9 +19,21 @@ const { bool: visible, setTrue: openModal } = useBoolean();
 
 const wrapperRef = ref<HTMLElement | null>(null);
 
+const searchParams = ref<Api.SystemManage.MenuSearchParams>({
+  current: 1,
+  size: 10,
+  menuName: null,
+  menuType: null,
+  status: null
+});
+
 const { columns, columnChecks, data, loading, pagination, getData, getDataByPage } = useNaivePaginatedTable({
-  api: () => fetchGetMenuList(),
+  api: () => fetchGetMenuList(searchParams.value),
   transform: response => defaultTransform(response),
+  onPaginationParamsChange: params => {
+    searchParams.value.current = params.page;
+    searchParams.value.size = params.pageSize;
+  },
   columns: () => [
     {
       type: 'selection',
@@ -215,8 +228,12 @@ function handleAddChildMenu(item: Api.SystemManage.Menu) {
 const allPages = ref<string[]>([]);
 
 async function getAllPages() {
-  const { data: pages } = await fetchGetAllPages();
-  allPages.value = pages || [];
+  try {
+    const pages = await fetchGetAllPages();
+    allPages.value = pages || [];
+  } catch {
+    // request errors are surfaced by the request layer
+  }
 }
 
 function init() {
@@ -229,6 +246,7 @@ init();
 
 <template>
   <div ref="wrapperRef" class="flex-col-stretch gap-16px overflow-hidden lt-sm:overflow-auto">
+    <MenuSearch v-model:model="searchParams" @search="getDataByPage" />
     <NCard :title="$t('page.manage.menu.title')" :bordered="false" size="small" class="card-wrapper sm:flex-1-hidden">
       <template #header-extra>
         <TableHeaderOperation

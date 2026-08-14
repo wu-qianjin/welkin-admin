@@ -8,11 +8,13 @@ import { setupUnocss } from './unocss';
 import { setupUnplugin } from './unplugin';
 import { setupHtmlPlugin } from './html';
 import { setupDevtoolsPlugin } from './devtools';
+import { setupLocalMock } from '../../mock/server/plugin';
 
 export function setupVitePlugins(viteEnv: Env.ImportMeta, buildTime: string) {
   const plugins: PluginOption = [
     vue(),
     vueJsx(),
+    setupLocalMock(),
     setupDevtoolsPlugin(viteEnv),
     setupElegantRouter(),
     setupUnocss(viteEnv),

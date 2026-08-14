@@ -168,15 +168,17 @@ const layoutOptions: CommonType.Option[] = [
 const roleOptions = ref<CommonType.Option<string>[]>([]);
 
 async function getRoleOptions() {
-  const { error, data } = await fetchGetAllRoles();
+  try {
+    const data = await fetchGetAllRoles();
 
-  if (!error) {
     const options = data.map(item => ({
       label: item.roleName,
       value: item.roleCode
     }));
 
     roleOptions.value = [...options];
+  } catch {
+    // request errors are surfaced by the request layer
   }
 }
 

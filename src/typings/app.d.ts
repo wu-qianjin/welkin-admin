@@ -518,6 +518,8 @@ declare namespace App {
             github: string;
             google: string;
             sliderHint: string;
+            sliderSuccess: string;
+            sliderRequired: string;
           };
           codeLogin: {
             title: string;
@@ -828,6 +830,243 @@ declare namespace App {
             iconType: {
               iconify: string;
               local: string;
+            };
+          };
+          config: {
+            title: string;
+            paramName: string;
+            paramKey: string;
+            paramValue: string;
+            paramStatus: string;
+            builtIn: string;
+            remark: string;
+            updateTime: string;
+            addConfig: string;
+            editConfig: string;
+            form: {
+              paramName: string;
+              paramKey: string;
+              paramValue: string;
+              paramStatus: string;
+              remark: string;
+            };
+          };
+          file: {
+            title: string;
+            fileName: string;
+            fileType: string;
+            fileSize: string;
+            bizType: string;
+            createBy: string;
+            createTime: string;
+            upload: string;
+            uploadSource: string;
+            uploadSuccess: string;
+            preview: string;
+            previewPlaceholder: string;
+            download: string;
+            type: {
+              image: string;
+              document: string;
+              archive: string;
+              other: string;
+            };
+            form: {
+              fileName: string;
+              fileType: string;
+            };
+          };
+          notice: {
+            title: string;
+            noticeTitle: string;
+            noticeType: string;
+            noticeStatus: string;
+            top: string;
+            content: string;
+            createBy: string;
+            createTime: string;
+            updateTime: string;
+            view: string;
+            publish: string;
+            withdraw: string;
+            confirmPublish: string;
+            confirmWithdraw: string;
+            publishSuccess: string;
+            withdrawSuccess: string;
+            addNotice: string;
+            editNotice: string;
+            type: {
+              notice: string;
+              announcement: string;
+            };
+            status: {
+              draft: string;
+              published: string;
+              withdrawn: string;
+            };
+            form: {
+              noticeTitle: string;
+              noticeType: string;
+              noticeStatus: string;
+            };
+          };
+          dept: {
+            title: string;
+            deptName: string;
+            parentDept: string;
+            rootDept: string;
+            leader: string;
+            phone: string;
+            email: string;
+            order: string;
+            status: string;
+            createTime: string;
+            addDept: string;
+            editDept: string;
+            addChildDept: string;
+            confirmDelete: string;
+            form: {
+              deptName: string;
+              parentDept: string;
+              leader: string;
+              phone: string;
+              email: string;
+              status: string;
+            };
+          };
+          dict: {
+            title: string;
+            dictName: string;
+            dictType: string;
+            status: string;
+            remark: string;
+            updateTime: string;
+            dictOptions: string;
+            addDictType: string;
+            editDictType: string;
+            form: {
+              dictName: string;
+              dictType: string;
+              status: string;
+              remark: string;
+            };
+            option: {
+              optionLabel: string;
+              optionValue: string;
+              sort: string;
+              colorTag: string;
+              addOption: string;
+              editOption: string;
+              form: {
+                optionLabel: string;
+                optionValue: string;
+              };
+            };
+          };
+          resource: {
+            title: string;
+            apiTab: string;
+            buttonTab: string;
+            status: string;
+            remark: string;
+            form: {
+              remark: string;
+            };
+            api: {
+              apiName: string;
+              apiPath: string;
+              apiMethod: string;
+              apiModule: string;
+              addApi: string;
+              editApi: string;
+              form: {
+                apiName: string;
+                apiPath: string;
+                apiMethod: string;
+                apiModule: string;
+              };
+            };
+            button: {
+              buttonCode: string;
+              buttonName: string;
+              menuName: string;
+              createTime: string;
+              addButton: string;
+              editButton: string;
+              form: {
+                buttonCode: string;
+                buttonName: string;
+                menuName: string;
+              };
+            };
+          };
+          log: {
+            title: string;
+            loginTab: string;
+            operateTab: string;
+            detail: string;
+            clear: string;
+            confirmClear: string;
+            clearSuccess: string;
+            login: {
+              userName: string;
+              ipaddr: string;
+              loginLocation: string;
+              browser: string;
+              os: string;
+              loginStatus: string;
+              success: string;
+              fail: string;
+              msg: string;
+              loginTime: string;
+              form: {
+                userName: string;
+                ipaddr: string;
+                status: string;
+              };
+            };
+            operate: {
+              title: string;
+              businessType: string;
+              userName: string;
+              method: string;
+              url: string;
+              params: string;
+              code: string;
+              costTime: string;
+              ipaddr: string;
+              operateTime: string;
+              type: {
+                add: string;
+                update: string;
+                delete: string;
+                export: string;
+                import: string;
+                other: string;
+              };
+              form: {
+                title: string;
+                userName: string;
+                businessType: string;
+              };
+            };
+          };
+          online: {
+            title: string;
+            userName: string;
+            tokenId: string;
+            ipaddr: string;
+            loginLocation: string;
+            browser: string;
+            os: string;
+            loginTime: string;
+            forceLogout: string;
+            batchForceLogout: string;
+            confirmForceLogout: string;
+            forceLogoutSuccess: string;
+            form: {
+              userName: string;
+              ipaddr: string;
             };
           };
         };

@@ -23,15 +23,7 @@ const searchParams: Api.SystemManage.UserSearchParams = reactive({
 
 const { columns, data, loading } = useNaiveTable({
   api: () => fetchGetUserList(searchParams),
-  transform: response => {
-    const { data: list, error } = response;
-
-    if (!error) {
-      return list.records;
-    }
-
-    return [];
-  },
+  transform: response => response.records,
   columns: () => [
     {
       type: 'selection',

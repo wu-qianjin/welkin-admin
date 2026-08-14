@@ -78,8 +78,61 @@ const rules = computed<Record<keyof FormModel, App.Global.FormRule[]>>(() => {
   };
 });
 
+const SLIDER_THUMB_WIDTH = 40;
+
+const sliderTrackRef = ref<HTMLElement | null>(null);
+const sliderVerified = ref(false);
+const sliderDragging = ref(false);
+const sliderX = ref(0);
+
+let sliderDragStartX = 0;
+
+function getSliderMaxX() {
+  const trackWidth = sliderTrackRef.value?.offsetWidth ?? 0;
+  return Math.max(0, trackWidth - SLIDER_THUMB_WIDTH);
+}
+
+function handleSliderPointerDown(event: PointerEvent) {
+  if (sliderVerified.value) return;
+
+  sliderDragging.value = true;
+  sliderDragStartX = event.clientX - sliderX.value;
+
+  try {
+    (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
+  } catch {
+    // pointer capture is unavailable (e.g. synthetic events), still allow dragging
+  }
+}
+
+function handleSliderPointerMove(event: PointerEvent) {
+  if (!sliderDragging.value) return;
+
+  const maxX = getSliderMaxX();
+  sliderX.value = Math.min(Math.max(0, event.clientX - sliderDragStartX), maxX);
+}
+
+function handleSliderPointerUp() {
+  if (!sliderDragging.value) return;
+
+  sliderDragging.value = false;
+
+  if (sliderX.value >= getSliderMaxX() - 2) {
+    sliderX.value = getSliderMaxX();
+    sliderVerified.value = true;
+  } else {
+    sliderX.value = 0;
+  }
+}
+
 async function handleSubmit() {
   await validate();
+
+  if (!sliderVerified.value) {
+    window.$message?.warning($t('page.login.pwdLogin.sliderRequired'));
+    return;
+  }
+
   await authStore.login(model.userName, model.password);
 }
 
@@ -114,9 +167,30 @@ function handlePhoneLogin() {
       </NFormItem>
 
       <NFormItem :show-feedback="false">
-        <div class="login-pwd__slider">
-          <div class="login-pwd__slider-thumb">»</div>
-          <span class="login-pwd__slider-hint">{{ $t('page.login.pwdLogin.sliderHint') }}</span>
+        <div
+          ref="sliderTrackRef"
+          class="login-pwd__slider"
+          :class="{ 'is-dragging': sliderDragging, 'is-verified': sliderVerified }"
+        >
+          <div class="login-pwd__slider-fill" :style="{ width: `${sliderX + SLIDER_THUMB_WIDTH}px` }" />
+          <div
+            class="login-pwd__slider-thumb"
+            :style="{ transform: `translateX(${sliderX}px)` }"
+            @pointerdown="handleSliderPointerDown"
+            @pointermove="handleSliderPointerMove"
+            @pointerup="handleSliderPointerUp"
+            @pointercancel="handleSliderPointerUp"
+          >
+            <span v-if="sliderVerified" class="login-pwd__slider-check text-16px">
+              <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+                <path fill="currentColor" d="M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z" />
+              </svg>
+            </span>
+            <template v-else>»</template>
+          </div>
+          <span class="login-pwd__slider-hint">
+            {{ sliderVerified ? $t('page.login.pwdLogin.sliderSuccess') : $t('page.login.pwdLogin.sliderHint') }}
+          </span>
         </div>
       </NFormItem>
 
@@ -249,6 +323,35 @@ function handlePhoneLogin() {
   display: flex;
   align-items: center;
   user-select: none;
+  overflow: hidden;
+  transition:
+    background-color 0.3s ease,
+    border-color 0.3s ease;
+}
+
+.login-pwd__slider.is-verified {
+  border-color: rgb(var(--success-color));
+  background-color: #e8f7ef;
+}
+
+.login-pwd__slider-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 0;
+  background-color: rgb(var(--primary-color));
+  opacity: 0.16;
+  transition: width 0.3s ease;
+}
+
+.login-pwd__slider.is-dragging .login-pwd__slider-fill {
+  transition: none;
+}
+
+.login-pwd__slider.is-verified .login-pwd__slider-fill {
+  background-color: rgb(var(--success-color));
+  opacity: 0.15;
 }
 
 .login-pwd__slider-thumb {
@@ -266,6 +369,48 @@ function handlePhoneLogin() {
   color: #999;
   font-size: 18px;
   cursor: grab;
+  touch-action: none;
+  will-change: transform;
+  transition:
+    transform 0.3s ease,
+    background-color 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.login-pwd__slider.is-dragging .login-pwd__slider-thumb {
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease;
+  background-color: rgb(var(--primary-color));
+  border-right-color: transparent;
+  color: #fff;
+}
+
+.login-pwd__slider:not(.is-dragging) .login-pwd__slider-thumb {
+  transition:
+    transform 0.3s ease,
+    background-color 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.login-pwd__slider-thumb:active {
+  cursor: grabbing;
+}
+
+.login-pwd__slider.is-verified .login-pwd__slider-thumb {
+  border-right-color: transparent;
+  background-color: rgb(var(--success-color));
+  color: #fff;
+  cursor: default;
+}
+
+.login-pwd__slider-check {
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .login-pwd__slider-hint {
@@ -273,6 +418,11 @@ function handlePhoneLogin() {
   text-align: center;
   font-size: 13px;
   color: #999;
+  transition: color 0.3s ease;
+}
+
+.login-pwd__slider.is-verified .login-pwd__slider-hint {
+  color: rgb(var(--success-color));
 }
 
 .login-pwd__divider {
