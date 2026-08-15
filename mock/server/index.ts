@@ -19,23 +19,12 @@ import {
   updateUser
 } from './db';
 import type { MockDept, MockMenu } from './db';
+import { customMockRoutes } from './custom';
+import { monitorRoutes } from './monitor';
+import { sendData, sendError } from './response';
+import type { MockRoute } from './types';
 
 const PROXY_PREFIX = '/proxy-default';
-const SUCCESS = { code: '0000', msg: '请求成功' };
-
-function sendJson(res: ServerResponse, payload: unknown) {
-  res.statusCode = 200;
-  res.setHeader('content-type', 'application/json; charset=utf-8');
-  res.end(JSON.stringify(payload));
-}
-
-function sendData(res: ServerResponse, data: unknown) {
-  sendJson(res, { data, ...SUCCESS });
-}
-
-function sendError(res: ServerResponse, code: string, msg: string) {
-  sendJson(res, { data: null, code, msg });
-}
 
 function readBody(req: IncomingMessage): Promise<any> {
   return new Promise((resolve, reject) => {
@@ -65,7 +54,7 @@ function decodeTokenUser(authorization: string | undefined): string | null {
   if (parts.length !== 3) return null;
   try {
     const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString('utf-8'));
-    return payload?.data?.[0]?.userName ?? null;
+    return payload?.data?.[0]?.userName ?? payload?.userName ?? payload?.username ?? payload?.sub ?? null;
   } catch {
     return null;
   }
@@ -120,15 +109,183 @@ function buildMenuTree(menus: MockMenu[]): any[] {
   }));
 }
 
-type MockHandler = (ctx: {
-  req: IncomingMessage;
-  res: ServerResponse;
-  query: URLSearchParams;
-  body: any;
-  url: URL;
-}) => Promise<void> | void;
+type MockRouteRecord = {
+  name: string;
+  path?: string;
+  component?: string;
+  meta?: Record<string, unknown>;
+  children?: MockRouteRecord[];
+  [key: string]: unknown;
+};
 
-const routes: Array<{ method: string; path: string; handler: MockHandler }> = [
+const legacyRouteNameMap: Record<string, Pick<MockRouteRecord, 'name' | 'path' | 'component'>> = {
+  manage_user: { name: 'manage_auth_user', path: '/manage/auth/user', component: 'view.manage_auth_user' },
+  'manage_user-detail': {
+    name: 'manage_auth_user-detail',
+    path: '/manage/auth/user-detail/:id',
+    component: 'view.manage_auth_user-detail'
+  },
+  manage_dept: { name: 'manage_auth_dept', path: '/manage/auth/dept', component: 'view.manage_auth_dept' },
+  manage_role: { name: 'manage_auth_role', path: '/manage/auth/role', component: 'view.manage_auth_role' },
+  manage_menu: { name: 'manage_auth_menu', path: '/manage/auth/menu', component: 'view.manage_auth_menu' },
+  manage_resource: {
+    name: 'manage_auth_resource',
+    path: '/manage/auth/resource',
+    component: 'view.manage_auth_resource'
+  },
+  manage_config: {
+    name: 'manage_system_config',
+    path: '/manage/system/config',
+    component: 'view.manage_system_config'
+  },
+  manage_dict: { name: 'manage_system_dict', path: '/manage/system/dict', component: 'view.manage_system_dict' },
+  manage_notice: {
+    name: 'manage_system_notice',
+    path: '/manage/system/notice',
+    component: 'view.manage_system_notice'
+  },
+  manage_file: { name: 'manage_system_file', path: '/manage/system/file', component: 'view.manage_system_file' },
+  manage_log: { name: 'manage_audit_log', path: '/manage/audit/log', component: 'view.manage_audit_log' },
+  manage_online: { name: 'manage_audit_online', path: '/manage/audit/online', component: 'view.manage_audit_online' }
+};
+
+type ManageModuleDefinition = {
+  name: string;
+  path: string;
+  icon: string;
+  order: number;
+  roles: string[];
+  legacyNames: string[];
+};
+
+const manageModuleDefinitions: ManageModuleDefinition[] = [
+  {
+    name: 'manage_auth',
+    path: '/manage/auth',
+    icon: 'mdi:shield-account-outline',
+    order: 1,
+    roles: ['R_ADMIN'],
+    legacyNames: ['manage_user', 'manage_user-detail', 'manage_dept', 'manage_role', 'manage_menu', 'manage_resource']
+  },
+  {
+    name: 'manage_system',
+    path: '/manage/system',
+    icon: 'mdi:cog-outline',
+    order: 2,
+    roles: ['R_ADMIN'],
+    legacyNames: ['manage_config', 'manage_dict', 'manage_notice', 'manage_file']
+  },
+  {
+    name: 'manage_audit',
+    path: '/manage/audit',
+    icon: 'mdi:clipboard-text-clock-outline',
+    order: 3,
+    roles: ['R_SUPER'],
+    legacyNames: ['manage_log', 'manage_online']
+  }
+];
+
+function normalizeRouteRecord(route: MockRouteRecord): MockRouteRecord {
+  const mapping = legacyRouteNameMap[route.name];
+  const name = mapping?.name ?? route.name;
+  const meta = route.meta
+    ? {
+        ...route.meta,
+        ...(mapping ? { title: name, i18nKey: `route.${name}` } : {}),
+        ...(name === 'manage_auth_user-detail' ? { activeMenu: 'manage_auth_user' } : {})
+      }
+    : route.meta;
+
+  return {
+    ...route,
+    ...mapping,
+    meta,
+    ...(route.children ? { children: route.children.map(normalizeRouteRecord) } : {})
+  };
+}
+
+function menuRecordToRoute(menu: MockMenu): MockRouteRecord {
+  const routeName = menu.routeName;
+  const meta = {
+    title: routeName,
+    i18nKey: typeof menu.i18nKey === 'string' ? menu.i18nKey : `route.${routeName}`,
+    ...(menu.icon ? { icon: menu.icon } : {}),
+    ...(typeof menu.order === 'number' ? { order: menu.order } : {}),
+    ...(menu.hideInMenu ? { hideInMenu: true } : {}),
+    ...(routeName === 'manage_auth_user-detail' ? { activeMenu: 'manage_auth_user' } : {})
+  };
+
+  return {
+    name: routeName,
+    path: menu.routePath,
+    ...(menu.component ? { component: menu.component } : {}),
+    meta,
+    ...(menu.children?.length ? { children: menu.children.map(menuRecordToRoute) } : {})
+  };
+}
+
+function normalizeManageRoute(route: MockRouteRecord): MockRouteRecord {
+  const sourceChildren = route.children ?? [];
+  const children = manageModuleDefinitions.map(definition => ({
+    name: definition.name,
+    path: definition.path,
+    meta: {
+      title: definition.name,
+      i18nKey: `route.${definition.name}`,
+      icon: definition.icon,
+      order: definition.order,
+      roles: [...definition.roles]
+    },
+    children: sourceChildren
+      .filter(child => definition.legacyNames.includes(child.name) || child.name === definition.name)
+      .map(normalizeRouteRecord)
+  }));
+
+  return {
+    ...route,
+    meta: {
+      ...route.meta,
+      title: 'manage',
+      i18nKey: 'route.manage',
+      icon: 'carbon:cloud-service-management',
+      order: 9,
+      roles: ['R_ADMIN']
+    },
+    children
+  };
+}
+
+function normalizeUserRoutes(value: { routes?: MockRouteRecord[]; home?: string }) {
+  if (!Array.isArray(value.routes)) return value;
+  const currentManageMenu = store.menus.find(menu => menu.routeName === 'manage');
+  const currentManageRoute = currentManageMenu ? menuRecordToRoute(currentManageMenu) : null;
+  const normalizedRoutes = value.routes.map(route =>
+    route.name === 'manage' ? normalizeManageRoute(route) : normalizeRouteRecord(route)
+  );
+
+  return {
+    ...value,
+    routes: normalizedRoutes.map(route => (route.name === 'manage' && currentManageRoute ? currentManageRoute : route)),
+    home: value.home === 'manage_user' ? 'manage_auth_user' : value.home
+  };
+}
+
+type StoredLoginToken = {
+  accessToken?: string;
+  token?: string;
+  refreshToken: string;
+  [key: string]: unknown;
+};
+
+function toLoginToken(value: StoredLoginToken) {
+  const { token, accessToken, ...rest } = value;
+  return { ...rest, accessToken: accessToken ?? token };
+}
+
+const routes: MockRoute[] = [
+  ...customMockRoutes,
+  ...monitorRoutes,
+
   // ---------------- auth ----------------
   {
     method: 'POST',
@@ -136,7 +293,7 @@ const routes: Array<{ method: string; path: string; handler: MockHandler }> = [
     async handler({ res, body }) {
       const account = db.loginTokens[body?.userName];
       if (account && body?.password === '123456') {
-        sendData(res, account);
+        sendData(res, toLoginToken(account));
       } else {
         sendError(res, '1000', '用户名或密码错误（Mock），请使用 Super / Admin / User + 123456');
       }
@@ -161,7 +318,7 @@ const routes: Array<{ method: string; path: string; handler: MockHandler }> = [
     path: '/auth/refreshToken',
     handler({ res, body }) {
       if (body?.refreshToken) {
-        sendData(res, db.refreshTokenData);
+        sendData(res, toLoginToken(db.refreshTokenData));
       } else {
         sendError(res, '8888', '用户状态失效，请重新登录');
       }
@@ -194,8 +351,58 @@ const routes: Array<{ method: string; path: string; handler: MockHandler }> = [
   {
     method: 'POST',
     path: '/auth/verifyCaptcha',
-    handler({ res }) {
+    handler({ res, body }) {
+      if (body?.code === '123456') {
+        sendData(res, null);
+      } else {
+        sendError(res, '1000', '验证码错误（Mock），验证码为 123456');
+      }
+    }
+  },
+
+  // ---------------- extended auth (monitoring demo) ----------------
+  {
+    method: 'POST',
+    path: '/auth/loginByPhone',
+    handler({ res, body }) {
+      if (body?.code === '123456') {
+        sendData(res, toLoginToken(db.loginTokens.admin));
+      } else {
+        sendError(res, '1000', '验证码错误（Mock），验证码为 123456');
+      }
+    }
+  },
+  {
+    method: 'POST',
+    path: '/auth/register',
+    handler({ res, body }) {
+      if (!body?.phone || !body?.password) {
+        sendError(res, '1000', '手机号和密码不能为空');
+        return;
+      }
       sendData(res, null);
+    }
+  },
+  {
+    method: 'POST',
+    path: '/auth/resetPwd',
+    handler({ res, body }) {
+      if (body?.code !== '123456') {
+        sendError(res, '1000', '验证码错误（Mock），验证码为 123456');
+        return;
+      }
+      sendData(res, null);
+    }
+  },
+  {
+    method: 'POST',
+    path: '/auth/scanLogin',
+    handler({ res, body }) {
+      if (body?.scanToken) {
+        sendData(res, toLoginToken(db.loginTokens.admin));
+      } else {
+        sendError(res, '1000', '扫码状态无效，请刷新二维码重试');
+      }
     }
   },
 
@@ -216,7 +423,7 @@ const routes: Array<{ method: string; path: string; handler: MockHandler }> = [
         sendError(res, '3333', '用户已失效或不存在');
         return;
       }
-      sendData(res, db.userRoutes);
+      sendData(res, normalizeUserRoutes(db.userRoutes));
     }
   },
   {
@@ -622,14 +829,29 @@ const routes: Array<{ method: string; path: string; handler: MockHandler }> = [
       const deptName = query.get('deptName');
       const status = query.get('status');
 
-      // a dept matches when itself or any descendant matches every condition
-      const deptMatches = (dept: MockDept): boolean => {
-        const selfMatch = contains(dept.deptName, deptName) && equals(dept.status, status);
-        const childMatch = (dept.children || []).some(deptMatches);
-        return selfMatch || childMatch;
+      // keep a dept when itself matches (with its whole subtree) or any descendant matches
+      const filterDeptTree = (depts: MockDept[]): MockDept[] => {
+        const result: MockDept[] = [];
+
+        for (const dept of depts) {
+          const selfMatch = contains(dept.deptName, deptName) && equals(dept.status, status);
+
+          if (selfMatch) {
+            result.push(dept);
+            continue;
+          }
+
+          const children = dept.children?.length ? filterDeptTree(dept.children) : [];
+
+          if (children.length > 0) {
+            result.push({ ...dept, children });
+          }
+        }
+
+        return result;
       };
 
-      const tree = buildDeptTree(store.depts).filter(deptMatches);
+      const tree = filterDeptTree(buildDeptTree(store.depts));
       // depts are hierarchical, return all matching nodes without pagination
       sendData(res, { records: tree, current: 1, size: tree.length, total: tree.length });
     }
@@ -912,13 +1134,28 @@ const routes: Array<{ method: string; path: string; handler: MockHandler }> = [
   }
 ];
 
+export interface MockRequestOptions {
+  /** Keep the demo monitor fixtures local; hybrid mode uses the real gateway monitor API. */
+  includeMonitor?: boolean;
+}
+
 /** handle one request if it matches a local mock route; otherwise fall through */
-export async function handleMockRequest(req: IncomingMessage, res: ServerResponse, next: Connect.NextFunction) {
+export async function handleMockRequest(
+  req: IncomingMessage,
+  res: ServerResponse,
+  next: Connect.NextFunction,
+  options: MockRequestOptions = {}
+) {
   const url = new URL(req.url || '/', 'http://localhost');
   const route = url.pathname.slice(PROXY_PREFIX.length);
   const method = (req.method || 'GET').toUpperCase();
 
-  const matched = routes.find(item => item.method === method && item.path === route);
+  const matched = routes.find(
+    item =>
+      item.method === method &&
+      item.path === route &&
+      (options.includeMonitor || !monitorRoutes.includes(item) || !item.path.startsWith('/v1/gateway/monitor/'))
+  );
 
   if (!matched) {
     // unmatched endpoints keep going to the remote proxy

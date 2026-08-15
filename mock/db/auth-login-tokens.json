@@ -10,5 +10,9 @@
   "User": {
     "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhIjpbeyJ1c2VyTmFtZSI6IlVzZXIwMSJ9XSwiaWF0IjoxNjk4NDg1MDEzLCJleHAiOjE3MzAwNDQ3OTksImF1ZCI6InNveWJlYW4tYWRtaW4iLCJpc3MiOiJTb3liZWFuIiwic3ViIjoiVXNlcjAxIn0.7m4r2DUYSd5EIihOeNc2aHLhBseWm3BWhormma-TPbU",
     "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhIjpbeyJ1c2VyTmFtZSI6IlVzZXIwMSJ9XSwiaWF0IjoxNjk4NDg1MDAwLCJleHAiOjE3NjE1ODA3OTksImF1ZCI6InNveWJlYW4tYWRtaW4iLCJpc3MiOiJTb3liZWFuIiwic3ViIjoiVXNlcjAxIn0.vXnUgwcf-y0UQWj5GZO-q2MEkCHsjGM06WgJ-I9f7cc"
+  },
+  "admin": {
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhIjpbeyJ1c2VyTmFtZSI6ImFkbWluIn1dLCJpYXQiOjE2OTg0ODQ5NDMsImV4cCI6MTg5MzQ1NjAwMCwiYXVkIjoid2Vsa2luLWFkbWluIiwiaXNzIjoid2Vsa2luIiwic3ViIjoiYWRtaW4ifQ.mock-signature-admin",
+    "refreshToken": "mock-refresh-token-admin"
   }
 }

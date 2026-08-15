@@ -14,7 +14,7 @@ export function setupVitePlugins(viteEnv: Env.ImportMeta, buildTime: string) {
   const plugins: PluginOption = [
     vue(),
     vueJsx(),
-    setupLocalMock(),
+    setupLocalMock(viteEnv),
     setupDevtoolsPlugin(viteEnv),
     setupElegantRouter(),
     setupUnocss(viteEnv),

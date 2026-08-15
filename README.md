@@ -186,6 +186,18 @@ pnpm i
 pnpm dev
 ```
 
+### Mock 模式
+
+开发环境默认使用 `VITE_MOCK_MODE=hybrid`：登录和管理页使用内置 Mock，网关监控和
+`mock/server/custom.ts` 中的自定义路由按配置处理，其他请求继续转发到 `.env.test` 中的
+`VITE_SERVICE_BASE_URL`（可指向 Welkin 网关或其他后端 Mock 服务）。网关监控在该模式下默认读取真实网关数据。
+
+- `VITE_MOCK_MODE=backend`：关闭本地 Mock，所有请求走后端；
+- `VITE_MOCK_MODE=custom`：只使用本地内置/自定义 Mock（同时将 `VITE_HTTP_PROXY` 设为 `N`）。
+
+本地 Mock 登录账号为 `Super`、`Admin`、`User`，密码均为 `123456`。Mock 同时兼容旧的
+`token` 字段和正式的 `accessToken` 字段，避免登录后因令牌字段不一致被误判为“用户已失效”。
+
 **构建项目**
 
 ```bash

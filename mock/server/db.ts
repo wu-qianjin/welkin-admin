@@ -34,6 +34,12 @@ export interface MockMenu {
   menuType: string;
   menuName: string;
   routeName: string;
+  routePath?: string;
+  component?: string;
+  i18nKey?: string;
+  icon?: string;
+  order?: number;
+  hideInMenu?: boolean;
   status: string;
   children?: MockMenu[];
   [key: string]: unknown;
@@ -48,9 +54,10 @@ interface PaginatingRecord<T> {
 
 /** immutable reference data captured from the remote apifox mock */
 export const db = {
-  loginTokens: readDb<Record<string, { token: string; refreshToken: string }>>('auth-login-tokens'),
+  loginTokens:
+    readDb<Record<string, { token?: string; accessToken?: string; refreshToken: string }>>('auth-login-tokens'),
   userInfos: readDb<Record<string, any>>('auth-user-infos'),
-  refreshTokenData: readDb<{ token: string; refreshToken: string }>('auth-refresh-token'),
+  refreshTokenData: readDb<{ token?: string; accessToken?: string; refreshToken: string }>('auth-refresh-token'),
   constantRoutes: readDb<any[]>('route-constant-routes'),
   userRoutes: readDb<any>('route-user-routes'),
   allRoles: readDb<any[]>('sm-all-roles'),

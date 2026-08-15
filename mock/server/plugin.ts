@@ -8,13 +8,18 @@ import { handleMockRequest, MOCK_PROXY_PREFIX } from './index';
  * prefix are answered with local data, unmatched ones fall through to the remote.
  * business code is untouched — it still requests the same `/proxy-default/*` urls.
  */
-export function setupLocalMock(): Plugin {
+export function setupLocalMock(viteEnv: Env.ImportMeta): Plugin {
+  const mode = viteEnv.VITE_MOCK_MODE || 'hybrid';
+  const includeMonitor = mode === 'custom';
+
   return {
     name: 'welkin:local-mock',
     configureServer(server) {
+      if (mode === 'backend') return;
+
       server.middlewares.use((req, res, next) => {
         if (req.url?.startsWith(MOCK_PROXY_PREFIX)) {
-          handleMockRequest(req, res, next);
+          handleMockRequest(req, res, next, { includeMonitor });
           return;
         }
         next();

@@ -16,5 +16,11 @@
     "userName": "User01",
     "roles": ["R_USER_COMMON"],
     "buttons": ["B_CODE3"]
+  },
+  "admin": {
+    "userId": "1",
+    "userName": "admin",
+    "roles": ["R_SUPER"],
+    "buttons": ["B_CODE1", "B_CODE2", "B_CODE3"]
   }
 }
