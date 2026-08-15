@@ -73,6 +73,13 @@ declare namespace Env {
      */
     readonly VITE_HTTP_PROXY?: CommonType.YesOrNo;
     /**
+     * Development mock strategy.
+     * - hybrid: local/custom mocks first, unmatched calls go to the backend/mock server
+     * - backend: disable the local mock middleware and use the backend/mock server
+     * - custom: only local/custom mock routes are expected
+     */
+    readonly VITE_MOCK_MODE?: 'hybrid' | 'backend' | 'custom';
+    /**
      * The auth route mode
      *
      * - Static: the auth routes is generated in front-end

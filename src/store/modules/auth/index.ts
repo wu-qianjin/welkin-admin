@@ -2,7 +2,7 @@ import { computed, reactive, ref } from 'vue';
 import { useRoute } from 'vue-router';
 import { defineStore } from 'pinia';
 import { useLoading } from '@sa/hooks';
-import { fetchGetUserInfo, fetchLogin } from '@/service/api';
+import { fetchGetUserInfo, fetchLogin, fetchLoginByPhone, fetchScanLogin } from '@/service/api';
 import { useRouterPush } from '@/hooks/common/router';
 import { localStg } from '@/utils/storage';
 import { SetupStoreId } from '@/enum';
@@ -97,10 +97,36 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
    * @param [redirect=true] Whether to redirect after login. Default is `true`
    */
   async function login(userName: string, password: string, redirect = true) {
+    await loginWithTokenRequest(() => fetchLogin(userName, password), redirect);
+  }
+
+  /**
+   * Login by phone number + sms code
+   *
+   * @param phone Phone number
+   * @param code Sms code
+   * @param [redirect=true] Whether to redirect after login. Default is `true`
+   */
+  async function loginByPhone(phone: string, code: string, redirect = true) {
+    await loginWithTokenRequest(() => fetchLoginByPhone(phone, code), redirect);
+  }
+
+  /**
+   * Login after the qr code scan is confirmed on mobile
+   *
+   * @param scanToken Token carried by the qr code
+   * @param [redirect=true] Whether to redirect after login. Default is `true`
+   */
+  async function loginByScan(scanToken: string, redirect = true) {
+    await loginWithTokenRequest(() => fetchScanLogin(scanToken), redirect);
+  }
+
+  /** shared login flow: fetch token -> persist -> fetch user info -> redirect -> notify */
+  async function loginWithTokenRequest(request: () => Promise<Api.Auth.LoginToken>, redirect = true) {
     startLoading();
 
     try {
-      const loginToken = await fetchLogin(userName, password);
+      const loginToken = await request();
       const pass = await loginByToken(loginToken);
 
       if (pass) {
@@ -128,15 +154,22 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
   }
 
   async function loginByToken(loginToken: Api.Auth.LoginToken) {
+    // Accept both the formal accessToken contract and legacy/custom Mock
+    // responses that still return `token`.
+    const accessToken = loginToken.accessToken || (loginToken as Api.Auth.LoginToken & { token?: string }).token;
+    if (!accessToken) {
+      throw new Error('登录响应缺少 accessToken');
+    }
+
     // 1. stored in the localStorage, the later requests need it in headers
-    localStg.set('token', loginToken.token);
+    localStg.set('token', accessToken);
     localStg.set('refreshToken', loginToken.refreshToken);
 
     // 2. get user info
     const pass = await getUserInfo();
 
     if (pass) {
-      token.value = loginToken.token;
+      token.value = accessToken;
 
       return true;
     }
@@ -178,6 +211,8 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
     loginLoading,
     resetStore,
     login,
+    loginByPhone,
+    loginByScan,
     initUserInfo
   };
 });

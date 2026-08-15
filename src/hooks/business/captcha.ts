@@ -1,6 +1,7 @@
 import { computed } from 'vue';
 import { useCountDown, useLoading } from '@sa/hooks';
 import { REG_PHONE } from '@/constants/reg';
+import { sendCaptcha } from '@/service/api';
 import { $t } from '@/locales';
 
 export function useCaptcha() {
@@ -48,12 +49,10 @@ export function useCaptcha() {
 
     startLoading();
 
-    // request
-    await new Promise(resolve => {
-      setTimeout(resolve, 500);
-    });
+    await sendCaptcha(phone);
 
     window.$message?.success?.($t('page.login.codeLogin.sendCodeSuccess'));
+    window.$message?.info?.($t('page.login.codeLogin.demoCode'));
 
     start();
 

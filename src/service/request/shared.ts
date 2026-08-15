@@ -23,7 +23,11 @@ export async function handleRefreshToken() {
 
   try {
     const data = await refreshTokenMethod;
-    localStg.set('token', data.token);
+    const accessToken = data.accessToken || (data as Api.Auth.LoginToken & { token?: string }).token;
+    if (!accessToken) {
+      throw new Error('刷新令牌响应缺少 accessToken');
+    }
+    localStg.set('token', accessToken);
     localStg.set('refreshToken', data.refreshToken);
   } catch (error) {
     resetStore();

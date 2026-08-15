@@ -25,6 +25,25 @@ export function verifyCaptcha(phone: string, code: string) {
   return alova.Post<null>('/auth/verifyCaptcha', { phone, code });
 }
 
+/** Login by phone number + sms code */
+export function fetchLoginByPhone(phone: string, code: string) {
+  return alova.Post<Api.Auth.LoginToken>('/auth/loginByPhone', { phone, code });
+}
+
+/** Register a new account */
+export function fetchRegister(data: { phone: string; password: string }) {
+  return alova.Post<null>('/auth/register', data);
+}
+
+/** Reset password by phone + sms code */
+export function fetchResetPwd(data: { phone: string; code: string; password: string }) {
+  return alova.Post<null>('/auth/resetPwd', data);
+}
+
+/** Login by scanning the qr code (confirmed on mobile) */
+export function fetchScanLogin(scanToken: string) {
+  return alova.Post<Api.Auth.LoginToken>('/auth/scanLogin', { scanToken });
+}
 /**
  * Refresh token
  *

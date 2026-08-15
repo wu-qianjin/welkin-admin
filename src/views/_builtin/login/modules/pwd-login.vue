@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { computed, reactive, ref, watch } from 'vue';
+import { computed, reactive, ref } from 'vue';
 import { loginModuleRecord } from '@/constants/app';
 import { useAuthStore } from '@/store/modules/auth';
 import { useRouterPush } from '@/hooks/common/router';
 import { useFormRules, useNaiveForm } from '@/hooks/common/form';
+import { localStg } from '@/utils/storage';
 import { $t } from '@/locales';
 
 defineOptions({
@@ -19,54 +20,19 @@ interface FormModel {
   password: string;
 }
 
-interface Account {
-  key: AccountKey;
-  label: string;
-  userName: string;
-  password: string;
-}
-
-type AccountKey = 'super' | 'admin' | 'user';
-
-const accounts = computed<Account[]>(() => [
-  {
-    key: 'super',
-    label: $t('page.login.pwdLogin.superAdmin'),
-    userName: 'Super',
-    password: '123456'
-  },
-  {
-    key: 'admin',
-    label: $t('page.login.pwdLogin.admin'),
-    userName: 'Admin',
-    password: '123456'
-  },
-  {
-    key: 'user',
-    label: $t('page.login.pwdLogin.user'),
-    userName: 'User',
-    password: '123456'
-  }
-]);
-
-const accountOptions = computed(() => accounts.value.map(item => ({ label: item.label, value: item.key })));
-
 const model: FormModel = reactive({
-  userName: 'Super',
-  password: '123456'
+  userName: '',
+  password: ''
 });
 
-const selectedAccount = ref<AccountKey>('super');
-
-watch(selectedAccount, key => {
-  const acc = accounts.value.find(a => a.key === key);
-  if (acc) {
-    model.userName = acc.userName;
-    model.password = acc.password;
-  }
-});
-
-const remember = ref(true);
+/** prefill only what the user explicitly remembered on a previous login */
+const remember = ref(false);
+const saved = localStg.get('rememberedLogin');
+if (saved) {
+  remember.value = true;
+  model.userName = saved.userName;
+  model.password = saved.password;
+}
 
 const rules = computed<Record<keyof FormModel, App.Global.FormRule[]>>(() => {
   // inside computed to make locale reactive, if not apply i18n, you can define it without computed
@@ -133,6 +99,12 @@ async function handleSubmit() {
     return;
   }
 
+  if (remember.value) {
+    localStg.set('rememberedLogin', { userName: model.userName, password: model.password });
+  } else {
+    localStg.remove('rememberedLogin');
+  }
+
   await authStore.login(model.userName, model.password);
 }
 
@@ -149,10 +121,6 @@ function handlePhoneLogin() {
     </header>
 
     <NForm ref="formRef" :model="model" :rules="rules" size="large" :show-label="false" @keyup.enter="handleSubmit">
-      <NFormItem>
-        <NSelect v-model:value="selectedAccount" :options="accountOptions" :consistent-menu-width="false" />
-      </NFormItem>
-
       <NFormItem path="userName">
         <NInput v-model:value="model.userName" :placeholder="$t('page.login.common.userNamePlaceholder')" />
       </NFormItem>
@@ -172,7 +140,17 @@ function handlePhoneLogin() {
           class="login-pwd__slider"
           :class="{ 'is-dragging': sliderDragging, 'is-verified': sliderVerified }"
         >
-          <div class="login-pwd__slider-fill" :style="{ width: `${sliderX + SLIDER_THUMB_WIDTH}px` }" />
+          <span class="login-pwd__slider-hint">
+            {{ sliderVerified ? $t('page.login.pwdLogin.sliderSuccess') : $t('page.login.pwdLogin.sliderHint') }}
+          </span>
+          <div
+            class="login-pwd__slider-fill"
+            :style="{ clipPath: `inset(0 calc(100% - ${sliderX + SLIDER_THUMB_WIDTH}px) 0 0)` }"
+          >
+            <span class="login-pwd__slider-hint login-pwd__slider-hint--on-fill">
+              {{ sliderVerified ? $t('page.login.pwdLogin.sliderSuccess') : $t('page.login.pwdLogin.sliderHint') }}
+            </span>
+          </div>
           <div
             class="login-pwd__slider-thumb"
             :style="{ transform: `translateX(${sliderX}px)` }"
@@ -188,9 +166,6 @@ function handlePhoneLogin() {
             </span>
             <template v-else>»</template>
           </div>
-          <span class="login-pwd__slider-hint">
-            {{ sliderVerified ? $t('page.login.pwdLogin.sliderSuccess') : $t('page.login.pwdLogin.sliderHint') }}
-          </span>
         </div>
       </NFormItem>
 
@@ -334,15 +309,12 @@ function handlePhoneLogin() {
   background-color: #e8f7ef;
 }
 
+/* solid fill clipped to the dragged portion, same color as the thumb */
 .login-pwd__slider-fill {
   position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 0;
+  inset: 0;
   background-color: rgb(var(--primary-color));
-  opacity: 0.16;
-  transition: width 0.3s ease;
+  transition: clip-path 0.3s ease;
 }
 
 .login-pwd__slider.is-dragging .login-pwd__slider-fill {
@@ -351,7 +323,16 @@ function handlePhoneLogin() {
 
 .login-pwd__slider.is-verified .login-pwd__slider-fill {
   background-color: rgb(var(--success-color));
-  opacity: 0.15;
+}
+
+.login-pwd__slider-hint--on-fill,
+.login-pwd__slider.is-verified .login-pwd__slider-hint--on-fill {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
 }
 
 .login-pwd__slider-thumb {
