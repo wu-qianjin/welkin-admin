@@ -7,6 +7,7 @@ import GlobalLogo from '../global-logo/index.vue';
 import GlobalBreadcrumb from '../global-breadcrumb/index.vue';
 import GlobalSearch from '../global-search/index.vue';
 import ThemeButton from './components/theme-button.vue';
+import MessageEntry from './components/message-entry.vue';
 import UserAvatar from './components/user-avatar.vue';
 
 defineOptions({
@@ -52,6 +53,7 @@ const { isFullscreen, toggle } = useFullscreen();
         @switch="themeStore.toggleThemeScheme"
       />
       <ThemeButton />
+      <MessageEntry />
       <UserAvatar />
     </div>
   </DarkModeContainer>
