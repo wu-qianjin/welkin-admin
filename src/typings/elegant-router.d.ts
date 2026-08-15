@@ -39,6 +39,13 @@ declare module "@elegant-router/types" {
     "alova": "/alova";
     "alova_request": "/alova/request";
     "alova_scenes": "/alova/scenes";
+    "auth": "/auth";
+    "auth_dept": "/auth/dept";
+    "auth_menu": "/auth/menu";
+    "auth_resource": "/auth/resource";
+    "auth_role": "/auth/role";
+    "auth_user": "/auth/user";
+    "auth_user-detail": "/auth/user-detail/:id";
     "function": "/function";
     "function_hide-child": "/function/hide-child";
     "function_hide-child_one": "/function/hide-child/one";
@@ -52,19 +59,14 @@ declare module "@elegant-router/types" {
     "home": "/home";
     "iframe-page": "/iframe-page/:url";
     "login": "/login/:module(pwd-login|code-login|register|reset-pwd|bind-wechat)?";
-    "manage": "/manage";
-    "manage_config": "/manage/config";
-    "manage_dept": "/manage/dept";
-    "manage_dict": "/manage/dict";
-    "manage_file": "/manage/file";
-    "manage_log": "/manage/log";
-    "manage_menu": "/manage/menu";
-    "manage_notice": "/manage/notice";
-    "manage_online": "/manage/online";
-    "manage_resource": "/manage/resource";
-    "manage_role": "/manage/role";
-    "manage_user": "/manage/user";
-    "manage_user-detail": "/manage/user-detail/:id";
+    "message": "/message";
+    "monitor": "/monitor";
+    "monitor_alert": "/monitor/alert";
+    "monitor_gateway": "/monitor/gateway";
+    "monitor_log": "/monitor/log";
+    "monitor_online": "/monitor/online";
+    "monitor_overview": "/monitor/overview";
+    "monitor_server": "/monitor/server";
     "multi-menu": "/multi-menu";
     "multi-menu_first": "/multi-menu/first";
     "multi-menu_first_child": "/multi-menu/first/child";
@@ -103,6 +105,11 @@ declare module "@elegant-router/types" {
     "pro-naive_table": "/pro-naive/table";
     "pro-naive_table_remote": "/pro-naive/table/remote";
     "pro-naive_table_row-edit": "/pro-naive/table/row-edit";
+    "system": "/system";
+    "system_config": "/system/config";
+    "system_dict": "/system/dict";
+    "system_file": "/system/file";
+    "system_notice": "/system/notice";
     "user-center": "/user-center";
   };
 
@@ -155,14 +162,17 @@ declare module "@elegant-router/types" {
     | "500"
     | "about"
     | "alova"
+    | "auth"
     | "function"
     | "home"
     | "iframe-page"
     | "login"
-    | "manage"
+    | "message"
+    | "monitor"
     | "multi-menu"
     | "plugin"
     | "pro-naive"
+    | "system"
     | "user-center"
   >;
 
@@ -190,6 +200,12 @@ declare module "@elegant-router/types" {
     | "about"
     | "alova_request"
     | "alova_scenes"
+    | "auth_dept"
+    | "auth_menu"
+    | "auth_resource"
+    | "auth_role"
+    | "auth_user-detail"
+    | "auth_user"
     | "function_hide-child_one"
     | "function_hide-child_three"
     | "function_hide-child_two"
@@ -199,18 +215,13 @@ declare module "@elegant-router/types" {
     | "function_tab"
     | "function_toggle-auth"
     | "home"
-    | "manage_config"
-    | "manage_dept"
-    | "manage_dict"
-    | "manage_file"
-    | "manage_log"
-    | "manage_menu"
-    | "manage_notice"
-    | "manage_online"
-    | "manage_resource"
-    | "manage_role"
-    | "manage_user-detail"
-    | "manage_user"
+    | "message"
+    | "monitor_alert"
+    | "monitor_gateway"
+    | "monitor_log"
+    | "monitor_online"
+    | "monitor_overview"
+    | "monitor_server"
     | "multi-menu_first_child"
     | "multi-menu_second_child_home"
     | "plugin_barcode"
@@ -237,6 +248,10 @@ declare module "@elegant-router/types" {
     | "pro-naive_form_step"
     | "pro-naive_table_remote"
     | "pro-naive_table_row-edit"
+    | "system_config"
+    | "system_dict"
+    | "system_file"
+    | "system_notice"
     | "user-center"
   >;
 

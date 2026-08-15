@@ -47,7 +47,7 @@ export const generatedRoutes: GeneratedRoute[] = [
       title: 'about',
       i18nKey: 'route.about',
       icon: 'fluent:book-information-24-regular',
-      order: 10
+      order: 11
     }
   },
   {
@@ -80,6 +80,96 @@ export const generatedRoutes: GeneratedRoute[] = [
           i18nKey: 'route.alova_scenes',
           icon: 'cbi:scene-dynamic',
           order: 3
+        }
+      }
+    ]
+  },
+  {
+    name: 'auth',
+    path: '/auth',
+    component: 'layout.base',
+    meta: {
+      title: 'auth',
+      i18nKey: 'route.auth',
+      icon: 'mdi:shield-account-outline',
+      order: 8,
+      roles: ['R_ADMIN']
+    },
+    children: [
+      {
+        name: 'auth_dept',
+        path: '/auth/dept',
+        component: 'view.auth_dept',
+        meta: {
+          title: 'auth_dept',
+          i18nKey: 'route.auth_dept',
+          icon: 'mdi:account-multiple-outline',
+          order: 2,
+          roles: ['R_ADMIN'],
+          keepAlive: true
+        }
+      },
+      {
+        name: 'auth_menu',
+        path: '/auth/menu',
+        component: 'view.auth_menu',
+        meta: {
+          title: 'auth_menu',
+          i18nKey: 'route.auth_menu',
+          icon: 'material-symbols:route',
+          order: 4,
+          roles: ['R_ADMIN'],
+          keepAlive: true
+        }
+      },
+      {
+        name: 'auth_resource',
+        path: '/auth/resource',
+        component: 'view.auth_resource',
+        meta: {
+          title: 'auth_resource',
+          i18nKey: 'route.auth_resource',
+          icon: 'mdi:api',
+          order: 5,
+          roles: ['R_SUPER'],
+          keepAlive: true
+        }
+      },
+      {
+        name: 'auth_role',
+        path: '/auth/role',
+        component: 'view.auth_role',
+        meta: {
+          title: 'auth_role',
+          i18nKey: 'route.auth_role',
+          icon: 'carbon:user-role',
+          order: 3,
+          roles: ['R_SUPER'],
+          keepAlive: true
+        }
+      },
+      {
+        name: 'auth_user',
+        path: '/auth/user',
+        component: 'view.auth_user',
+        meta: {
+          title: 'auth_user',
+          i18nKey: 'route.auth_user',
+          icon: 'ic:round-manage-accounts',
+          order: 1,
+          roles: ['R_ADMIN'],
+          keepAlive: true
+        }
+      },
+      {
+        name: 'auth_user-detail',
+        path: '/auth/user-detail/:id',
+        component: 'view.auth_user-detail',
+        meta: {
+          title: 'auth_user-detail',
+          i18nKey: 'route.auth_user-detail',
+          hideInMenu: true,
+          activeMenu: 'auth_user'
         }
       }
     ]
@@ -239,169 +329,105 @@ export const generatedRoutes: GeneratedRoute[] = [
     }
   },
   {
-    name: 'manage',
-    path: '/manage',
+    name: 'message',
+    path: '/message',
+    component: 'layout.base$view.message',
+    meta: {
+      title: 'message',
+      i18nKey: 'route.message',
+      icon: 'mdi:message-badge-outline',
+      order: 2,
+      hideInMenu: true
+    }
+  },
+  {
+    name: 'monitor',
+    path: '/monitor',
     component: 'layout.base',
     meta: {
-      title: 'manage',
-      i18nKey: 'route.manage',
-      icon: 'carbon:cloud-service-management',
-      order: 9,
-      roles: ['R_ADMIN']
+      title: 'monitor',
+      i18nKey: 'route.monitor',
+      icon: 'mdi:monitor-dashboard',
+      order: 10,
+      roles: ['R_SUPER']
     },
     children: [
       {
-        name: 'manage_config',
-        path: '/manage/config',
-        component: 'view.manage_config',
+        name: 'monitor_alert',
+        path: '/monitor/alert',
+        component: 'view.monitor_alert',
         meta: {
-          title: 'manage_config',
-          i18nKey: 'route.manage_config',
-          icon: 'mdi:cog-outline',
+          title: 'monitor_alert',
+          i18nKey: 'route.monitor_alert',
+          icon: 'mdi:bell-alert-outline',
+          order: 4,
+          roles: ['R_SUPER'],
+          keepAlive: true
+        }
+      },
+      {
+        name: 'monitor_gateway',
+        path: '/monitor/gateway',
+        component: 'view.monitor_gateway',
+        meta: {
+          title: 'monitor_gateway',
+          i18nKey: 'route.monitor_gateway',
+          icon: 'mdi:transit-connection-variant',
+          order: 3,
+          roles: ['R_SUPER'],
+          keepAlive: true
+        }
+      },
+      {
+        name: 'monitor_log',
+        path: '/monitor/log',
+        component: 'view.monitor_log',
+        meta: {
+          title: 'monitor_log',
+          i18nKey: 'route.monitor_log',
+          icon: 'mdi:file-document-multiple-outline',
+          order: 5,
+          roles: ['R_SUPER'],
+          keepAlive: true
+        }
+      },
+      {
+        name: 'monitor_online',
+        path: '/monitor/online',
+        component: 'view.monitor_online',
+        meta: {
+          title: 'monitor_online',
+          i18nKey: 'route.monitor_online',
+          icon: 'mdi:monitor-account',
           order: 6,
           roles: ['R_SUPER'],
           keepAlive: true
         }
       },
       {
-        name: 'manage_dept',
-        path: '/manage/dept',
-        component: 'view.manage_dept',
+        name: 'monitor_overview',
+        path: '/monitor/overview',
+        component: 'view.monitor_overview',
         meta: {
-          title: 'manage_dept',
-          i18nKey: 'route.manage_dept',
-          icon: 'mdi:account-group-outline',
-          order: 4,
-          roles: ['R_ADMIN'],
-          keepAlive: true
-        }
-      },
-      {
-        name: 'manage_dict',
-        path: '/manage/dict',
-        component: 'view.manage_dict',
-        meta: {
-          title: 'manage_dict',
-          i18nKey: 'route.manage_dict',
-          icon: 'mdi:bookshelf',
-          order: 9,
-          roles: ['R_SUPER'],
-          keepAlive: true
-        }
-      },
-      {
-        name: 'manage_file',
-        path: '/manage/file',
-        component: 'view.manage_file',
-        meta: {
-          title: 'manage_file',
-          i18nKey: 'route.manage_file',
-          icon: 'mdi:folder-file-outline',
-          order: 7,
-          roles: ['R_ADMIN'],
-          keepAlive: true
-        }
-      },
-      {
-        name: 'manage_log',
-        path: '/manage/log',
-        component: 'view.manage_log',
-        meta: {
-          title: 'manage_log',
-          i18nKey: 'route.manage_log',
-          icon: 'mdi:file-document-multiple-outline',
-          order: 11,
-          roles: ['R_SUPER'],
-          keepAlive: true
-        }
-      },
-      {
-        name: 'manage_menu',
-        path: '/manage/menu',
-        component: 'view.manage_menu',
-        meta: {
-          title: 'manage_menu',
-          i18nKey: 'route.manage_menu',
-          icon: 'material-symbols:route',
-          order: 3,
-          roles: ['R_ADMIN'],
-          keepAlive: true
-        }
-      },
-      {
-        name: 'manage_notice',
-        path: '/manage/notice',
-        component: 'view.manage_notice',
-        meta: {
-          title: 'manage_notice',
-          i18nKey: 'route.manage_notice',
-          icon: 'mdi:bullhorn-outline',
-          order: 8,
-          roles: ['R_ADMIN'],
-          keepAlive: true
-        }
-      },
-      {
-        name: 'manage_online',
-        path: '/manage/online',
-        component: 'view.manage_online',
-        meta: {
-          title: 'manage_online',
-          i18nKey: 'route.manage_online',
-          icon: 'mdi:monitor-account',
-          order: 12,
-          roles: ['R_SUPER'],
-          keepAlive: true
-        }
-      },
-      {
-        name: 'manage_resource',
-        path: '/manage/resource',
-        component: 'view.manage_resource',
-        meta: {
-          title: 'manage_resource',
-          i18nKey: 'route.manage_resource',
-          icon: 'mdi:shield-key-outline',
-          order: 10,
-          roles: ['R_SUPER'],
-          keepAlive: true
-        }
-      },
-      {
-        name: 'manage_role',
-        path: '/manage/role',
-        component: 'view.manage_role',
-        meta: {
-          title: 'manage_role',
-          i18nKey: 'route.manage_role',
-          icon: 'carbon:user-role',
-          order: 2,
-          roles: ['R_SUPER']
-        }
-      },
-      {
-        name: 'manage_user',
-        path: '/manage/user',
-        component: 'view.manage_user',
-        meta: {
-          title: 'manage_user',
-          i18nKey: 'route.manage_user',
-          icon: 'ic:round-manage-accounts',
+          title: 'monitor_overview',
+          i18nKey: 'route.monitor_overview',
+          icon: 'mdi:view-dashboard-outline',
           order: 1,
-          roles: ['R_ADMIN']
+          roles: ['R_SUPER'],
+          keepAlive: true
         }
       },
       {
-        name: 'manage_user-detail',
-        path: '/manage/user-detail/:id',
-        component: 'view.manage_user-detail',
-        props: true,
+        name: 'monitor_server',
+        path: '/monitor/server',
+        component: 'view.monitor_server',
         meta: {
-          title: 'manage_user-detail',
-          i18nKey: 'route.manage_user-detail',
-          hideInMenu: true,
-          roles: ['R_ADMIN'],
-          activeMenu: 'manage_user'
+          title: 'monitor_server',
+          i18nKey: 'route.monitor_server',
+          icon: 'mdi:server',
+          order: 2,
+          roles: ['R_SUPER'],
+          keepAlive: true
         }
       }
     ]
@@ -413,7 +439,7 @@ export const generatedRoutes: GeneratedRoute[] = [
     meta: {
       title: 'multi-menu',
       i18nKey: 'route.multi-menu',
-      order: 8
+      order: 7
     },
     children: [
       {
@@ -792,6 +818,72 @@ export const generatedRoutes: GeneratedRoute[] = [
             }
           }
         ]
+      }
+    ]
+  },
+  {
+    name: 'system',
+    path: '/system',
+    component: 'layout.base',
+    meta: {
+      title: 'system',
+      i18nKey: 'route.system',
+      icon: 'mdi:cog-outline',
+      order: 9,
+      roles: ['R_ADMIN']
+    },
+    children: [
+      {
+        name: 'system_config',
+        path: '/system/config',
+        component: 'view.system_config',
+        meta: {
+          title: 'system_config',
+          i18nKey: 'route.system_config',
+          icon: 'mdi:tune-variant',
+          order: 1,
+          roles: ['R_SUPER'],
+          keepAlive: true
+        }
+      },
+      {
+        name: 'system_dict',
+        path: '/system/dict',
+        component: 'view.system_dict',
+        meta: {
+          title: 'system_dict',
+          i18nKey: 'route.system_dict',
+          icon: 'mdi:bookshelf',
+          order: 2,
+          roles: ['R_SUPER'],
+          keepAlive: true
+        }
+      },
+      {
+        name: 'system_file',
+        path: '/system/file',
+        component: 'view.system_file',
+        meta: {
+          title: 'system_file',
+          i18nKey: 'route.system_file',
+          icon: 'mdi:folder-file-outline',
+          order: 4,
+          roles: ['R_ADMIN'],
+          keepAlive: true
+        }
+      },
+      {
+        name: 'system_notice',
+        path: '/system/notice',
+        component: 'view.system_notice',
+        meta: {
+          title: 'system_notice',
+          i18nKey: 'route.system_notice',
+          icon: 'mdi:bullhorn-outline',
+          order: 3,
+          roles: ['R_ADMIN'],
+          keepAlive: true
+        }
       }
     ]
   },

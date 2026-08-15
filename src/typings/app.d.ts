@@ -520,25 +520,37 @@ declare namespace App {
             sliderHint: string;
             sliderSuccess: string;
             sliderRequired: string;
+            accountQuickFill: string;
           };
           codeLogin: {
             title: string;
             getCode: string;
             reGetCode: string;
             sendCodeSuccess: string;
+            demoCode: string;
             imageCodePlaceholder: string;
           };
           register: {
             title: string;
+            success: string;
             agreement: string;
             protocol: string;
             policy: string;
           };
           resetPwd: {
             title: string;
+            success: string;
           };
           bindWeChat: {
             title: string;
+          };
+          scanLogin: {
+            title: string;
+            hint: string;
+            scanned: string;
+            success: string;
+            expired: string;
+            refresh: string;
           };
           banner: {
             title: string;
@@ -912,6 +924,13 @@ declare namespace App {
           };
           dept: {
             title: string;
+            orgStructure: string;
+            childList: string;
+            childCountSuffix: string;
+            expandAll: string;
+            collapseAll: string;
+            noChildDept: string;
+            noMatchDept: string;
             deptName: string;
             parentDept: string;
             rootDept: string;
@@ -1070,6 +1089,97 @@ declare namespace App {
             };
           };
         };
+        monitor: {
+          serverList: string;
+          running: string;
+          fault: string;
+          cpu: string;
+          memory: string;
+          disk: string;
+          gaugePanel: string;
+          trend: string;
+          runtimeInfo: string;
+          goVersion: string;
+          version: string;
+          uptime: string;
+          cpuCores: string;
+          goroutines: string;
+          threads: string;
+          gcPause: string;
+          openFds: string;
+          memUsage: string;
+          diskUsage: string;
+          netIn: string;
+          netOut: string;
+          updateTime: string;
+          autoRefresh: string;
+          selectFirst: string;
+        };
+        gateway: {
+          overview: string;
+          qps: string;
+          todayCalls: string;
+          requestCount: string;
+          avgCost: string;
+          p95Cost: string;
+          errorRate: string;
+          onlineServices: string;
+          activeRoutes: string;
+          connections: string;
+          trend: string;
+          last15minutes: string;
+          lastHour: string;
+          today: string;
+          last3days: string;
+          last7days: string;
+          last30days: string;
+          trafficMetric: string;
+          errorMetric: string;
+          latencyMetric: string;
+          qpsAxis: string;
+          costAxis: string;
+          topInvoked: string;
+          topSlow: string;
+          topError: string;
+          times: string;
+          routeTable: string;
+          serviceRoute: string;
+          method: string;
+          upstream: string;
+          strategy: string;
+          status: string;
+          enabled: string;
+          disabled: string;
+          partialDisabled: string;
+          expandAll: string;
+          collapseAll: string;
+          qpsCol: string;
+          avgCostCol: string;
+          p95CostCol: string;
+          errorRateCol: string;
+          errorCalls: string;
+          instanceCount: string;
+          callsCol: string;
+          keyword: string;
+          allServices: string;
+          allStatus: string;
+          viewDetail: string;
+          routeDetail: string;
+          routeName: string;
+          statusDistribution: string;
+          successRate: string;
+          lastSeen: string;
+          autoRefresh: string;
+          lastUpdated: string;
+          readOnlyHint: string;
+          loadFailed: string;
+          strategyMap: {
+            roundRobin: string;
+            weighted: string;
+            random: string;
+            ipHash: string;
+          };
+        };
       };
       form: {
         required: string;
@@ -1155,11 +1265,15 @@ declare namespace App {
     /** The backend service response data */
     type Response<T = unknown> = {
       /** The backend service response code */
-      code: string;
+      code: number;
       /** The backend service response message */
-      msg: string;
+      message: string;
+      /** Request trace identifier */
+      traceId: string;
       /** The backend service response data */
       data: T;
+      /** Development-only error detail */
+      detail?: string;
     };
 
     /** The demo backend service response data */
