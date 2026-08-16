@@ -40,7 +40,7 @@ export function useCaptcha() {
     return true;
   }
 
-  async function getCaptcha(phone: string) {
+  async function getCaptcha(phone: string, scene: 'login' | 'register' | 'resetPassword' = 'login') {
     const valid = isPhoneValid(phone);
 
     if (!valid || loading.value) {
@@ -49,7 +49,7 @@ export function useCaptcha() {
 
     startLoading();
 
-    await sendCaptcha(phone);
+    await sendCaptcha(phone, scene);
 
     window.$message?.success?.($t('page.login.codeLogin.sendCodeSuccess'));
     window.$message?.info?.($t('page.login.codeLogin.demoCode'));

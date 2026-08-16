@@ -9,14 +9,17 @@ declare namespace Api {
 
     /** role */
     /** role; id is decimal string (Snowflake, exceeds JS safe integer) */
-    type Role = Omit<Common.CommonRecord<{
-      /** role name */
-      roleName: string;
-      /** role code */
-      roleCode: string;
-      /** role description */
-      roleDesc: string;
-    }>, 'id'> & { id: string; builtIn?: string };
+    type Role = Omit<
+      Common.CommonRecord<{
+        /** role name */
+        roleName: string;
+        /** role code */
+        roleCode: string;
+        /** role description */
+        roleDesc: string;
+      }>,
+      'id'
+    > & { id: string; builtIn?: string };
 
     /** role search params */
     type RoleSearchParams = CommonType.RecordNullable<
@@ -38,20 +41,24 @@ declare namespace Api {
     type UserGender = '1' | '2';
 
     /** user */
-    type User = Common.CommonRecord<{
-      /** user name */
-      userName: string;
-      /** user gender */
-      userGender: UserGender | null;
-      /** user nick name */
-      nickName: string;
-      /** user phone */
-      userPhone: string;
-      /** user email */
-      userEmail: string;
-      /** user role code collection */
-      userRoles: string[];
-    }>;
+    type User = Omit<
+      Common.CommonRecord<{
+        /** user name */
+        userName: string;
+        /** user gender */
+        userGender: UserGender | null;
+        /** user nick name */
+        nickName: string;
+        /** user phone */
+        userPhone: string;
+        /** user email */
+        userEmail: string;
+        /** user role code collection */
+        userRoles: string[];
+        deptId?: string;
+      }>,
+      'id'
+    > & { id: string };
 
     /** user search params */
     type UserSearchParams = CommonType.RecordNullable<
@@ -103,29 +110,31 @@ declare namespace Api {
       | 'query'
     >;
 
-    type Menu = Common.CommonRecord<{
-      /** parent menu id */
-      parentId: number;
-      /** menu type */
-      menuType: MenuType;
-      /** menu name */
-      menuName: string;
-      /** route name */
-      routeName: string;
-      /** route path */
-      routePath: string;
-      /** component */
-      component?: string;
-      /** iconify icon name or local icon name */
-      icon: string;
-      /** icon type */
-      iconType: IconType;
-      /** buttons */
-      buttons?: MenuButton[] | null;
-      /** children menu */
-      children?: Menu[] | null;
-    }> &
-      MenuPropsOfRoute;
+    type Menu = Omit<
+      Common.CommonRecord<{
+        /** parent menu id */
+        parentId: string;
+        /** menu type */
+        menuType: MenuType;
+        /** menu name */
+        menuName: string;
+        /** route name */
+        routeName: string;
+        /** route path */
+        routePath: string;
+        /** component */
+        component?: string;
+        /** iconify icon name or local icon name */
+        icon: string;
+        /** icon type */
+        iconType: IconType;
+        /** buttons */
+        buttons?: MenuButton[] | null;
+        /** children menu */
+        children?: Menu[] | null;
+      }>,
+      'id'
+    > & { id: string } & MenuPropsOfRoute;
 
     /** menu list */
     type MenuList = Common.PaginatingQueryRecord<Menu>;
@@ -136,25 +145,29 @@ declare namespace Api {
     >;
 
     type MenuTree = {
-      id: number;
+      id: string;
       label: string;
-      pId: number;
+      i18nKey?: string;
+      pId: string;
       children?: MenuTree[];
     };
 
     /** system config */
-    type SystemConfig = Common.CommonRecord<{
-      /** config name */
-      paramName: string;
-      /** config key */
-      paramKey: string;
-      /** config value */
-      paramValue: string;
-      /** whether it is built-in, built-in config cannot be deleted */
-      builtIn: CommonType.YesOrNo;
-      /** remark */
-      remark?: string;
-    }>;
+    type SystemConfig = Omit<
+      Common.CommonRecord<{
+        /** config name */
+        paramName: string;
+        /** config key */
+        paramKey: string;
+        /** config value */
+        paramValue: string;
+        /** whether it is built-in, built-in config cannot be deleted */
+        builtIn: CommonType.YesOrNo;
+        /** remark */
+        remark?: string;
+      }>,
+      'id'
+    > & { id: string };
 
     /** system config list */
     type SystemConfigList = Common.PaginatingQueryRecord<SystemConfig>;
@@ -177,7 +190,7 @@ declare namespace Api {
     /** system file */
     type SystemFile = {
       /** file id */
-      id: number;
+      id: string;
       /** file name with extension */
       fileName: string;
       /** file type */
@@ -218,18 +231,21 @@ declare namespace Api {
     type NoticeStatus = '1' | '2' | '3';
 
     /** system notice */
-    type SystemNotice = Common.CommonRecord<{
-      /** notice title */
-      title: string;
-      /** notice type */
-      noticeType: NoticeType;
-      /** notice status */
-      noticeStatus: NoticeStatus;
-      /** whether the notice is pinned to the top */
-      isTop: boolean;
-      /** rich text content */
-      content: string;
-    }>;
+    type SystemNotice = Omit<
+      Common.CommonRecord<{
+        /** notice title */
+        title: string;
+        /** notice type */
+        noticeType: NoticeType;
+        /** notice status */
+        noticeStatus: NoticeStatus;
+        /** whether the notice is pinned to the top */
+        isTop: boolean;
+        /** rich text content */
+        content: string;
+      }>,
+      'id'
+    > & { id: string };
 
     /** system notice list */
     type SystemNoticeList = Common.PaginatingQueryRecord<SystemNotice>;
@@ -240,14 +256,17 @@ declare namespace Api {
     >;
 
     /** dict type */
-    type DictType = Common.CommonRecord<{
-      /** dict name */
-      dictName: string;
-      /** dict type key, unique */
-      dictType: string;
-      /** remark */
-      remark?: string;
-    }>;
+    type DictType = Omit<
+      Common.CommonRecord<{
+        /** dict name */
+        dictName: string;
+        /** dict type key, unique */
+        dictType: string;
+        /** remark */
+        remark?: string;
+      }>,
+      'id'
+    > & { id: string };
 
     /** dict type list */
     type DictTypeList = Common.PaginatingQueryRecord<DictType>;
@@ -261,20 +280,23 @@ declare namespace Api {
     type DictColorTag = 'default' | 'primary' | 'info' | 'success' | 'warning' | 'error';
 
     /** dict option, belongs to a dict type */
-    type DictOption = Common.CommonRecord<{
-      /** the dict type this option belongs to */
-      dictType: string;
-      /** option label */
-      optionLabel: string;
-      /** option value */
-      optionValue: string;
-      /** sort number, asc */
-      sort: number;
-      /** tag color */
-      colorTag?: DictColorTag | null;
-      /** remark */
-      remark?: string;
-    }>;
+    type DictOption = Omit<
+      Common.CommonRecord<{
+        /** the dict type this option belongs to */
+        dictType: string;
+        /** option label */
+        optionLabel: string;
+        /** option value */
+        optionValue: string;
+        /** sort number, asc */
+        sort: number;
+        /** tag color */
+        colorTag?: DictColorTag | null;
+        /** remark */
+        remark?: string;
+      }>,
+      'id'
+    > & { id: string };
 
     /** dict option list */
     type DictOptionList = Common.PaginatingQueryRecord<DictOption>;
@@ -286,22 +308,25 @@ declare namespace Api {
 
     /** department, children are only populated in list responses.
      *  id/parentId are decimal strings (Snowflake IDs exceed JS safe integer). */
-    type Dept = Omit<Common.CommonRecord<{
-      /** dept name */
-      deptName: string;
-      /** parent dept id, 0 for root */
-      parentId: string;
-      /** leader name */
-      leader?: string | null;
-      /** contact phone */
-      phone?: string | null;
-      /** contact email */
-      email?: string | null;
-      /** sort number, asc */
-      order: number;
-      /** children depts */
-      children?: Dept[] | null;
-    }>, 'id'> & { id: string };
+    type Dept = Omit<
+      Common.CommonRecord<{
+        /** dept name */
+        deptName: string;
+        /** parent dept id, 0 for root */
+        parentId: string;
+        /** leader name */
+        leader?: string | null;
+        /** contact phone */
+        phone?: string | null;
+        /** contact email */
+        email?: string | null;
+        /** sort number, asc */
+        order: number;
+        /** children depts */
+        children?: Dept[] | null;
+      }>,
+      'id'
+    > & { id: string };
 
     /** dept list */
     type DeptList = Common.PaginatingQueryRecord<Dept>;
@@ -315,18 +340,21 @@ declare namespace Api {
     type ApiMethod = 'GET' | 'POST' | 'PUT' | 'DELETE';
 
     /** api resource */
-    type ApiResource = Common.CommonRecord<{
-      /** api name */
-      apiName: string;
-      /** request path */
-      apiPath: string;
-      /** request method */
-      apiMethod: ApiMethod;
-      /** the module the api belongs to */
-      apiModule: string;
-      /** remark */
-      remark?: string;
-    }>;
+    type ApiResource = Omit<
+      Common.CommonRecord<{
+        /** api name */
+        apiName: string;
+        /** request path */
+        apiPath: string;
+        /** request method */
+        apiMethod: ApiMethod;
+        /** the module the api belongs to */
+        apiModule: string;
+        /** remark */
+        remark?: string;
+      }>,
+      'id'
+    > & { id: string };
 
     /** api resource list */
     type ApiResourceList = Common.PaginatingQueryRecord<ApiResource>;
@@ -338,16 +366,19 @@ declare namespace Api {
     >;
 
     /** button permission resource */
-    type ButtonResource = Common.CommonRecord<{
-      /** permission code, e.g. B_USER_ADD */
-      buttonCode: string;
-      /** button name */
-      buttonName: string;
-      /** the menu the button belongs to */
-      menuName: string;
-      /** remark */
-      remark?: string;
-    }>;
+    type ButtonResource = Omit<
+      Common.CommonRecord<{
+        /** permission code, e.g. B_USER_ADD */
+        buttonCode: string;
+        /** button name */
+        buttonName: string;
+        /** the menu the button belongs to */
+        menuName: string;
+        /** remark */
+        remark?: string;
+      }>,
+      'id'
+    > & { id: string };
 
     /** button resource list */
     type ButtonResourceList = Common.PaginatingQueryRecord<ButtonResource>;
@@ -359,7 +390,7 @@ declare namespace Api {
 
     /** login log */
     type LoginLog = {
-      id: number;
+      id: string;
       /** login account */
       userName: string;
       /** login ip */
@@ -405,7 +436,7 @@ declare namespace Api {
 
     /** operation log */
     type OperateLog = {
-      id: number;
+      id: string;
       /** operated module, e.g. 用户管理 */
       title: string;
       /** operation type */
@@ -438,7 +469,7 @@ declare namespace Api {
 
     /** online user session */
     type OnlineUser = {
-      id: number;
+      id: string;
       /** session token id */
       tokenId: string;
       /** login account */

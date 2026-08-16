@@ -4,17 +4,17 @@ import { alova } from '../request';
 
 /** get monitored server list */
 export function fetchGetServerList() {
-  return alova.Get<Api.Monitor.Server[]>('/monitor/getServerList');
+  return alova.Get<Api.Monitor.Server[]>('/v1/monitor/server/list');
 }
 
 /** get real-time metrics of one server */
 export function fetchGetServerMetrics(params: { serverId: number }) {
-  return alova.Get<Api.Monitor.ServerMetrics>('/monitor/getServerMetrics', { params });
+  return alova.Get<Api.Monitor.ServerMetrics>('/v1/monitor/server/metrics', { params });
 }
 
 /** get metric history of one server (last 5 minutes, 5s step) */
 export function fetchGetServerMetricHistory(params: { serverId: number }) {
-  return alova.Get<Api.Monitor.MetricHistoryPoint[]>('/monitor/getServerMetricHistory', { params });
+  return alova.Get<Api.Monitor.MetricHistoryPoint[]>('/v1/monitor/server/metricHistory', { params });
 }
 
 // ---------------- gateway analytics ----------------
@@ -83,4 +83,70 @@ export function fetchGetGatewayTopSlow(params?: GatewayRankingParams) {
 /** get routes with the highest error rate */
 export function fetchGetGatewayTopError(params?: GatewayRankingParams) {
   return alova.Get<Api.Gateway.TopItem[]>('/v1/gateway/monitor/getTopError', { params });
+}
+
+export interface MonitorAlertItem {
+  id: string;
+  level: number;
+  title: string;
+  target: string;
+  value: string;
+  threshold: string;
+  status: number;
+  occurredAt: string;
+  description: string;
+}
+
+export function fetchMonitorAlertList(params: {
+  current: number;
+  size: number;
+  keyword?: string;
+  level?: number;
+  status?: number;
+}) {
+  return alova.Post<{ records: MonitorAlertItem[]; current: number; size: number; total: number }>(
+    '/v1/monitor/alert/page',
+    params
+  );
+}
+
+export function acknowledgeMonitorAlert(id: string) {
+  return alova.Put<null>(`/v1/monitor/alert/${id}/ack`, {});
+}
+
+export function recoverMonitorAlert(id: string) {
+  return alova.Put<null>(`/v1/monitor/alert/recover/${id}`, {});
+}
+
+export interface MonitorAlertRuleItem {
+  id: string;
+  name: string;
+  target: string;
+  condition: string;
+  level: number;
+  channels: string;
+  enabled: boolean;
+}
+
+export function fetchMonitorAlertRuleList(params = { current: 1, size: 100 }) {
+  return alova.Post<{ records: MonitorAlertRuleItem[]; current: number; size: number; total: number }>(
+    '/v1/monitor/alertRule/page',
+    params
+  );
+}
+
+export function createMonitorAlertRule(data: Omit<MonitorAlertRuleItem, 'id'>) {
+  return alova.Post<{ id: string }>('/v1/monitor/alertRule/create', data);
+}
+
+export function updateMonitorAlertRule(id: string, data: Omit<MonitorAlertRuleItem, 'id'>) {
+  return alova.Put<null>(`/v1/monitor/alertRule/update/${id}`, data);
+}
+
+export function setMonitorAlertRuleStatus(id: string, enabled: boolean) {
+  return alova.Put<null>(`/v1/monitor/alertRule/status/${id}`, { enabled });
+}
+
+export function deleteMonitorAlertRules(ids: string[]) {
+  return alova.Delete<null>('/v1/monitor/alertRule/delete', { ids });
 }

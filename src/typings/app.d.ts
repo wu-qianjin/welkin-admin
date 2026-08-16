@@ -351,6 +351,7 @@ declare namespace App {
         refresh: string;
         reset: string;
         search: string;
+        sessionExpired: string;
         switch: string;
         tip: string;
         trigger: string;

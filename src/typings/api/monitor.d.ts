@@ -11,11 +11,13 @@ declare namespace Api {
       goVersion: string;
       cpuCores: number;
       uptime: string;
-      status: Api.Common.EnableStatus;
+      status: number | Api.Common.EnableStatus;
       /** snapshot of the latest metrics, for the instance cards */
       cpuPercent: number;
       memPercent: number;
       diskPercent: number;
+      metricsAvailable?: boolean;
+      metricsMessage?: string;
     }
 
     interface ServerMetrics {
@@ -34,6 +36,8 @@ declare namespace Api {
       netIn: number;
       netOut: number;
       updateTime: string;
+      metricsAvailable?: boolean;
+      metricsMessage?: string;
     }
 
     interface MetricHistoryPoint {
