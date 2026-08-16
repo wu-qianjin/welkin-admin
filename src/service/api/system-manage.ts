@@ -1,12 +1,5 @@
 import { alova } from '../request';
 
-/** drop null/undefined entries so alova does not serialize them as the literal "null" */
-function cleanParams<T extends Record<string, unknown>>(params?: T) {
-  if (!params) return undefined;
-
-  return Object.fromEntries(Object.entries(params).filter(([, value]) => value !== null && value !== undefined)) as T;
-}
-
 // ---------------- role (real backend via gateway, contract: docs/iam/openapi.yaml) ----------------
 
 /** backend role item (status is int 0/1) */
