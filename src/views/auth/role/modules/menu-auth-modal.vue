@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed, shallowRef, watch } from 'vue';
-import { mockPermissionTree, mockRolePermissions } from '@/mock/admin';
+import { computed, ref, watch } from 'vue';
+import { fetchGetMenuTree, fetchRolePermissions, updateRolePermissions } from '@/service/api';
 
 defineOptions({ name: 'MenuAuthModal' });
 
@@ -11,25 +11,40 @@ interface Props {
 const props = defineProps<Props>();
 const visible = defineModel<boolean>('visible', { default: false });
 const title = computed(() => `编辑菜单权限 · 角色 #${props.roleId}`);
-const tree = shallowRef(mockPermissionTree);
-const checks = shallowRef<string[]>([]);
-const home = shallowRef('home');
-const pageSelectOptions = [
-  { label: '首页', value: 'home' },
-  { label: '系统管理', value: 'manage' },
-  { label: '监控总览', value: 'monitor_runtime_overview' }
-];
+interface TreeOption {
+  key: string;
+  label: string;
+  children?: TreeOption[];
+}
+const tree = ref<TreeOption[]>([]);
+const checks = ref<string[]>([]);
+const home = ref('');
+const permission = ref({ apiIds: [] as string[], buttonIds: [] as string[] });
+const pageSelectOptions = computed(() => flatten(tree.value).map(item => ({ label: item.label, value: item.key })));
 
-function init() {
-  const permissions = mockRolePermissions[props.roleId];
-  checks.value = [...(permissions?.menus ?? ['home'])];
-  home.value = permissions?.menus.includes('monitor_runtime_overview') ? 'monitor_runtime_overview' : 'home';
+function flatten(nodes: TreeOption[]): TreeOption[] {
+  return nodes.flatMap(node => [node, ...(node.children ? flatten(node.children) : [])]);
 }
 
-function handleSubmit() {
-  const current = mockRolePermissions[props.roleId] ?? { menus: [], buttons: [] };
-  mockRolePermissions[props.roleId] = { ...current, menus: [...checks.value] };
-  window.$message?.success('菜单权限已保存（Mock）');
+function mapTree(nodes: Api.SystemManage.MenuTree[]): TreeOption[] {
+  return nodes.map(node => ({
+    key: node.id,
+    label: node.label,
+    children: node.children ? mapTree(node.children) : undefined
+  }));
+}
+
+async function init() {
+  const [menuTree, permissions] = await Promise.all([fetchGetMenuTree(), fetchRolePermissions(props.roleId)]);
+  tree.value = mapTree(menuTree);
+  checks.value = [...permissions.menuIds];
+  permission.value = { apiIds: permissions.apiIds, buttonIds: permissions.buttonIds };
+  home.value = checks.value[0] ?? pageSelectOptions.value[0]?.value ?? '';
+}
+
+async function handleSubmit() {
+  await updateRolePermissions(props.roleId, { menuIds: [...checks.value], ...permission.value });
+  window.$message?.success('菜单权限已保存');
   visible.value = false;
 }
 

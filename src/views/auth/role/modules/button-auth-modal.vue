@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
-import { mockButtonPermissionTree, mockRolePermissions } from '@/mock/admin';
+import { fetchGetButtonList, fetchRolePermissions, updateRolePermissions } from '@/service/api';
 
 defineOptions({ name: 'ButtonAuthModal' });
 
@@ -12,15 +12,22 @@ const props = defineProps<Props>();
 const visible = defineModel<boolean>('visible', { default: false });
 const title = computed(() => `编辑按钮权限 · 角色 #${props.roleId}`);
 const checks = ref<string[]>([]);
+const permission = ref({ menuIds: [] as string[], apiIds: [] as string[] });
+const buttonTree = ref<{ key: string; label: string; code: string }[]>([]);
 
-function init() {
-  checks.value = [...(mockRolePermissions[props.roleId]?.buttons ?? [])];
+async function init() {
+  const [buttons, permissions] = await Promise.all([
+    fetchGetButtonList({ current: 1, size: 100 }),
+    fetchRolePermissions(props.roleId)
+  ]);
+  buttonTree.value = buttons.records.map(item => ({ key: item.id, label: item.buttonName, code: item.buttonCode }));
+  checks.value = [...permissions.buttonIds];
+  permission.value = { menuIds: permissions.menuIds, apiIds: permissions.apiIds };
 }
 
-function handleSubmit() {
-  const current = mockRolePermissions[props.roleId] ?? { menus: [], buttons: [] };
-  mockRolePermissions[props.roleId] = { ...current, buttons: [...checks.value] };
-  window.$message?.success('按钮权限已保存（Mock）');
+async function handleSubmit() {
+  await updateRolePermissions(props.roleId, { ...permission.value, buttonIds: [...checks.value] });
+  window.$message?.success('按钮权限已保存');
   visible.value = false;
 }
 
@@ -38,7 +45,7 @@ watch(visible, value => {
     <NCheckboxGroup v-model:value="checks">
       <div class="flex flex-col gap-10px">
         <div
-          v-for="item in mockButtonPermissionTree"
+          v-for="item in buttonTree"
           :key="item.key"
           class="flex-y-center justify-between rounded-6px border-1px border-gray-2 px-12px py-10px"
         >

@@ -7,9 +7,12 @@ import { useAppStore } from '@/store/modules/app';
 import { defaultTransform, useNaivePaginatedTable, useTableOperate } from '@/hooks/common/table';
 import { $t } from '@/locales';
 import RoleOperateDrawer from './modules/role-operate-drawer.vue';
+import RoleAuthDrawer from './modules/role-auth-drawer.vue';
 import RoleSearch from './modules/role-search.vue';
 
 const appStore = useAppStore();
+const authorizationRole = ref<Api.SystemManage.Role | null>(null);
+const authorizationVisible = ref(false);
 
 const searchParams = ref<Api.SystemManage.RoleSearchParams>({
   current: 1,
@@ -80,9 +83,12 @@ const { columns, columnChecks, data, loading, getData, getDataByPage, mobilePagi
       key: 'operate',
       title: $t('common.operate'),
       align: 'center',
-      width: 130,
+      width: 210,
       render: row => (
         <div class="flex-center gap-8px">
+          <NButton type="primary" ghost size="small" onClick={() => openAuthorization(row)}>
+            授权
+          </NButton>
           <NButton type="primary" ghost size="small" onClick={() => edit(row.id)}>
             {$t('common.edit')}
           </NButton>
@@ -136,6 +142,11 @@ function edit(id: string) {
   handleEdit(id);
 }
 
+function openAuthorization(role: Api.SystemManage.Role) {
+  authorizationRole.value = role;
+  authorizationVisible.value = true;
+}
+
 async function handleSubmitted() {
   await getData();
 }
@@ -173,6 +184,12 @@ async function handleSubmitted() {
         :operate-type="operateType"
         :row-data="editingData"
         @submitted="handleSubmitted"
+      />
+      <RoleAuthDrawer
+        v-if="authorizationRole"
+        v-model:visible="authorizationVisible"
+        :role-id="authorizationRole.id"
+        :role-name="authorizationRole.roleName"
       />
     </NCard>
   </div>
