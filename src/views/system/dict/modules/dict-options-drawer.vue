@@ -125,7 +125,7 @@ const { columns, data, getData, getDataByPage, loading, pagination } = useNaiveP
 const { operateType, editingData, handleAdd, handleEdit, checkedRowKeys, onBatchDeleted, onDeleted } =
   useTableOperate(data, 'id', getData);
 
-async function handleDelete(id: number) {
+async function handleDelete(id: string) {
   try {
     await deleteDictOption(id);
     onDeleted();
@@ -136,7 +136,7 @@ async function handleDelete(id: number) {
 
 async function handleBatchDelete() {
   try {
-    await batchDeleteDictOption(checkedRowKeys.value.map(Number));
+    await batchDeleteDictOption(checkedRowKeys.value);
     onBatchDeleted();
   } catch {
     // request errors are surfaced by the request layer
@@ -238,7 +238,7 @@ function addOption() {
   modalVisible.value = true;
 }
 
-function openEdit(id: number) {
+function openEdit(id: string) {
   handleEdit(id);
   modalVisible.value = true;
 }

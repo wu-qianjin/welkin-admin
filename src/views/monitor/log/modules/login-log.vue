@@ -113,7 +113,7 @@ const { columns, data, getData, getDataByPage, loading, mobilePagination } = use
   ]
 });
 
-async function handleDelete(id: number) {
+async function handleDelete(id: string) {
   try {
     await deleteLoginLog(id);
     getData();
@@ -142,7 +142,7 @@ function exportLogs() {
   anchor.download = `login-logs-${new Date().toISOString().slice(0, 10)}.csv`;
   anchor.click();
   URL.revokeObjectURL(url);
-  window.$message?.success('登录日志已导出（Mock）');
+  window.$message?.success('登录日志已导出');
 }
 </script>
 

@@ -2,7 +2,7 @@
 import { computed, ref, watch } from 'vue';
 import { jsonClone } from '@sa/utils';
 import { enableStatusOptions, userGenderOptions } from '@/constants/business';
-import { fetchGetAllRoles } from '@/service/api';
+import { addUser, fetchGetAllRoles, updateUser } from '@/service/api';
 import { useFormRules, useNaiveForm } from '@/hooks/common/form';
 import { $t } from '@/locales';
 
@@ -78,7 +78,7 @@ async function getRoleOptions() {
       value: item.roleCode
     }));
 
-    // the mock data does not have the roleCode, so fill it
+    // Older records may omit roleCode; keep the selector compatible with both shapes.
     // if the real request, remove the following code
     const userRoleOptions = model.value.userRoles.map(item => ({
       label: item,
@@ -106,15 +106,13 @@ function closeDrawer() {
 
 async function handleSubmit() {
   await validate();
-  const data = {
-    ...model.value,
-    id: props.rowData?.id ?? Date.now(),
-    createBy: props.rowData?.createBy ?? 'Super',
-    createTime: props.rowData?.createTime ?? new Date().toLocaleString('sv-SE'),
-    updateBy: 'Super',
-    updateTime: new Date().toLocaleString('sv-SE')
-  } as Api.SystemManage.User;
-  window.$message?.success('用户信息已保存（Mock）');
+  if (props.operateType === 'add') {
+    await addUser(model.value);
+  } else if (props.rowData) {
+    await updateUser({ ...model.value, id: props.rowData.id });
+  }
+  const data = { ...model.value, id: props.rowData?.id ?? '' } as Api.SystemManage.User;
+  window.$message?.success('用户信息已保存');
   closeDrawer();
   emit('submitted', data);
 }

@@ -1,13 +1,12 @@
 <script setup lang="tsx">
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 import { NButton, NPopconfirm, NTag } from 'naive-ui';
 import { enableStatusRecord } from '@/constants/business';
 import { yesOrNoRecord } from '@/constants/common';
-import { batchDeleteConfig, deleteConfig, fetchGetConfigList } from '@/service/api';
+import { batchDeleteConfig, deleteConfig, fetchConfigHistory, fetchGetConfigList, type ConfigHistoryItem } from '@/service/api';
 import { useAppStore } from '@/store/modules/app';
 import { defaultTransform, useNaivePaginatedTable, useTableOperate } from '@/hooks/common/table';
 import { $t } from '@/locales';
-import { mockConfigHistory } from '@/mock/admin';
 import ConfigOperateDrawer from './modules/config-operate-drawer.vue';
 import ConfigSearch from './modules/config-search.vue';
 
@@ -17,6 +16,14 @@ defineOptions({
 
 const appStore = useAppStore();
 const historyVisible = ref(false);
+const history = ref<ConfigHistoryItem[]>([]);
+
+watch(historyVisible, async visible => {
+  if (visible) {
+    const result = await fetchConfigHistory();
+    history.value = result.records;
+  }
+});
 
 function displayConfigValue(row: Api.SystemManage.SystemConfig) {
   return /password|token|secret|key/i.test(row.paramKey) ? '••••••••' : row.paramValue;
@@ -147,20 +154,20 @@ const { columns, columnChecks, data, getData, getDataByPage, loading, mobilePagi
 const { drawerVisible, operateType, editingData, handleAdd, handleEdit, checkedRowKeys, onBatchDeleted, onDeleted } =
   useTableOperate(data, 'id', getData);
 
-function edit(id: number) {
+function edit(id: string) {
   handleEdit(id);
 }
 
 async function handleBatchDelete() {
   try {
-    await batchDeleteConfig(checkedRowKeys.value.map(Number));
+    await batchDeleteConfig(checkedRowKeys.value);
     onBatchDeleted();
   } catch {
     // request errors are surfaced by the request layer
   }
 }
 
-async function handleDelete(id: number) {
+async function handleDelete(id: string) {
   try {
     await deleteConfig(id);
     onDeleted();
@@ -207,9 +214,9 @@ async function handleDelete(id: number) {
         :row-data="editingData"
         @submitted="getDataByPage"
       />
-      <NModal v-model:show="historyVisible" preset="card" title="参数变更历史（Mock）" class="w-900px">
+      <NModal v-model:show="historyVisible" preset="card" title="参数变更历史" class="w-900px">
         <NDataTable
-          :data="mockConfigHistory"
+          :data="history"
           :pagination="false"
           size="small"
           :columns="[

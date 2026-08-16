@@ -1,57 +1,33 @@
 <script setup lang="tsx">
-import { computed, h, ref } from 'vue';
+import { computed, h, onMounted, ref } from 'vue';
 import { NButton, NTag, NSwitch } from 'naive-ui';
-import type { MockAlert } from '@/mock/admin';
-import { mockAlerts } from '@/mock/admin';
+import {
+  acknowledgeMonitorAlert,
+  recoverMonitorAlert,
+  createMonitorAlertRule,
+  fetchMonitorAlertList,
+  fetchMonitorAlertRuleList,
+  setMonitorAlertRuleStatus,
+  type MonitorAlertItem,
+  type MonitorAlertRuleItem
+} from '@/service/api';
 
 defineOptions({ name: 'MonitorAlert' });
 // Menu metadata is maintained in build/plugins/router.ts alongside the module boundary.
 
-const alerts = ref(mockAlerts.map(item => ({ ...item })));
+type AlertRow = Omit<MonitorAlertItem, 'level' | 'status'> & {
+  level: '严重' | '警告' | '提示';
+  status: '待处理' | '处理中' | '已恢复';
+};
+const alerts = ref<AlertRow[]>([]);
 const keyword = ref('');
 const level = ref<string | null>(null);
 const status = ref<string | null>(null);
 const detailVisible = ref(false);
-const detail = ref<MockAlert | null>(null);
+const detail = ref<AlertRow | null>(null);
 const ruleVisible = ref(false);
-const rules = ref([
-  {
-    id: 1,
-    name: '服务不可用',
-    target: '所有服务实例',
-    condition: '健康检查连续 3 次失败',
-    level: '严重',
-    channels: '站内信、邮件',
-    enabled: true
-  },
-  {
-    id: 2,
-    name: '磁盘空间不足',
-    target: '文件服务',
-    condition: '磁盘使用率 > 85%',
-    level: '严重',
-    channels: '站内信、Webhook',
-    enabled: true
-  },
-  {
-    id: 3,
-    name: '网关错误率',
-    target: 'API Gateway',
-    condition: '5 分钟错误率 > 1%',
-    level: '警告',
-    channels: '站内信',
-    enabled: true
-  },
-  {
-    id: 4,
-    name: '响应时间偏高',
-    target: '所有接口',
-    condition: 'P95 响应时间 > 500 ms',
-    level: '提示',
-    channels: '站内信',
-    enabled: false
-  }
-]);
+type AlertRuleRow = Omit<MonitorAlertRuleItem, 'level'> & { level: '严重' | '警告' | '提示' };
+const rules = ref<AlertRuleRow[]>([]);
 
 const filteredAlerts = computed(() =>
   alerts.value.filter(item => {
@@ -62,7 +38,7 @@ const filteredAlerts = computed(() =>
   })
 );
 
-const alertColumns = computed<NaiveUI.TableColumn<MockAlert>[]>(() => [
+const alertColumns = computed<NaiveUI.TableColumn<AlertRow>[]>(() => [
   {
     key: 'level',
     title: '级别',
@@ -112,24 +88,61 @@ const alertColumns = computed<NaiveUI.TableColumn<MockAlert>[]>(() => [
   }
 ]);
 
-function viewDetail(row: MockAlert) {
+function viewDetail(row: AlertRow) {
   detail.value = row;
   detailVisible.value = true;
 }
 
-function acknowledge(row: MockAlert) {
+async function acknowledge(row: AlertRow) {
+  if (row.status === '处理中') {
+    await recoverMonitorAlert(row.id);
+  } else {
+    await acknowledgeMonitorAlert(row.id);
+  }
   row.status = row.status === '待处理' ? '处理中' : '已恢复';
   window.$message?.success(row.status === '处理中' ? '告警已确认，进入处理中' : '告警已标记为恢复');
 }
 
-function toggleRule(rule: (typeof rules.value)[number]) {
-  rule.enabled = !rule.enabled;
+async function toggleRule(rule: (typeof rules.value)[number]) {
+  const next = !rule.enabled;
+  await setMonitorAlertRuleStatus(rule.id, next);
+  rule.enabled = next;
   window.$message?.success(rule.enabled ? '告警规则已启用' : '告警规则已停用');
 }
 
-function addRule() {
-  window.$message?.success('新增规则入口已预留（Mock）');
+async function addRule() {
+  await createMonitorAlertRule({
+    name: '新告警规则',
+    target: '未指定服务',
+    condition: '请编辑规则条件',
+    level: 2,
+    channels: '站内信',
+    enabled: false
+  });
+  await loadRules();
+  window.$message?.success('告警规则已创建，请继续完善条件');
 }
+
+async function loadAlerts() {
+  const result = await fetchMonitorAlertList({ current: 1, size: 100 });
+  alerts.value = result.records.map(item => ({
+    ...item,
+    level: item.level === 1 ? '严重' : item.level === 2 ? '警告' : '提示',
+    status: item.status === 1 ? '待处理' : item.status === 2 ? '处理中' : '已恢复'
+  }));
+}
+
+async function loadRules() {
+  const result = await fetchMonitorAlertRuleList();
+  rules.value = result.records.map(item => ({
+    ...item,
+    level: item.level >= 3 ? '严重' : item.level === 2 ? '警告' : '提示'
+  }));
+}
+
+onMounted(async () => {
+  await Promise.all([loadAlerts(), loadRules()]);
+});
 </script>
 
 <template>
@@ -138,10 +151,10 @@ function addRule() {
       <div class="flex items-center justify-between lt-sm:flex-col lt-sm:items-start lt-sm:gap-12px">
         <div>
           <h2 class="m-0 text-20px font-600">告警中心</h2>
-          <div class="mt-6px text-13px text-gray-5">统一查看、确认和追踪系统异常，所有数据为设计期 Mock。</div>
+          <div class="mt-6px text-13px text-gray-5">统一查看、确认和追踪系统异常，记录来自 api-monitor。</div>
         </div>
         <NSpace>
-          <NButton @click="alerts = mockAlerts.map(item => ({ ...item }))">
+          <NButton @click="loadAlerts">
             <template #icon><icon-mdi-refresh /></template>
             刷新
           </NButton>

@@ -234,6 +234,9 @@ function barItemsFor(item: Api.Monitor.Server) {
 
 <template>
   <div class="min-h-500px flex-col-stretch gap-16px">
+    <NAlert v-if="metrics?.metricsAvailable === false" type="warning" :show-icon="true">
+      {{ metrics.metricsMessage ?? '主机级指标数据源未配置，当前仅展示进程健康信息' }}
+    </NAlert>
     <!-- gauges + realtime trend of the selected service -->
     <NGrid cols="1 l:24" responsive="screen" :x-gap="16" :y-gap="16">
       <NGi span="24 l:13">

@@ -2,7 +2,7 @@
 import { ref } from 'vue';
 import { NButton, NPopconfirm, NTag } from 'naive-ui';
 import { enableStatusRecord, userGenderRecord } from '@/constants/business';
-import { fetchGetUserList } from '@/service/api';
+import { batchDeleteUser, deleteUser, fetchGetUserList } from '@/service/api';
 import { useAppStore } from '@/store/modules/app';
 import { defaultTransform, useNaivePaginatedTable, useTableOperate } from '@/hooks/common/table';
 import { useRouter } from 'vue-router';
@@ -147,24 +147,24 @@ const {
 } = useTableOperate(data, 'id', getData);
 
 async function handleBatchDelete() {
-  data.value = data.value.filter(item => !checkedRowKeys.value.map(Number).includes(item.id));
+  await batchDeleteUser(checkedRowKeys.value.map(String));
   checkedRowKeys.value = [];
-  window.$message?.success('用户已批量删除（Mock）');
+  await getData();
+  window.$message?.success('用户已批量删除');
 }
 
-function handleDelete(id: number) {
-  data.value = data.value.filter(item => item.id !== id);
-  window.$message?.success('用户已删除（Mock）');
+async function handleDelete(id: string) {
+  await deleteUser(id);
+  await getData();
+  window.$message?.success('用户已删除');
 }
 
-function edit(id: number) {
+function edit(id: string) {
   handleEdit(id);
 }
 
-function handleSubmitted(row: Api.SystemManage.User) {
-  const index = data.value.findIndex(item => item.id === row.id);
-  if (index >= 0) data.value[index] = row;
-  else data.value.unshift(row);
+async function handleSubmitted(_row: Api.SystemManage.User) {
+  await getData();
 }
 </script>
 

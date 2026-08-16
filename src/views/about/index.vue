@@ -42,7 +42,7 @@ const latestBuildTime = BUILD_TIME;
 const systemInfo = [
   { label: '前端版本', value: pkgJson.version },
   { label: '运行环境', value: '生产环境' },
-  { label: 'API 服务', value: '已连接（Mock）' },
+  { label: 'API 服务', value: '已连接' },
   { label: '数据版本', value: 'schema-2026.08' },
   { label: '构建时间', value: latestBuildTime },
   { label: '授权协议', value: 'MIT License' }

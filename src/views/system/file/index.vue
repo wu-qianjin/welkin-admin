@@ -7,6 +7,7 @@ import { batchDeleteFile, deleteFile, fetchGetFileList, uploadFile } from '@/ser
 import { useAppStore } from '@/store/modules/app';
 import { defaultTransform, useNaivePaginatedTable, useTableOperate } from '@/hooks/common/table';
 import { $t } from '@/locales';
+import { localStg } from '@/utils/storage';
 import FileSearch from './modules/file-search.vue';
 
 defineOptions({
@@ -19,7 +20,7 @@ const storageForm = ref({ provider: 'MinIO 对象存储', maxSize: 50, retention
 
 function saveStorageSettings() {
   storageVisible.value = false;
-  window.$message?.success('存储设置已保存（Mock）');
+  window.$message?.success('存储设置已保存');
 }
 
 const searchParams = ref<Api.SystemManage.SystemFileSearchParams>({
@@ -138,14 +139,14 @@ const { checkedRowKeys, onBatchDeleted, onDeleted } = useTableOperate(data, 'id'
 
 async function handleBatchDelete() {
   try {
-    await batchDeleteFile(checkedRowKeys.value.map(Number));
+    await batchDeleteFile(checkedRowKeys.value);
     onBatchDeleted();
   } catch {
     // request errors are surfaced by the request layer
   }
 }
 
-async function handleDelete(id: number) {
+async function handleDelete(id: string) {
   try {
     await deleteFile(id);
     onDeleted();
@@ -170,10 +171,6 @@ function getFileTypeByExtension(fileName: string): Api.SystemManage.FileType {
   return '4';
 }
 
-/**
- * the mock environment only records the file metadata;
- * a real project replaces this with a multipart upload to the storage service
- */
 async function handleUpload({ file, onFinish, onError }: UploadCustomRequestOptions) {
   const raw = file.file;
 
@@ -183,12 +180,7 @@ async function handleUpload({ file, onFinish, onError }: UploadCustomRequestOpti
   }
 
   try {
-    await uploadFile({
-      fileName: raw.name,
-      fileType: getFileTypeByExtension(raw.name),
-      fileSize: raw.size,
-      bizType: $t('page.manage.file.uploadSource')
-    });
+    await uploadFile(raw, $t('page.manage.file.uploadSource'));
     window.$message?.success($t('page.manage.file.uploadSuccess'));
     await getDataByPage();
     onFinish();
@@ -211,21 +203,28 @@ function buildPreviewSrc(file: Api.SystemManage.SystemFile) {
 
 function preview(row: Api.SystemManage.SystemFile) {
   previewFile.value = row;
-  previewSrc.value = buildPreviewSrc(row);
+  void fetchFile(row, 'preview').then(url => { previewSrc.value = url; }).catch(() => { previewSrc.value = buildPreviewSrc(row); });
   previewVisible.value = true;
 }
 
-function download(row: Api.SystemManage.SystemFile) {
-  const blob = new Blob([`Mock file: ${row.fileName} (${formatFileSize(row.fileSize)})`], {
-    type: 'application/octet-stream'
+async function fetchFile(row: Api.SystemManage.SystemFile, action: 'preview' | 'download') {
+  const token = localStg.get('token');
+  const response = await fetch(`/v1/system/file/${action}/${encodeURIComponent(row.id)}`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined
   });
-  const url = URL.createObjectURL(blob);
+  if (!response.ok) throw new Error('file request failed');
+  const blob = await response.blob();
+  return URL.createObjectURL(blob);
+}
+
+async function download(row: Api.SystemManage.SystemFile) {
+  const url = await fetchFile(row, 'download');
   const anchor = document.createElement('a');
 
   anchor.href = url;
   anchor.download = row.fileName;
   anchor.click();
-  URL.revokeObjectURL(url);
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 </script>
 
@@ -303,8 +302,8 @@ function download(row: Api.SystemManage.SystemFile) {
           <div class="text-12px text-#999">{{ $t('page.manage.file.previewPlaceholder') }}</div>
         </template>
       </NModal>
-      <NModal v-model:show="storageVisible" preset="card" title="文件存储设置（Mock）" class="w-520px">
-        <NAlert type="info" class="mb-16px">后端接入时可将存储适配到本地、MinIO、S3 或云对象存储。</NAlert>
+      <NModal v-model:show="storageVisible" preset="card" title="文件存储设置" class="w-520px">
+        <NAlert type="info" class="mb-16px">当前后端使用受控本地对象存储适配器，生产环境可替换为 MinIO/S3。</NAlert>
         <NForm :model="storageForm" label-placement="left" label-width="100">
           <NFormItem label="存储提供方">
             <NSelect

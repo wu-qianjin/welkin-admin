@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
-import { mockUserDetails } from '@/mock/admin';
+import { fetchGetUserDetail, resetUserPassword, updateUserStatus } from '@/service/api';
 
 interface Props {
   id: string;
@@ -11,25 +11,89 @@ defineOptions({ name: 'ManageUserDetail' });
 
 const props = defineProps<Props>();
 const router = useRouter();
-const user = computed(() => mockUserDetails[props.id] ?? mockUserDetails['1']);
-const enabled = ref(user.value.status === '正常');
+type DetailView = {
+  id: string;
+  userName: string;
+  nickName: string;
+  department: string;
+  role: string;
+  email: string;
+  phone: string;
+  status: '正常' | '锁定';
+  avatarText: string;
+  avatarColor: string;
+  joinedAt: string;
+  lastLoginAt: string;
+  lastLoginIp: string;
+  loginCount: number;
+  operationCount: number;
+  permissions: string[];
+  timeline: Array<{ title: string; time: string; description: string; type: 'success' | 'info' | 'warning' }>;
+};
+
+const user = ref<DetailView>({
+  id: props.id,
+  userName: '',
+  nickName: '',
+  department: '未分配（部门ID：0）',
+  role: '未分配',
+  email: '',
+  phone: '',
+  status: '正常',
+  avatarText: '用',
+  avatarColor: '#4f46e5',
+  joinedAt: '',
+  lastLoginAt: '暂无',
+  lastLoginIp: '暂无',
+  loginCount: 0,
+  operationCount: 0,
+  permissions: [],
+  timeline: []
+});
+const enabled = computed(() => user.value.status === '正常');
 const resetVisible = ref(false);
 const resetPassword = ref('');
 
+async function loadUser() {
+  const data = await fetchGetUserDetail(props.id);
+  user.value = {
+    ...user.value,
+    id: data.id,
+    userName: data.userName,
+    nickName: data.nickName,
+    department: `部门ID：${data.deptId || '0'}`,
+    role: data.userRoles?.join('、') || '未分配',
+    email: data.userEmail,
+    phone: data.userPhone,
+    status: data.status === 1 ? '正常' : '锁定',
+    avatarText: (data.nickName || data.userName || '用').slice(0, 1),
+    joinedAt: data.createTime,
+    lastLoginAt: data.lastLoginAt || '暂无',
+    lastLoginIp: data.lastLoginIp || '暂无',
+    permissions: data.userRoles || []
+  };
+}
+
+onMounted(loadUser);
+watch(() => props.id, loadUser);
+
 function goBack() {
-  router.push('/manage/user');
+  router.push('/auth/user');
 }
 
-function toggleStatus() {
-  enabled.value = !enabled.value;
-  window.$message?.success(enabled.value ? '用户已启用' : '用户已锁定');
+async function toggleStatus() {
+  const nextStatus = enabled.value ? 0 : 1;
+  await updateUserStatus(props.id, nextStatus);
+  user.value.status = nextStatus === 1 ? '正常' : '锁定';
+  window.$message?.success(nextStatus === 1 ? '用户已启用' : '用户已锁定');
 }
 
-function confirmReset() {
+async function confirmReset() {
   if (resetPassword.value.length < 8) {
     window.$message?.warning('临时密码至少需要 8 位');
     return;
   }
+  await resetUserPassword(props.id, resetPassword.value);
   resetVisible.value = false;
   resetPassword.value = '';
   window.$message?.success('临时密码已生成，请通过安全渠道告知用户');

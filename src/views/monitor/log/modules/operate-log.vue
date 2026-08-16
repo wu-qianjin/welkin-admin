@@ -72,8 +72,8 @@ const { columns, data, getData, getDataByPage, loading, mobilePagination } = use
           5: 'info',
           6: 'default'
         };
-        const label = $t(operateTypeRecord[row.businessType]);
-        return <NTag type={tagMap[row.businessType]}>{label}</NTag>;
+        const label = $t(operateTypeRecord[row.businessType] ?? operateTypeRecord['6']);
+        return <NTag type={tagMap[row.businessType] ?? 'default'}>{label}</NTag>;
       }
     },
     {
@@ -154,7 +154,7 @@ function viewDetail(row: Api.SystemManage.OperateLog) {
   detailVisible.value = true;
 }
 
-async function handleDelete(id: number) {
+async function handleDelete(id: string) {
   try {
     await deleteOperateLog(id);
     getData();
@@ -165,7 +165,7 @@ async function handleDelete(id: number) {
 
 async function handleBatchDelete() {
   try {
-    await batchDeleteOperateLog(checkedRowKeys.value.map(Number));
+    await batchDeleteOperateLog(checkedRowKeys.value.map(String));
     checkedRowKeys.value = [];
     getData();
   } catch {
@@ -198,7 +198,7 @@ function exportLogs() {
   anchor.download = `operate-logs-${new Date().toISOString().slice(0, 10)}.csv`;
   anchor.click();
   URL.revokeObjectURL(url);
-  window.$message?.success('操作日志已导出（Mock）');
+  window.$message?.success('操作日志已导出');
 }
 </script>
 
@@ -257,7 +257,7 @@ function exportLogs() {
         <NDescriptions v-if="detailData" label-placement="left" bordered :column="1">
           <NDescriptionsItem :label="$t('page.manage.log.operate.title')">{{ detailData.title }}</NDescriptionsItem>
           <NDescriptionsItem :label="$t('page.manage.log.operate.businessType')">
-            {{ $t(operateTypeRecord[detailData.businessType]) }}
+            {{ $t(operateTypeRecord[detailData.businessType] ?? operateTypeRecord['6']) }}
           </NDescriptionsItem>
           <NDescriptionsItem :label="$t('page.manage.log.operate.userName')">
             {{ detailData.userName }}

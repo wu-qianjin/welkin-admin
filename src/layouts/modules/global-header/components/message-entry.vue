@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { $t } from '@/locales';
-import type { MockNoticeFeed } from '@/mock/admin';
+import type { MessageItem } from '@/service/api';
 import { useNoticeFeed } from '@/views/message/modules/notice-feed';
 
 defineOptions({ name: 'MessageEntry' });
@@ -10,17 +10,22 @@ defineOptions({ name: 'MessageEntry' });
 const router = useRouter();
 const show = ref(false);
 const activeTab = ref<'all' | 'unread'>('all');
-const selected = ref<MockNoticeFeed | null>(null);
+const selected = ref<MessageItem | null>(null);
 const detailVisible = ref(false);
-const { notices, unreadCount, markAllRead } = useNoticeFeed();
+const { notices, unreadCount, load, markRead, markAllRead } = useNoticeFeed();
+onMounted(load);
 
 const filteredNotices = computed(() => notices.filter(item => activeTab.value === 'all' || !item.read));
 
-function viewNotice(notice: MockNoticeFeed) {
-  notice.read = true;
+function viewNotice(notice: MessageItem) {
+  markRead(notice.id);
   show.value = false;
   selected.value = notice;
   detailVisible.value = true;
+}
+
+function typeLabel(type: number) {
+  return type === 1 ? '通知' : type === 2 ? '公告' : '更新';
 }
 
 function viewAll() {
@@ -56,8 +61,8 @@ function viewAll() {
             class="size-36px shrink-0 flex-center rounded-8px"
             :class="notice.read ? 'bg-gray-2 text-gray-5' : 'bg-primary:12 text-primary'"
           >
-            <icon-mdi-bell-outline v-if="notice.type === '通知'" class="text-18px" />
-            <icon-mdi-bullhorn-outline v-else-if="notice.type === '公告'" class="text-18px" />
+            <icon-mdi-bell-outline v-if="notice.type === 1" class="text-18px" />
+            <icon-mdi-bullhorn-outline v-else-if="notice.type === 2" class="text-18px" />
             <icon-mdi-update v-else class="text-18px" />
           </div>
           <div class="min-w-0 flex-1">
@@ -81,7 +86,7 @@ function viewAll() {
   <NModal v-model:show="detailVisible" preset="card" class="w-560px" :title="selected?.title">
     <div v-if="selected">
       <div class="flex-y-center gap-8px text-12px text-gray-5">
-        <NTag size="small" bordered>{{ selected.type }}</NTag>
+        <NTag size="small" bordered>{{ typeLabel(selected.type) }}</NTag>
         {{ selected.author }} · {{ selected.publishAt }} · {{ selected.scope }}
       </div>
       <NDivider />

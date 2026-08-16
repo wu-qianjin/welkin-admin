@@ -3,7 +3,13 @@ import { computed, h, onMounted, ref } from 'vue';
 import { NTag } from 'naive-ui';
 import type { ECOption } from '@/hooks/common/echarts';
 import { useEcharts } from '@/hooks/common/echarts';
-import { mockAlerts, mockDependencies } from '@/mock/admin';
+import {
+  fetchGetGatewayOverview,
+  fetchGetGatewayTrend,
+  fetchGetGatewayServiceList,
+  fetchGetServerList,
+  fetchMonitorAlertList
+} from '@/service/api';
 import { useRouter } from 'vue-router';
 
 defineOptions({ name: 'MonitorOverview' });
@@ -11,127 +17,114 @@ defineOptions({ name: 'MonitorOverview' });
 const router = useRouter();
 const refreshing = ref(false);
 const lastUpdated = ref('刚刚');
-const alerts = ref(mockAlerts.map(item => ({ ...item })));
+const gatewayOverview = ref<Api.Gateway.Overview | null>(null);
+const trendPoints = ref<Api.Gateway.TrendPoint[]>([]);
+const services = ref<Api.Gateway.Service[]>([]);
+const servers = ref<Api.Monitor.Server[]>([]);
+const alerts = ref<import('@/service/api/monitor').MonitorAlertItem[]>([]);
 
-const healthCards = computed(() => [
-  {
-    label: '服务实例',
-    value: '5 / 6',
-    detail: '1 个实例异常',
-    icon: 'mdi:server',
-    color: '#2563eb',
-    status: 'warning'
-  },
-  {
-    label: '网关错误率',
-    value: '0.86%',
-    detail: '较昨日下降 0.12%',
-    icon: 'mdi:transit-connection-variant',
-    color: '#16a34a',
-    status: 'success'
-  },
-  {
-    label: '平均响应',
-    value: '42 ms',
-    detail: 'P95 128 ms',
-    icon: 'mdi:timer-outline',
-    color: '#7c3aed',
-    status: 'success'
-  },
-  {
-    label: '数据库连接',
-    value: '78%',
-    detail: '连接池使用率',
-    icon: 'mdi:database-outline',
-    color: '#d97706',
-    status: 'warning'
-  },
-  {
-    label: '今日请求',
-    value: '2.84M',
-    detail: '峰值 328 QPS',
-    icon: 'mdi:chart-line',
-    color: '#0891b2',
-    status: 'success'
-  },
-  {
-    label: '待处理告警',
-    value: '2',
-    detail: '1 严重 / 1 警告',
-    icon: 'mdi:bell-alert-outline',
-    color: '#dc2626',
-    status: 'error'
-  }
-]);
+const healthCards = computed(() => {
+  const overview = gatewayOverview.value;
+  const online = servers.value.filter(item => item.status === 1 || item.status === '1').length;
+  const total = servers.value.length;
+  const pending = alerts.value.filter(item => item.status === 1 || item.status === 2).length;
+  const severe = alerts.value.filter(item => item.level >= 3 && item.status !== 3).length;
+  return [
+    {
+      label: '服务实例',
+      value: `${online} / ${total}`,
+      detail: total && online < total ? `${total - online} 个实例异常` : '全部实例正常',
+      icon: 'mdi:server',
+      color: '#2563eb',
+      status: 'warning'
+    },
+    {
+      label: '网关错误率',
+      value: `${(overview?.errorRate ?? 0).toFixed(2)}%`,
+      detail: '当前时间范围错误率',
+      icon: 'mdi:transit-connection-variant',
+      color: '#16a34a',
+      status: 'success'
+    },
+    {
+      label: '平均响应',
+      value: `${(overview?.avgCostMs ?? 0).toFixed(1)} ms`,
+      detail: `P95 ${(overview?.p95CostMs ?? 0).toFixed(1)} ms`,
+      icon: 'mdi:timer-outline',
+      color: '#7c3aed',
+      status: 'success'
+    },
+    {
+      label: '数据库连接',
+      value: '数据源未配置',
+      detail: '数据库池指标待接入 Prometheus',
+      icon: 'mdi:database-outline',
+      color: '#d97706',
+      status: 'warning'
+    },
+    {
+      label: '今日请求',
+      value: formatCompact(overview?.todayCalls ?? 0),
+      detail: `当前 QPS ${(overview?.qps ?? 0).toFixed(1)}`,
+      icon: 'mdi:chart-line',
+      color: '#0891b2',
+      status: 'success'
+    },
+    {
+      label: '待处理告警',
+      value: String(pending),
+      detail: `${severe} 严重 / ${Math.max(0, pending - severe)} 其他`,
+      icon: 'mdi:bell-alert-outline',
+      color: '#dc2626',
+      status: 'error'
+    }
+  ];
+});
 
-const serviceHealth = [
-  {
-    name: '用户服务',
-    code: 'user-svc',
-    host: '10.0.1.21:9002',
-    status: '运行中',
-    cpu: 32,
-    memory: 48,
-    qps: 186,
-    version: 'v2.4.1'
-  },
-  {
-    name: '系统服务',
-    code: 'system-svc',
-    host: '10.0.1.22:9001',
-    status: '运行中',
-    cpu: 24,
-    memory: 41,
-    qps: 92,
-    version: 'v2.4.1'
-  },
-  {
-    name: '文件服务',
-    code: 'file-svc',
-    host: '10.0.1.23:9003',
-    status: '资源偏高',
-    cpu: 68,
-    memory: 72,
-    qps: 64,
-    version: 'v1.8.0'
-  },
-  {
-    name: '消息服务',
-    code: 'message-svc',
-    host: '10.0.1.24:9004',
-    status: '运行中',
-    cpu: 37,
-    memory: 55,
-    qps: 220,
-    version: 'v2.0.3'
-  },
-  {
-    name: '报表服务',
-    code: 'report-svc',
-    host: '10.0.1.25:9005',
-    status: '运行中',
-    cpu: 46,
-    memory: 62,
-    qps: 18,
-    version: 'v1.4.6'
-  },
-  {
-    name: '任务服务',
-    code: 'job-svc',
-    host: '10.0.1.26:9006',
-    status: '离线',
-    cpu: 0,
-    memory: 0,
+const serviceHealth = computed(() =>
+  servers.value.map(server => ({
+    name: server.serviceName,
+    code: server.serviceCode,
+    host: `${server.host}:${server.port}`,
+    status: server.status === 1 || server.status === '1' ? '运行中' : '离线',
+    cpu: server.cpuPercent,
+    memory: server.memPercent,
     qps: 0,
-    version: 'v0.9.8'
-  }
-];
+    version: server.version || server.goVersion
+  }))
+);
+
+const dependencies = computed(() =>
+  services.value.map(service => ({
+    name: service.serviceName,
+    type: 'upstream',
+    address: service.serviceName,
+    status: service.status === 1 ? '正常' : '异常',
+    latency: service.discoveryStatus === 'fresh' ? '已发现' : '待探测'
+  }))
+);
+
+const alertRows = computed(() =>
+  alerts.value.map(item => ({
+    ...item,
+    levelLabel: item.level >= 3 ? '严重' : item.level === 2 ? '警告' : '提示',
+    statusLabel: item.status === 3 ? '已恢复' : item.status === 2 ? '已确认' : '待处理'
+  }))
+);
+
+function formatCompact(value: number) {
+  return value >= 1_000_000
+    ? `${(value / 1_000_000).toFixed(2)}M`
+    : value >= 1_000
+      ? `${(value / 1_000).toFixed(1)}K`
+      : String(value);
+}
 
 const trendOption = (): ECOption => ({
   tooltip: { trigger: 'axis' },
   legend: { top: 0, right: 0 },
   grid: { left: 8, right: 16, top: 34, bottom: 8, containLabel: true },
-  xAxis: { type: 'category', boundaryGap: false, data: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00'] },
+  xAxis: { type: 'category', boundaryGap: false, data: trendPoints.value.map(item => item.time) },
   yAxis: { type: 'value', splitNumber: 4 },
   series: [
     {
@@ -140,9 +133,15 @@ const trendOption = (): ECOption => ({
       smooth: true,
       symbol: 'none',
       areaStyle: { opacity: 0.12 },
-      data: [118, 96, 228, 286, 318, 248]
+      data: trendPoints.value.map(item => item.qps)
     },
-    { name: '错误率 %', type: 'line', smooth: true, symbol: 'none', data: [0.42, 0.36, 0.72, 0.88, 1.24, 0.86] }
+    {
+      name: '错误率 %',
+      type: 'line',
+      smooth: true,
+      symbol: 'none',
+      data: trendPoints.value.map(item => item.errorRate)
+    }
   ]
 });
 
@@ -158,17 +157,43 @@ function goAlerts() {
   router.push('/monitor/alert');
 }
 
-function refresh() {
-  refreshing.value = true;
-  window.setTimeout(() => {
-    refreshing.value = false;
-    lastUpdated.value = '刚刚';
-    updateTrend(trendOption);
-    window.$message?.success('监控数据已刷新');
-  }, 450);
+async function loadData() {
+  const [overview, trend, serviceList, serverList, alertPage] = await Promise.all([
+    fetchGetGatewayOverview(),
+    fetchGetGatewayTrend({ startTime: Date.now() - 60 * 60 * 1000, endTime: Date.now() }),
+    fetchGetGatewayServiceList(),
+    fetchGetServerList(),
+    fetchMonitorAlertList({ current: 1, size: 20 })
+  ]);
+  gatewayOverview.value = overview;
+  trendPoints.value = trend;
+  services.value = serviceList;
+  servers.value = serverList;
+  alerts.value = alertPage.records;
+  lastUpdated.value = overview.updatedAt ?? new Date().toLocaleTimeString();
+  updateTrend(trendOption);
 }
 
-onMounted(() => updateTrend(trendOption));
+async function refresh() {
+  refreshing.value = true;
+  try {
+    await loadData();
+  } catch {
+    window.$message?.error('监控数据加载失败');
+  } finally {
+    refreshing.value = false;
+    window.$message?.success('监控数据已刷新');
+  }
+}
+
+onMounted(async () => {
+  updateTrend(trendOption);
+  try {
+    await loadData();
+  } catch {
+    window.$message?.warning('监控数据源未配置');
+  }
+});
 </script>
 
 <template>
@@ -235,7 +260,7 @@ onMounted(() => updateTrend(trendOption));
       <NGi span="24 l:9">
         <NCard title="基础依赖健康" :bordered="false" class="card-wrapper h-full">
           <NList hoverable>
-            <NListItem v-for="dependency in mockDependencies" :key="dependency.name">
+            <NListItem v-for="dependency in dependencies" :key="dependency.name">
               <div class="flex-y-center gap-10px">
                 <span
                   class="size-8px rounded-full"
@@ -324,7 +349,7 @@ onMounted(() => updateTrend(trendOption));
     <NCard title="最近告警" :bordered="false" class="card-wrapper">
       <template #header-extra><NButton text type="primary" @click="goAlerts">处理告警</NButton></template>
       <NDataTable
-        :data="alerts.slice(0, 3)"
+        :data="alertRows.slice(0, 3)"
         :pagination="false"
         size="small"
         :columns="[
@@ -335,13 +360,16 @@ onMounted(() => updateTrend(trendOption));
             render: row =>
               h(
                 NTag,
-                { type: row.level === '严重' ? 'error' : row.level === '警告' ? 'warning' : 'info', size: 'small' },
-                { default: () => row.level }
+                {
+                  type: row.levelLabel === '严重' ? 'error' : row.levelLabel === '警告' ? 'warning' : 'info',
+                  size: 'small'
+                },
+                { default: () => row.levelLabel }
               )
           },
           { key: 'title', title: '告警内容', minWidth: 220 },
           { key: 'target', title: '目标', minWidth: 170 },
-          { key: 'status', title: '状态', width: 100 },
+          { key: 'statusLabel', title: '状态', width: 100 },
           { key: 'occurredAt', title: '发生时间', width: 170 }
         ]"
       />

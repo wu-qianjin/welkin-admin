@@ -236,16 +236,11 @@ function selectTrendMetric(value: TrendMetric) {
 }
 
 async function loadRoutes() {
-  if (!serviceFilter.value) return;
   routeLoading.value = true;
   try {
-    const nextRoutes = await fetchGetGatewayServiceRoutes({
-      keyword: keyword.value,
-      method: methodFilter.value,
-      status: statusFilter.value,
-      serviceName: serviceFilter.value
-    });
-    routes.value = [...routes.value.filter(route => route.serviceName !== serviceFilter.value), ...nextRoutes];
+    // 未选具体服务时对全部服务生效（按服务逐个拉取，接口要求 serviceName 必填）。
+    const targets = serviceFilter.value ? [serviceFilter.value] : services.value.map(service => service.serviceName);
+    await Promise.all(targets.map(serviceName => loadServiceRoutes(serviceName)));
   } finally {
     routeLoading.value = false;
   }
@@ -277,12 +272,16 @@ async function loadAll() {
 
     overview.value = nextOverview;
     currentTrend.value = trend;
-    services.value = nextServices;
+    // 只展示有健康实例的服务：健康实例为 0 的服务（如未部署的 api-example）视为未使用。
+    services.value = nextServices.filter(service => service.healthyInstanceCount > 0);
     updateTrendChart(trend);
     updateTopInvoked(() => buildTopOption(invoked, '#3b82f6', ''));
     updateTopSlow(() => buildTopOption(slow, '#f59e0b', ' ms'));
     updateTopError(() => buildTopOption(errors, '#f43f5e', '%'));
     lastUpdated.value = nextOverview.updatedAt ?? new Date().toLocaleTimeString();
+    // 预取各服务路由填充树表 children：NDataTable 对 children 为空的行不渲染展开箭头，
+    // 不预取则永远无法展开查看服务下的 API 列表。
+    await Promise.all(services.value.map(service => loadServiceRoutes(service.serviceName)));
   } catch {
     window.$message?.error($t('page.gateway.loadFailed'));
   } finally {

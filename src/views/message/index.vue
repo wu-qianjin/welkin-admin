@@ -1,14 +1,14 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
-import type { MockNoticeFeed } from '@/mock/admin';
+import { computed, onMounted, ref } from 'vue';
+import type { MessageItem } from '@/service/api';
 import { useNoticeFeed } from './modules/notice-feed';
 
 defineOptions({ name: 'MessageCenter' });
 
-const { notices, unreadCount, markAllRead } = useNoticeFeed();
+const { notices, unreadCount, load, markRead, markAllRead } = useNoticeFeed();
 const activeTab = ref<'all' | 'unread'>('all');
 const keyword = ref('');
-const selected = ref<MockNoticeFeed | null>(null);
+const selected = ref<MessageItem | null>(null);
 const detailVisible = ref(false);
 
 const filteredNotices = computed(() =>
@@ -19,8 +19,8 @@ const filteredNotices = computed(() =>
   })
 );
 
-function viewNotice(notice: MockNoticeFeed) {
-  notice.read = true;
+function viewNotice(notice: MessageItem) {
+  markRead(notice.id);
   selected.value = notice;
   detailVisible.value = true;
 }
@@ -29,6 +29,12 @@ function handleMarkAllRead() {
   markAllRead();
   window.$message?.success('全部消息已标记为已读');
 }
+
+function typeLabel(type: number) {
+  return type === 1 ? '通知' : type === 2 ? '公告' : '更新';
+}
+
+onMounted(load);
 </script>
 
 <template>
@@ -66,8 +72,8 @@ function handleMarkAllRead() {
               class="size-40px flex-center rounded-10px"
               :class="notice.read ? 'bg-gray-2 text-gray-5' : 'bg-primary:12 text-primary'"
             >
-              <icon-mdi-bell-outline v-if="notice.type === '通知'" class="text-21px" />
-              <icon-mdi-bullhorn-outline v-else-if="notice.type === '公告'" class="text-21px" />
+              <icon-mdi-bell-outline v-if="notice.type === 1" class="text-21px" />
+              <icon-mdi-bullhorn-outline v-else-if="notice.type === 2" class="text-21px" />
               <icon-mdi-update v-else class="text-21px" />
             </div>
             <div class="min-w-0 flex-1">
@@ -76,7 +82,7 @@ function handleMarkAllRead() {
                   {{ notice.title }}
                 </span>
                 <NTag v-if="notice.top" size="small" type="error">置顶</NTag>
-                <NTag size="small" bordered>{{ notice.type }}</NTag>
+                <NTag size="small" bordered>{{ typeLabel(notice.type) }}</NTag>
               </div>
               <div class="mt-7px text-13px text-gray-5">{{ notice.summary }}</div>
               <div class="mt-8px flex flex-wrap gap-x-18px gap-y-4px text-12px text-gray-4">
@@ -98,7 +104,7 @@ function handleMarkAllRead() {
     <NModal v-model:show="detailVisible" preset="card" class="w-680px" :title="selected?.title">
       <div v-if="selected">
         <div class="flex-y-center gap-8px text-12px text-gray-5">
-          <NTag size="small" bordered>{{ selected.type }}</NTag>
+          <NTag size="small" bordered>{{ typeLabel(selected.type) }}</NTag>
           {{ selected.author }} · {{ selected.publishAt }} · {{ selected.scope }}
         </div>
         <NDivider />

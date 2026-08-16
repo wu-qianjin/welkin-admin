@@ -46,7 +46,7 @@ async function handleSubmit() {
 
   submitting.value = true;
   try {
-    await fetchRegister({ phone: model.phone, password: model.password });
+    await fetchRegister({ phone: model.phone, code: model.code, password: model.password });
     window.$message?.success($t('page.login.register.success'));
     toggleLoginModule('pwd-login');
   } finally {
@@ -69,7 +69,7 @@ async function handleSubmit() {
       <NFormItem path="code">
         <div class="w-full flex-y-center gap-12px">
           <NInput v-model:value="model.code" :placeholder="$t('page.login.common.codePlaceholder')" />
-          <NButton size="large" :disabled="isCounting" :loading="loading" @click="getCaptcha(model.phone)">
+          <NButton size="large" :disabled="isCounting" :loading="loading" @click="getCaptcha(model.phone, 'register')">
             {{ label }}
           </NButton>
         </div>

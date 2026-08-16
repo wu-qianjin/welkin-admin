@@ -1,17 +1,29 @@
 import { computed, reactive } from 'vue';
-import { mockNoticeFeed } from '@/mock/admin';
+import { fetchMessageList, markAllMessagesRead, markMessageRead, type MessageItem } from '@/service/api';
 
 /** module-level state so the header badge and the message page share read status */
-const notices = reactive(mockNoticeFeed.map(item => ({ ...item })));
+const notices = reactive<MessageItem[]>([]);
 
 export function useNoticeFeed() {
   const unreadCount = computed(() => notices.filter(item => !item.read).length);
 
-  function markAllRead() {
+  async function load() {
+    const page = await fetchMessageList({ current: 1, size: 100 });
+    notices.splice(0, notices.length, ...page.records);
+  }
+
+  async function markRead(id: string) {
+    await markMessageRead(id);
+    const notice = notices.find(item => item.id === id);
+    if (notice) notice.read = true;
+  }
+
+  async function markAllRead() {
+    await markAllMessagesRead();
     notices.forEach(item => {
       item.read = true;
     });
   }
 
-  return { notices, unreadCount, markAllRead };
+  return { notices, unreadCount, load, markRead, markAllRead };
 }

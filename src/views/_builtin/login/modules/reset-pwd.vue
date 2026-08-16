@@ -69,7 +69,12 @@ async function handleSubmit() {
       <NFormItem path="code">
         <div class="w-full flex-y-center gap-12px">
           <NInput v-model:value="model.code" :placeholder="$t('page.login.common.codePlaceholder')" />
-          <NButton size="large" :disabled="isCounting" :loading="loading" @click="getCaptcha(model.phone)">
+          <NButton
+            size="large"
+            :disabled="isCounting"
+            :loading="loading"
+            @click="getCaptcha(model.phone, 'resetPassword')"
+          >
             {{ label }}
           </NButton>
         </div>

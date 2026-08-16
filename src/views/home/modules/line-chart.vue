@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { watch } from 'vue';
+import { onMounted, watch } from 'vue';
 import { useAppStore } from '@/store/modules/app';
 import { useEcharts } from '@/hooks/common/echarts';
 import { $t } from '@/locales';
+import { fetchGetGatewayTrend } from '@/service/api';
 
 defineOptions({
   name: 'LineChart'
@@ -102,18 +103,18 @@ const { domRef, updateOptions } = useEcharts(() => ({
   ]
 }));
 
-async function mockData() {
-  await new Promise(resolve => {
-    setTimeout(resolve, 1000);
-  });
-
-  updateOptions(opts => {
-    opts.xAxis.data = ['06:00', '08:00', '10:00', '12:00', '14:00', '16:00', '18:00', '20:00', '22:00', '24:00'];
-    opts.series[0].data = [4623, 6145, 6268, 6411, 1890, 4251, 2978, 3880, 3606, 4311];
-    opts.series[1].data = [2208, 2016, 2916, 4512, 8281, 2008, 1963, 2367, 2956, 678];
-
-    return opts;
-  });
+async function loadData() {
+  try {
+    const points = await fetchGetGatewayTrend({ startTime: Date.now() - 24 * 60 * 60 * 1000, endTime: Date.now() });
+    updateOptions(opts => {
+      opts.xAxis.data = points.map(point => point.time);
+      opts.series[0].data = points.map(point => point.qps);
+      opts.series[1].data = points.map(point => point.errorRate);
+      return opts;
+    });
+  } catch {
+    /* show an empty chart when the gateway is not configured */
+  }
 }
 
 function updateLocale() {
@@ -129,7 +130,7 @@ function updateLocale() {
 }
 
 async function init() {
-  mockData();
+  await loadData();
 }
 
 watch(
@@ -140,7 +141,7 @@ watch(
 );
 
 // init
-init();
+onMounted(init);
 </script>
 
 <template>

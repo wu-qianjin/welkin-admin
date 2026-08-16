@@ -5,7 +5,7 @@ import { NButton, NPopconfirm, NTag } from 'naive-ui';
 import { useBoolean } from '@sa/hooks';
 import { yesOrNoRecord } from '@/constants/common';
 import { enableStatusRecord, menuTypeRecord } from '@/constants/business';
-import { fetchGetAllPages, fetchGetMenuList } from '@/service/api';
+import { batchDeleteMenu, deleteMenu, fetchGetAllPages, fetchGetMenuList } from '@/service/api';
 import { useAppStore } from '@/store/modules/app';
 import { defaultTransform, useNaivePaginatedTable, useTableOperate } from '@/hooks/common/table';
 import { $t } from '@/locales';
@@ -194,14 +194,14 @@ function handleAdd() {
 }
 
 async function handleBatchDelete() {
-  data.value = data.value.filter(item => !checkedRowKeys.value.map(Number).includes(item.id));
-  checkedRowKeys.value = [];
-  window.$message?.success('菜单已批量删除（Mock）');
+	await batchDeleteMenu(checkedRowKeys.value);
+	checkedRowKeys.value = [];
+	await getData();
 }
 
-function handleDelete(id: number) {
-  data.value = data.value.filter(item => item.id !== id);
-  window.$message?.success('菜单已删除（Mock）');
+async function handleDelete(id: string) {
+	await deleteMenu(id);
+	await getData();
 }
 
 /** the edit menu data or the parent menu data when adding a child menu */

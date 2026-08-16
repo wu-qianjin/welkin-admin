@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { createReusableTemplate } from '@vueuse/core';
 import { useThemeStore } from '@/store/modules/theme';
 import { $t } from '@/locales';
+import { fetchGetGatewayOverview } from '@/service/api';
 
 defineOptions({
   name: 'CardData'
@@ -24,7 +25,7 @@ const cardData = computed<CardData[]>(() => [
   {
     key: 'visitCount',
     title: $t('page.home.visitCount'),
-    value: 9725,
+    value: overview.value?.todayCalls ?? 0,
     unit: '',
     color: {
       start: '#ec4786',
@@ -35,7 +36,7 @@ const cardData = computed<CardData[]>(() => [
   {
     key: 'turnover',
     title: $t('page.home.turnover'),
-    value: 1026,
+    value: Math.round(overview.value?.avgCostMs ?? 0),
     unit: '$',
     color: {
       start: '#865ec0',
@@ -46,7 +47,7 @@ const cardData = computed<CardData[]>(() => [
   {
     key: 'downloadCount',
     title: $t('page.home.downloadCount'),
-    value: 970925,
+    value: overview.value?.requestCount ?? 0,
     unit: '',
     color: {
       start: '#56cdf3',
@@ -57,7 +58,7 @@ const cardData = computed<CardData[]>(() => [
   {
     key: 'dealCount',
     title: $t('page.home.dealCount'),
-    value: 9527,
+    value: overview.value?.routeCount ?? 0,
     unit: '',
     color: {
       start: '#fcbc25',
@@ -66,6 +67,15 @@ const cardData = computed<CardData[]>(() => [
     icon: 'ant-design:trademark-circle-outlined'
   }
 ]);
+
+const overview = ref<Api.Gateway.Overview | null>(null);
+onMounted(async () => {
+  try {
+    overview.value = await fetchGetGatewayOverview();
+  } catch {
+    /* gateway may be offline during local preview */
+  }
+});
 
 interface GradientBgProps {
   gradientColor: string;

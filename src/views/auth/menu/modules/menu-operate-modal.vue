@@ -2,7 +2,7 @@
 import { computed, ref, watch } from 'vue';
 import type { SelectOption } from 'naive-ui';
 import { enableStatusOptions, menuIconTypeOptions, menuTypeOptions } from '@/constants/business';
-import { fetchGetAllRoles } from '@/service/api';
+import { addMenu, fetchGetAllRoles, updateMenu } from '@/service/api';
 import { useFormRules, useNaiveForm } from '@/hooks/common/form';
 import { getLocalIcons } from '@/utils/icon';
 import { $t } from '@/locales';
@@ -97,7 +97,7 @@ function createDefaultModel(): Model {
     i18nKey: null,
     icon: '',
     iconType: '1',
-    parentId: 0,
+    parentId: '0',
     status: '1',
     keepAlive: false,
     constant: false,
@@ -134,7 +134,7 @@ const localIconOptions = localIcons.map<SelectOption>(item => ({
   value: item
 }));
 
-const showLayout = computed(() => model.value.parentId === 0);
+const showLayout = computed(() => model.value.parentId === '0');
 
 const showPage = computed(() => model.value.menuType === '2');
 
@@ -254,18 +254,17 @@ function getSubmitParams() {
 async function handleSubmit() {
   await validate();
 
-  const params = {
-    ...getSubmitParams(),
-    id: props.rowData?.id ?? Date.now(),
-    createBy: props.rowData?.createBy ?? 'Super',
-    createTime: props.rowData?.createTime ?? new Date().toLocaleString('sv-SE'),
-    updateBy: 'Super',
-    updateTime: new Date().toLocaleString('sv-SE')
-  } as Api.SystemManage.Menu;
+  const params = getSubmitParams();
 
-  window.$message?.success('菜单信息已保存（Mock）');
+  if (props.operateType === 'edit' && props.rowData) {
+    await updateMenu({ ...params, id: props.rowData.id });
+  } else {
+    await addMenu(params);
+  }
+
+  window.$message?.success($t('common.modifySuccess'));
   closeDrawer();
-  emit('submitted', params);
+  emit('submitted', props.rowData ? ({ ...props.rowData, ...params } as Api.SystemManage.Menu) : (params as Api.SystemManage.Menu));
 }
 
 watch(visible, () => {

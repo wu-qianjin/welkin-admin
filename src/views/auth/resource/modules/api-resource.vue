@@ -134,20 +134,20 @@ const { columns, columnChecks, data, getData, getDataByPage, loading, mobilePagi
 const { drawerVisible, operateType, editingData, handleAdd, handleEdit, checkedRowKeys, onBatchDeleted, onDeleted } =
   useTableOperate(data, 'id', getData);
 
-function edit(id: number) {
+function edit(id: string) {
   handleEdit(id);
 }
 
 async function handleBatchDelete() {
   try {
-    await batchDeleteApi(checkedRowKeys.value.map(Number));
+    await batchDeleteApi(checkedRowKeys.value);
     onBatchDeleted();
   } catch {
     // request errors are surfaced by the request layer
   }
 }
 
-async function handleDelete(id: number) {
+async function handleDelete(id: string) {
   try {
     await deleteApi(id);
     onDeleted();

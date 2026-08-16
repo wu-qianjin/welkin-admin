@@ -1,22 +1,45 @@
 <script setup lang="ts">
-import { computed, reactive, ref } from 'vue';
+import { computed, onMounted, reactive, ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { mockCurrentUser, mockLoginDevices, mockNoticeFeed } from '@/mock/admin';
+import {
+  changePassword,
+  fetchGetProfile,
+  fetchProfileSessions,
+  revokeProfileSession,
+  updateProfile
+} from '@/service/api';
+import { useNoticeFeed } from '@/views/message/modules/notice-feed';
 
 defineOptions({
   name: 'UserCenter'
 });
 
 const router = useRouter();
-const profile = reactive({ ...mockCurrentUser });
-const devices = ref(mockLoginDevices.map(item => ({ ...item })));
-const notices = ref(mockNoticeFeed.map(item => ({ ...item })));
+const profile = reactive({
+  userId: '',
+  userName: '',
+  nickName: '',
+  phone: '',
+  email: '',
+  gender: 0,
+  roles: [] as string[],
+  department: '',
+  lastLoginAt: '',
+  lastLoginIp: '',
+  avatarColor: '#18a058',
+  avatarText: '',
+  role: '',
+  joinedAt: ''
+});
+const devices = ref<
+  Array<{ id: string; device: string; current: boolean; ip: string; location: string; lastActive: string }>
+>([]);
+const { notices, unreadCount, load: loadMessages, markRead: markMessageRead } = useNoticeFeed();
 const profileVisible = ref(false);
 const passwordVisible = ref(false);
 const profileForm = reactive({ nickName: profile.nickName, phone: profile.phone, email: profile.email });
 const passwordForm = reactive({ current: '', next: '', confirm: '' });
 
-const unreadCount = computed(() => notices.value.filter(item => !item.read).length);
 const securityScore = computed(() => {
   let score = 60;
   if (profile.email) score += 15;
@@ -30,36 +53,62 @@ function openProfile() {
   profileVisible.value = true;
 }
 
-function saveProfile() {
+async function saveProfile() {
+  await updateProfile({ ...profileForm, gender: profile.gender });
   Object.assign(profile, profileForm);
   profileVisible.value = false;
   window.$message?.success('个人资料已保存');
 }
 
-function savePassword() {
+async function savePassword() {
   if (!passwordForm.current || passwordForm.next.length < 8 || passwordForm.next !== passwordForm.confirm) {
     window.$message?.warning('请检查密码：新密码至少 8 位且两次输入一致');
     return;
   }
 
+  await changePassword(passwordForm.current, passwordForm.next);
   Object.assign(passwordForm, { current: '', next: '', confirm: '' });
   passwordVisible.value = false;
   window.$message?.success('密码修改成功');
 }
 
-function removeDevice(id: number) {
+async function removeDevice(id: string) {
+  await revokeProfileSession(id);
   devices.value = devices.value.filter(item => item.id !== id);
   window.$message?.success('设备已下线');
 }
 
-function markNoticeRead(id: number) {
-  const notice = notices.value.find(item => item.id === id);
-  if (notice) notice.read = true;
+function markNoticeRead(id: string) {
+  markMessageRead(id);
 }
 
 function goMessageCenter() {
   router.push('/message');
 }
+
+async function loadProfile() {
+  const [data, sessions] = await Promise.all([fetchGetProfile(), fetchProfileSessions()]);
+  Object.assign(profile, {
+    ...data,
+    avatarText: (data.nickName || data.userName).slice(0, 1).toUpperCase(),
+    role: data.roles[0] || 'user',
+    joinedAt: '—'
+  });
+  Object.assign(profileForm, { nickName: data.nickName, phone: data.phone, email: data.email });
+  devices.value = sessions.map((item, index) => ({
+    id: item.id,
+    device: item.userAgent || 'Unknown device',
+    current: index === 0,
+    ip: item.ip,
+    location: '—',
+    lastActive: item.createdAt
+  }));
+}
+
+onMounted(() => {
+  loadProfile();
+  loadMessages();
+});
 </script>
 
 <template>

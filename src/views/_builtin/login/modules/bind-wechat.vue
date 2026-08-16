@@ -3,6 +3,7 @@ import { onMounted, onUnmounted, ref } from 'vue';
 import { useAuthStore } from '@/store/modules/auth';
 import { useRouterPush } from '@/hooks/common/router';
 import { $t } from '@/locales';
+import { createScanSession, fetchScanStatus } from '@/service/api/auth';
 
 defineOptions({
   name: 'BindWechat'
@@ -19,15 +20,13 @@ const scanToken = ref('');
 const status = ref<'waiting' | 'scanned' | 'success' | 'expired'>('waiting');
 
 let scanTimer: number | null = null;
-let confirmTimer: number | null = null;
 let expireTimer: number | null = null;
 
 function clearTimers() {
-  [scanTimer, confirmTimer, expireTimer].forEach(timer => {
+  [scanTimer, expireTimer].forEach(timer => {
     if (timer !== null) window.clearTimeout(timer);
   });
   scanTimer = null;
-  confirmTimer = null;
   expireTimer = null;
 }
 
@@ -76,32 +75,37 @@ function drawQr(token: string) {
   drawFinder(ctx, 0, QR_MODULES - 7, cell);
 }
 
-/**
- * mock scan flow: waiting -> scanned (5s) -> confirmed (2.5s) -> login,
- * the qr expires after 60s without being scanned
- */
-function startScan() {
-  clearTimers();
-  status.value = 'waiting';
-  scanToken.value = `scan-${Date.now()}`;
-  drawQr(scanToken.value);
-
-  expireTimer = window.setTimeout(() => {
-    if (status.value === 'waiting') {
-      status.value = 'expired';
-    }
-  }, 60_000);
-
-  scanTimer = window.setTimeout(() => {
-    if (status.value !== 'waiting') return;
-    status.value = 'scanned';
-
-    confirmTimer = window.setTimeout(async () => {
-      if (status.value !== 'scanned') return;
+async function pollStatus() {
+  if (!scanToken.value || status.value === 'expired') return;
+  try {
+    const next = await fetchScanStatus(scanToken.value);
+    if (next.status === 'confirmed') {
       status.value = 'success';
       await authStore.loginByScan(scanToken.value);
-    }, 2500);
-  }, 5000);
+      return;
+    }
+    if (next.status === 'expired' || next.status === 'consumed') {
+      status.value = 'expired';
+      return;
+    }
+  } catch {
+    // Keep polling until the server-side expiry timer elapses.
+  }
+  scanTimer = window.setTimeout(pollStatus, 2000);
+}
+
+async function startScan() {
+  clearTimers();
+  status.value = 'waiting';
+  const session = await createScanSession();
+  scanToken.value = session.scanToken;
+  drawQr(session.qrContent);
+
+  expireTimer = window.setTimeout(() => {
+    status.value = 'expired';
+    clearTimers();
+  }, 120_000);
+  void pollStatus();
 }
 
 onMounted(startScan);

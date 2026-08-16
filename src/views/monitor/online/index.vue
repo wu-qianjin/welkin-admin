@@ -20,7 +20,7 @@ const searchParams = ref<Api.SystemManage.OnlineUserSearchParams>({
   ipaddr: null
 });
 
-const checkedRowKeys = ref<number[]>([]);
+const checkedRowKeys = ref<string[]>([]);
 
 const { columns, data, getData, getDataByPage, loading, mobilePagination } = useNaivePaginatedTable({
   api: () => fetchGetOnlineUserList(searchParams.value),
@@ -71,13 +71,15 @@ const { columns, data, getData, getDataByPage, loading, mobilePagination } = use
       key: 'browser',
       title: $t('page.manage.online.browser'),
       align: 'center',
-      width: 120
+      width: 120,
+      ellipsis: { tooltip: true }
     },
     {
       key: 'os',
       title: $t('page.manage.online.os'),
       align: 'center',
-      width: 120
+      width: 120,
+      ellipsis: { tooltip: true }
     },
     {
       key: 'loginTime',
@@ -106,7 +108,7 @@ const { columns, data, getData, getDataByPage, loading, mobilePagination } = use
   ]
 });
 
-async function handleForceLogout(ids: number[]) {
+async function handleForceLogout(ids: string[]) {
   try {
     await forceLogout(ids);
     window.$message?.success($t('page.manage.online.forceLogoutSuccess'));
@@ -118,7 +120,7 @@ async function handleForceLogout(ids: number[]) {
 }
 
 async function handleBatchForceLogout() {
-  await handleForceLogout(checkedRowKeys.value.map(Number));
+  await handleForceLogout(checkedRowKeys.value);
 }
 </script>
 
