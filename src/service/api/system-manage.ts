@@ -7,18 +7,85 @@ function cleanParams<T extends Record<string, unknown>>(params?: T) {
   return Object.fromEntries(Object.entries(params).filter(([, value]) => value !== null && value !== undefined)) as T;
 }
 
-/** get role list */
-export function fetchGetRoleList(params?: Api.SystemManage.RoleSearchParams) {
-  return alova.Get<Api.SystemManage.RoleList>('/systemManage/getRoleList', { params: cleanParams(params) });
+// ---------------- role (real backend via gateway, contract: docs/iam/openapi.yaml) ----------------
+
+/** backend role item (status is int 0/1) */
+interface BackendRoleItem {
+  id: string;
+  roleName: string;
+  roleCode: string;
+  roleDesc: string;
+  status: number;
+  builtIn: string;
+  createTime: string;
 }
 
-/**
- * get all roles
- *
- * these roles are all enabled
- */
-export function fetchGetAllRoles() {
-  return alova.Get<Api.SystemManage.AllRole[]>('/systemManage/getAllRoles');
+function adaptRoleItem(item: BackendRoleItem): Api.SystemManage.Role {
+  return {
+    id: item.id,
+    roleName: item.roleName,
+    roleCode: item.roleCode,
+    roleDesc: item.roleDesc,
+    builtIn: item.builtIn,
+    status: item.status === 1 ? '1' : '2',
+    createTime: item.createTime,
+    createBy: '',
+    updateTime: '',
+    updateBy: ''
+  };
+}
+
+/** get role list (paged, POST /v1/iam/role/page) */
+export async function fetchGetRoleList(params?: Api.SystemManage.RoleSearchParams) {
+  const res = await alova.Post<{ records: BackendRoleItem[]; current: number; size: number; total: number }>(
+    '/v1/iam/role/page',
+    {
+      current: params?.current ?? 1,
+      size: params?.size ?? 10,
+      roleName: params?.roleName ?? '',
+      roleCode: params?.roleCode ?? '',
+      status: params?.status ? Number(params.status === '1' ? 1 : 0) : undefined
+    }
+  );
+  return { ...res, records: res.records.map(adaptRoleItem) } as Api.SystemManage.RoleList;
+}
+
+/** get all roles (GET /v1/iam/role/all) */
+export async function fetchGetAllRoles() {
+  const res = await alova.Get<BackendRoleItem[]>('/v1/iam/role/all');
+  return res.map(adaptRoleItem) as unknown as Api.SystemManage.AllRole[];
+}
+
+export type RoleModel = Pick<Api.SystemManage.Role, 'roleName' | 'roleCode' | 'roleDesc' | 'status'>;
+
+/** add role */
+export function addRole(data: RoleModel) {
+  return alova.Post<{ id: string }>('/v1/iam/role/create', {
+    roleName: data.roleName,
+    roleCode: data.roleCode,
+    roleDesc: data.roleDesc ?? '',
+    status: data.status === '2' ? 0 : 1
+  });
+}
+
+/** update role */
+export function updateRole(data: RoleModel & Pick<Api.SystemManage.Role, 'id'>) {
+  return alova.Put<null>(`/v1/iam/role/update/${data.id}`, {
+    roleName: data.roleName,
+    roleCode: data.roleCode,
+    roleDesc: data.roleDesc ?? '',
+    status: data.status === '2' ? 0 : 1
+  });
+}
+
+/** delete role */
+export function deleteRole(id: string) {
+  return alova.Delete<null>('/v1/iam/role/delete', { ids: [id] });
+}
+
+/** batch delete role */
+export function batchDeleteRole(ids: string[]) {
+  return alova.Delete<null>('/v1/iam/role/delete', { ids });
 }
 
 /** get user list */

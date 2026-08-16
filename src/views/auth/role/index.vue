@@ -2,7 +2,7 @@
 import { ref } from 'vue';
 import { NButton, NPopconfirm, NTag } from 'naive-ui';
 import { enableStatusRecord } from '@/constants/business';
-import { fetchGetRoleList } from '@/service/api';
+import { batchDeleteRole, deleteRole, fetchGetRoleList } from '@/service/api';
 import { useAppStore } from '@/store/modules/app';
 import { defaultTransform, useNaivePaginatedTable, useTableOperate } from '@/hooks/common/table';
 import { $t } from '@/locales';
@@ -112,24 +112,32 @@ const {
 } = useTableOperate(data, 'id', getData);
 
 async function handleBatchDelete() {
-  data.value = data.value.filter(item => !checkedRowKeys.value.map(Number).includes(item.id));
-  checkedRowKeys.value = [];
-  window.$message?.success('角色已批量删除（Mock）');
+  try {
+    await batchDeleteRole(checkedRowKeys.value.map(String));
+    checkedRowKeys.value = [];
+    window.$message?.success($t('common.deleteSuccess'));
+    await getData();
+  } catch {
+    // request errors are surfaced by the request layer
+  }
 }
 
-function handleDelete(id: number) {
-  data.value = data.value.filter(item => item.id !== id);
-  window.$message?.success('角色已删除（Mock）');
+async function handleDelete(id: string) {
+  try {
+    await deleteRole(id);
+    window.$message?.success($t('common.deleteSuccess'));
+    await getData();
+  } catch {
+    // request errors are surfaced by the request layer
+  }
 }
 
-function edit(id: number) {
+function edit(id: string) {
   handleEdit(id);
 }
 
-function handleSubmitted(row: Api.SystemManage.Role) {
-  const index = data.value.findIndex(item => item.id === row.id);
-  if (index >= 0) data.value[index] = row;
-  else data.value.unshift(row);
+async function handleSubmitted() {
+  await getData();
 }
 </script>
 

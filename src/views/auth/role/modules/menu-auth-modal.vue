@@ -5,7 +5,7 @@ import { mockPermissionTree, mockRolePermissions } from '@/mock/admin';
 defineOptions({ name: 'MenuAuthModal' });
 
 interface Props {
-  roleId: number;
+  roleId: string;
 }
 
 const props = defineProps<Props>();

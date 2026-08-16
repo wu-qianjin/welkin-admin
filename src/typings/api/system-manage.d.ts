@@ -8,14 +8,15 @@ declare namespace Api {
     type CommonSearchParams = Pick<Common.PaginatingCommonParams, 'current' | 'size'>;
 
     /** role */
-    type Role = Common.CommonRecord<{
+    /** role; id is decimal string (Snowflake, exceeds JS safe integer) */
+    type Role = Omit<Common.CommonRecord<{
       /** role name */
       roleName: string;
       /** role code */
       roleCode: string;
       /** role description */
       roleDesc: string;
-    }>;
+    }>, 'id'> & { id: string; builtIn?: string };
 
     /** role search params */
     type RoleSearchParams = CommonType.RecordNullable<

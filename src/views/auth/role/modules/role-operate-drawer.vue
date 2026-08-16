@@ -3,6 +3,7 @@ import { computed, ref, watch } from 'vue';
 import { jsonClone } from '@sa/utils';
 import { useBoolean } from '@sa/hooks';
 import { enableStatusOptions } from '@/constants/business';
+import { addRole, updateRole } from '@/service/api';
 import { useFormRules, useNaiveForm } from '@/hooks/common/form';
 import { $t } from '@/locales';
 import MenuAuthModal from './menu-auth-modal.vue';
@@ -22,7 +23,7 @@ interface Props {
 const props = defineProps<Props>();
 
 interface Emits {
-  (e: 'submitted', data: Api.SystemManage.Role): void;
+  (e: 'submitted'): void;
 }
 
 const emit = defineEmits<Emits>();
@@ -65,7 +66,7 @@ const rules: Record<RuleKey, App.Global.FormRule> = {
   status: defaultRequiredRule
 };
 
-const roleId = computed(() => props.rowData?.id || -1);
+const roleId = computed(() => props.rowData?.id || '');
 
 const isEdit = computed(() => props.operateType === 'edit');
 
@@ -83,17 +84,20 @@ function closeDrawer() {
 
 async function handleSubmit() {
   await validate();
-  const data = {
-    ...model.value,
-    id: props.rowData?.id ?? Date.now(),
-    createBy: props.rowData?.createBy ?? 'Super',
-    createTime: props.rowData?.createTime ?? new Date().toLocaleString('sv-SE'),
-    updateBy: 'Super',
-    updateTime: new Date().toLocaleString('sv-SE')
-  } as Api.SystemManage.Role;
-  window.$message?.success('角色信息已保存（Mock）');
-  closeDrawer();
-  emit('submitted', data);
+
+  try {
+    if (props.operateType === 'edit' && props.rowData) {
+      await updateRole({ ...model.value, id: props.rowData.id } as Api.SystemManage.Role);
+    } else {
+      await addRole(model.value as Api.SystemManage.Role);
+    }
+
+    window.$message?.success($t('common.updateSuccess'));
+    closeDrawer();
+    emit('submitted');
+  } catch {
+    // request errors are surfaced by the request layer
+  }
 }
 
 watch(visible, () => {

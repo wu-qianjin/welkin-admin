@@ -260,7 +260,7 @@ export const mockButtonPermissionTree = [
   { key: 'monitor:alert', label: '告警中心 / 处理告警', code: 'B_MONITOR_ALERT_HANDLE' }
 ];
 
-export const mockRolePermissions: Record<number, { menus: string[]; buttons: string[] }> = {
+export const mockRolePermissions: Record<string, { menus: string[]; buttons: string[] }> = {
   1: {
     menus: flattenMenuKeys(mockPermissionTree),
     buttons: mockButtonPermissionTree.map(item => item.key)

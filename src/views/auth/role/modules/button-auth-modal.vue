@@ -5,7 +5,7 @@ import { mockButtonPermissionTree, mockRolePermissions } from '@/mock/admin';
 defineOptions({ name: 'ButtonAuthModal' });
 
 interface Props {
-  roleId: number;
+  roleId: string;
 }
 
 const props = defineProps<Props>();
