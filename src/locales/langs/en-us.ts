@@ -39,6 +39,7 @@ const local: App.I18n.Schema = {
     refresh: 'Refresh',
     reset: 'Reset',
     search: 'Search',
+    sessionExpired: 'Session expired, please log in again',
     switch: 'Switch',
     tip: 'Tip',
     trigger: 'Trigger',

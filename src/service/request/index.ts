@@ -68,6 +68,7 @@ export const alova = createAlovaRequest(
       // when the backend response code is in `logoutCodes`, it means the user will be logged out and redirected to login page
       const logoutCodes = import.meta.env.VITE_SERVICE_LOGOUT_CODES?.split(',') || [];
       if (logoutCodes.includes(responseCode)) {
+        window.$message?.error($t('common.sessionExpired'));
         handleLogout();
         throw error;
       }

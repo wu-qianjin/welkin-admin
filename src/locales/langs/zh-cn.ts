@@ -39,6 +39,7 @@ const local: App.I18n.Schema = {
     refresh: '刷新',
     reset: '重置',
     search: '搜索',
+    sessionExpired: '登录已过期，请重新登录',
     switch: '切换',
     tip: '提示',
     trigger: '触发',

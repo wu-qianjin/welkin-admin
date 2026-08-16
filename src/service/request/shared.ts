@@ -1,5 +1,6 @@
 import { useAuthStore } from '@/store/modules/auth';
 import { localStg } from '@/utils/storage';
+import { $t } from '@/locales';
 import { fetchRefreshToken } from '../api';
 import type { RequestInstanceState } from './type';
 
@@ -30,6 +31,7 @@ export async function handleRefreshToken() {
     localStg.set('token', accessToken);
     localStg.set('refreshToken', data.refreshToken);
   } catch (error) {
+    window.$message?.error($t('common.sessionExpired'));
     resetStore();
     throw error;
   }
