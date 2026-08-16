@@ -1,18 +1,18 @@
 import { alova } from '../request';
 
 /**
- * Login
+ * Login (real backend via gateway; contract: docs/iam/openapi.yaml)
  *
  * @param userName User name
  * @param password Password
  */
 export function fetchLogin(userName: string, password: string) {
-  return alova.Post<Api.Auth.LoginToken>('/auth/login', { userName, password });
+  return alova.Post<Api.Auth.LoginToken>('/v1/iam/auth/login', { userName, password });
 }
 
-/** Get user info */
+/** Get user info (real backend via gateway) */
 export function fetchGetUserInfo() {
-  return alova.Get<Api.Auth.UserInfo>('/auth/getUserInfo');
+  return alova.Get<Api.Auth.UserInfo>('/v1/iam/auth/userInfo');
 }
 
 /** Send captcha to target phone */
@@ -51,7 +51,7 @@ export function fetchScanLogin(scanToken: string) {
  */
 export function fetchRefreshToken(refreshToken: string) {
   return alova.Post<Api.Auth.LoginToken>(
-    '/auth/refreshToken',
+    '/v1/iam/auth/refreshToken',
     { refreshToken },
     {
       meta: {
