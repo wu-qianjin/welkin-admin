@@ -17,7 +17,7 @@ type DeptOperateType = 'addChild' | 'edit';
 
 const loading = ref(false);
 const deptTree = shallowRef<Api.SystemManage.Dept[]>([]);
-const selectedId = ref<number | null>(null);
+const selectedId = ref<string | null>(null);
 
 const searchParams = ref<Api.SystemManage.DeptSearchParams>({
   current: 1,
@@ -30,7 +30,7 @@ function handleSearch() {
   loadData();
 }
 
-function findDept(depts: Api.SystemManage.Dept[], id: number | null): Api.SystemManage.Dept | null {
+function findDept(depts: Api.SystemManage.Dept[], id: string | null): Api.SystemManage.Dept | null {
   if (id === null) {
     return null;
   }
@@ -54,7 +54,7 @@ const childRows = computed(() => selectedDept.value?.children ?? []);
 
 interface DeptTreeNode {
   [key: string]: unknown;
-  id: number;
+  id: string;
   deptName: string;
   children?: DeptTreeNode[];
 }
@@ -89,9 +89,9 @@ async function loadData() {
   }
 }
 
-const expandedKeys = ref<number[]>([]);
+const expandedKeys = ref<string[]>([]);
 
-function collectDeptIds(depts: Api.SystemManage.Dept[], ids: number[] = []): number[] {
+function collectDeptIds(depts: Api.SystemManage.Dept[], ids: string[] = []): string[] {
   depts.forEach(dept => {
     ids.push(dept.id);
     if (dept.children?.length) {
@@ -110,7 +110,7 @@ function collapseAll() {
 }
 
 /** selecting a node expands it if needed, but never collapses an expanded one */
-function handleTreeSelect(keys: number[]) {
+function handleTreeSelect(keys: string[]) {
   selectedId.value = keys[0] ?? null;
 
   if (selectedId.value !== null && !expandedKeys.value.includes(selectedId.value)) {
@@ -260,7 +260,7 @@ function handleEdit(row: Api.SystemManage.Dept) {
   drawerVisible.value = true;
 }
 
-async function handleDelete(id: number) {
+async function handleDelete(id: string) {
   try {
     await deleteDept(id);
     window.$message?.success($t('common.deleteSuccess'));
@@ -272,7 +272,7 @@ async function handleDelete(id: number) {
 
 async function handleBatchDelete() {
   try {
-    await batchDeleteDept(checkedRowKeys.value.map(Number));
+    await batchDeleteDept(checkedRowKeys.value.map(String));
     checkedRowKeys.value = [];
     window.$message?.success($t('common.deleteSuccess'));
     await loadData();

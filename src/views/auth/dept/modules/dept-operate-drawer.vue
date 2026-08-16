@@ -41,7 +41,7 @@ const model = ref(createDefaultModel());
 function createDefaultModel() {
   return {
     deptName: '',
-    parentId: 0,
+    parentId: '0',
     leader: '',
     phone: '',
     email: '',
@@ -58,7 +58,7 @@ const rules: Record<string, App.Global.FormRule[]> = {
   email: [patternRules.email]
 };
 
-type TreeOption = { key: number; label: string; children?: TreeOption[] };
+type TreeOption = { key: string; label: string; children?: TreeOption[] };
 
 /** tree options of all depts for parent selection */
 const deptTreeOptions = shallowRef<TreeOption[]>([]);
@@ -81,7 +81,7 @@ async function getDeptTreeOptions() {
 }
 
 /** when editing, disable the node itself and its descendants as parent options */
-function disableSelfSubtree(options: TreeOption[], disabledId: number) {
+function disableSelfSubtree(options: TreeOption[], disabledId: string) {
   options.forEach(option => {
     if (option.key === disabledId) {
       option.children = undefined;
@@ -109,7 +109,7 @@ function handleInitModel() {
   if (props.isEdit && props.rowData) {
     disableSelfSubtree(options, props.rowData.id);
   }
-  computedTreeOptions.value = [{ key: 0, label: $t('page.manage.dept.rootDept'), children: options }];
+  computedTreeOptions.value = [{ key: '0', label: $t('page.manage.dept.rootDept'), children: options }];
 }
 
 function closeDrawer() {

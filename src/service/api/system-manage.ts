@@ -225,38 +225,87 @@ export function batchDeleteDictOption(ids: number[]) {
   return alova.Delete<null>('/systemManage/batchDeleteDictOption', { ids });
 }
 
-// ---------------- dept ----------------
+// ---------------- dept (real backend via gateway, contract: docs/iam/openapi.yaml) ----------------
 
 export type DeptModel = Pick<
   Api.SystemManage.Dept,
   'deptName' | 'parentId' | 'leader' | 'phone' | 'email' | 'order' | 'status'
 >;
 
-/** get dept list (hierarchical) */
-export function fetchGetDeptList(params?: Api.SystemManage.DeptSearchParams) {
-  return alova.Get<Api.SystemManage.DeptList>('/systemManage/getDeptList', {
-    params: cleanParams(params)
+/** backend dept node (status is int 0/1) */
+interface BackendDeptNode {
+  id: string;
+  parentId: string;
+  deptName: string;
+  leader: string;
+  phone: string;
+  email: string;
+  order: number;
+  status: number;
+  createTime: string;
+  children: BackendDeptNode[] | null;
+}
+
+/** adapter: backend status(0/1) -> frontend EnableStatus("1"/"2") */
+function adaptDeptNode(node: BackendDeptNode): Api.SystemManage.Dept {
+  return {
+    id: node.id,
+    parentId: node.parentId,
+    deptName: node.deptName,
+    leader: node.leader,
+    phone: node.phone,
+    email: node.email,
+    order: node.order,
+    status: node.status === 1 ? '1' : '2',
+    createTime: node.createTime,
+    createBy: '',
+    updateTime: '',
+    updateBy: '',
+    children: node.children?.map(adaptDeptNode) ?? null
+  };
+}
+
+/** adapter: frontend form model -> backend save request */
+function toDeptSaveReq(data: DeptModel & { id?: string }) {
+  return {
+    parentId: String(data.parentId ?? '0'),
+    deptName: data.deptName,
+    leader: data.leader ?? '',
+    phone: data.phone ?? '',
+    email: data.email ?? '',
+    order: data.order ?? 1,
+    status: data.status === '2' ? 0 : 1
+  };
+}
+
+/** get dept tree (hierarchical, POST /v1/iam/dept/tree) */
+export async function fetchGetDeptList(params?: Api.SystemManage.DeptSearchParams) {
+  const res = await alova.Post<BackendDeptNode[]>('/v1/iam/dept/tree', {
+    deptName: params?.deptName ?? '',
+    status: params?.status ? Number(params.status === '1' ? 1 : 0) : undefined
   });
+  const records = res.map(adaptDeptNode);
+  return { records, current: 1, size: records.length, total: records.length } as Api.SystemManage.DeptList;
 }
 
 /** add dept */
 export function addDept(data: DeptModel) {
-  return alova.Post<null>('/systemManage/addDept', data);
+  return alova.Post<{ id: string }>('/v1/iam/dept/create', toDeptSaveReq(data));
 }
 
 /** update dept */
 export function updateDept(data: DeptModel & Pick<Api.SystemManage.Dept, 'id'>) {
-  return alova.Post<null>('/systemManage/updateDept', data);
+  return alova.Put<null>(`/v1/iam/dept/update/${data.id}`, toDeptSaveReq(data));
 }
 
 /** delete dept */
-export function deleteDept(id: number) {
-  return alova.Delete<null>('/systemManage/deleteDept', { id });
+export function deleteDept(id: string) {
+  return alova.Delete<null>('/v1/iam/dept/delete', { ids: [id] });
 }
 
 /** batch delete dept */
-export function batchDeleteDept(ids: number[]) {
-  return alova.Delete<null>('/systemManage/batchDeleteDept', { ids });
+export function batchDeleteDept(ids: string[]) {
+  return alova.Delete<null>('/v1/iam/dept/delete', { ids });
 }
 
 // ---------------- api resource ----------------

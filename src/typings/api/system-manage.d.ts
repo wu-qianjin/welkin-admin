@@ -283,12 +283,13 @@ declare namespace Api {
       Pick<Api.SystemManage.DictOption, 'dictType' | 'optionLabel' | 'status'> & CommonSearchParams
     >;
 
-    /** department, children are only populated in list responses */
-    type Dept = Common.CommonRecord<{
+    /** department, children are only populated in list responses.
+     *  id/parentId are decimal strings (Snowflake IDs exceed JS safe integer). */
+    type Dept = Omit<Common.CommonRecord<{
       /** dept name */
       deptName: string;
       /** parent dept id, 0 for root */
-      parentId: number;
+      parentId: string;
       /** leader name */
       leader?: string | null;
       /** contact phone */
@@ -299,7 +300,7 @@ declare namespace Api {
       order: number;
       /** children depts */
       children?: Dept[] | null;
-    }>;
+    }>, 'id'> & { id: string };
 
     /** dept list */
     type DeptList = Common.PaginatingQueryRecord<Dept>;
