@@ -68,6 +68,8 @@ export interface ProfileData {
   userId: string;
   userName: string;
   nickName: string;
+  /** 头像文件预览路径（/v1/system/file/preview/{id}），空串表示未设置，需带 token 以 blob 方式加载 */
+  avatar: string;
   phone: string;
   email: string;
   gender: number;
@@ -92,7 +94,7 @@ export function fetchGetProfile() {
   return alova.Get<ProfileData>('/v1/iam/profile');
 }
 
-export function updateProfile(data: Pick<ProfileData, 'nickName' | 'phone' | 'email' | 'gender'>) {
+export function updateProfile(data: Pick<ProfileData, 'nickName' | 'phone' | 'email' | 'gender' | 'avatar'>) {
   return alova.Put<null>('/v1/iam/profile', data);
 }
 

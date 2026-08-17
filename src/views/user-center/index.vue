@@ -6,8 +6,11 @@ import {
   fetchGetProfile,
   fetchProfileSessions,
   revokeProfileSession,
-  updateProfile
+  updateProfile,
+  uploadFile
 } from '@/service/api';
+import { localStg } from '@/utils/storage';
+import { getServiceBaseURL } from '@/utils/service';
 import { useNoticeFeed } from '@/views/message/modules/notice-feed';
 
 defineOptions({
@@ -15,10 +18,13 @@ defineOptions({
 });
 
 const router = useRouter();
+const isHttpProxy = import.meta.env.DEV && import.meta.env.VITE_HTTP_PROXY === 'Y';
+const { baseURL: serviceBaseURL } = getServiceBaseURL(import.meta.env, isHttpProxy);
 const profile = reactive({
   userId: '',
   userName: '',
   nickName: '',
+  avatar: '',
   phone: '',
   email: '',
   gender: 0,
@@ -31,9 +37,38 @@ const profile = reactive({
   role: '',
   joinedAt: ''
 });
+const avatarSrc = ref('');
+const avatarUploading = ref(false);
 const devices = ref<
-  Array<{ id: string; device: string; current: boolean; ip: string; location: string; lastActive: string }>
+  Array<{ id: string; device: string; mobile: boolean; current: boolean; ip: string; lastActive: string }>
 >([]);
+
+/** 把原始 User-Agent 解析成短标签（如 "Chrome 151 · macOS"），避免整串 UA 撑坏列表 */
+function parseUserAgent(ua: string) {
+  if (!ua) return { label: '未知设备', mobile: false };
+  let browser = '未知设备';
+  if (/Edg\//.test(ua)) browser = 'Edge';
+  else if (/OPR\//.test(ua)) browser = 'Opera';
+  else if (/Chrome\//.test(ua)) browser = 'Chrome';
+  else if (/Firefox\//.test(ua)) browser = 'Firefox';
+  else if (/Safari\//.test(ua)) browser = 'Safari';
+  else if (/curl\//.test(ua)) browser = 'curl';
+  else if (/Go-http-client/.test(ua)) browser = 'Go HTTP Client';
+
+  let os = '';
+  if (/Windows NT 10/.test(ua)) os = 'Windows';
+  else if (/iPhone/.test(ua)) os = 'iPhone';
+  else if (/Android/.test(ua)) os = 'Android';
+  else if (/Mac OS X/.test(ua)) os = 'macOS';
+  else if (/Linux/.test(ua)) os = 'Linux';
+
+  const version = ua.match(/(?:Chrome|Firefox|Safari|Edge|OPR)\/(\d+)/)?.[1];
+  const label = version ? `${browser} ${version}` : browser;
+  return {
+    label: os ? `${label} · ${os}` : label,
+    mobile: /iPhone|Android|Mobile/i.test(ua)
+  };
+}
 const { notices, unreadCount, load: loadMessages, markRead: markMessageRead } = useNoticeFeed();
 const profileVisible = ref(false);
 const passwordVisible = ref(false);
@@ -54,10 +89,49 @@ function openProfile() {
 }
 
 async function saveProfile() {
-  await updateProfile({ ...profileForm, gender: profile.gender });
+  await updateProfile({ ...profileForm, gender: profile.gender, avatar: profile.avatar });
   Object.assign(profile, profileForm);
   profileVisible.value = false;
   window.$message?.success('个人资料已保存');
+}
+
+/** 头像存的是鉴权预览路径，<img> 无法携带 Authorization 头，需 fetch 成 blob 再生成 objectURL；必须拼 serviceBaseURL，直连 /v1 会被 Vite SPA fallback 吞掉 */
+async function loadAvatarBlob(path: string) {
+  if (avatarSrc.value) URL.revokeObjectURL(avatarSrc.value);
+  avatarSrc.value = '';
+  if (!path) return;
+  const token = localStg.get('token');
+  const res = await fetch(`${serviceBaseURL}${path}`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined
+  });
+  if (!res.ok) throw new Error('avatar request failed');
+  avatarSrc.value = URL.createObjectURL(await res.blob());
+}
+
+async function onAvatarChange(event: Event) {
+  const input = event.target as HTMLInputElement;
+  const file = input.files?.[0];
+  input.value = '';
+  if (!file || avatarUploading.value) return;
+  if (!file.type.startsWith('image/')) {
+    window.$message?.warning('请选择图片文件');
+    return;
+  }
+  if (file.size > 2 * 1024 * 1024) {
+    window.$message?.warning('头像图片不能超过 2MB');
+    return;
+  }
+  avatarUploading.value = true;
+  try {
+    const uploaded = await uploadFile(file, 'avatar');
+    const avatar = `/v1/system/file/preview/${uploaded.id}`;
+    await updateProfile({ ...profileForm, gender: profile.gender, avatar });
+    profile.avatar = avatar;
+    await loadAvatarBlob(avatar);
+    window.$message?.success('头像已更新');
+  } finally {
+    avatarUploading.value = false;
+  }
 }
 
 async function savePassword() {
@@ -95,14 +169,20 @@ async function loadProfile() {
     joinedAt: '—'
   });
   Object.assign(profileForm, { nickName: data.nickName, phone: data.phone, email: data.email });
-  devices.value = sessions.map((item, index) => ({
-    id: item.id,
-    device: item.userAgent || 'Unknown device',
-    current: index === 0,
-    ip: item.ip,
-    location: '—',
-    lastActive: item.createdAt
-  }));
+  void loadAvatarBlob(data.avatar).catch(() => {
+    avatarSrc.value = '';
+  });
+  devices.value = sessions.map((item, index) => {
+    const parsed = parseUserAgent(item.userAgent || '');
+    return {
+      id: item.id,
+      device: parsed.label,
+      mobile: parsed.mobile,
+      current: index === 0,
+      ip: item.ip || '—',
+      lastActive: item.createdAt
+    };
+  });
 }
 
 onMounted(() => {
@@ -116,7 +196,6 @@ onMounted(() => {
     <NCard :bordered="false" class="card-wrapper overflow-hidden">
       <div class="relative flex items-center gap-20px lt-sm:flex-col lt-sm:items-start">
         <div class="absolute right-0 top-0 size-180px rounded-full bg-primary:8 blur-2xl" />
-        <NAvatar :size="76" round :color="profile.avatarColor">{{ profile.avatarText }}</NAvatar>
         <div class="relative flex-1">
           <div class="flex-y-center gap-10px">
             <h2 class="m-0 text-22px font-600">{{ profile.nickName }}</h2>
@@ -189,7 +268,26 @@ onMounted(() => {
     <NGrid cols="1 l:24" responsive="screen" :x-gap="16" :y-gap="16">
       <NGi span="24 l:14">
         <NCard title="账户信息" :bordered="false" class="card-wrapper h-full">
-          <NDescriptions label-placement="left" bordered :column="2" size="small">
+          <div class="flex items-center gap-20px lt-sm:flex-col lt-sm:items-start">
+            <label class="group relative inline-flex shrink-0 cursor-pointer select-none" title="点击上传头像">
+              <!-- naive-ui Avatar：默认插槽有内容时永远渲染文字分支，src 仅在插槽为空时生效，因此有头像时不渲染兜底文字 -->
+              <NAvatar :size="64" round :color="profile.avatarColor" :src="avatarSrc || undefined">
+                <template v-if="!avatarSrc">{{ profile.avatarText }}</template>
+              </NAvatar>
+              <div
+                class="absolute inset-0 flex-center gap-2px rounded-full bg-black:45 text-12px text-white opacity-0 transition-opacity group-hover:opacity-100"
+              >
+                <icon-mdi-camera-outline class="text-14px" />
+                {{ avatarUploading ? '上传中' : '上传' }}
+              </div>
+              <input type="file" accept="image/*" class="hidden" @change="onAvatarChange" />
+            </label>
+            <div class="min-w-0 flex-1">
+              <div class="text-16px font-600">{{ profile.nickName }}</div>
+              <div class="mt-4px text-12px text-gray-5">点击头像可上传自定义头像（支持 2MB 内图片）</div>
+            </div>
+          </div>
+          <NDescriptions class="mt-16px" label-placement="left" bordered :column="2" size="small">
             <NDescriptionsItem label="登录账号">{{ profile.userName }}</NDescriptionsItem>
             <NDescriptionsItem label="所属部门">{{ profile.department }}</NDescriptionsItem>
             <NDescriptionsItem label="邮箱">{{ profile.email }}</NDescriptionsItem>
@@ -220,52 +318,59 @@ onMounted(() => {
       </NGi>
     </NGrid>
 
-    <NCard title="登录设备" :bordered="false" class="card-wrapper">
-      <template #header-extra><span class="text-12px text-gray-5">仅保留你认识的设备</span></template>
-      <NList hoverable>
-        <NListItem v-for="device in devices" :key="device.id">
-          <div class="flex-y-center gap-12px lt-sm:items-start">
-            <div class="size-36px flex-center rounded-8px bg-primary:10 text-primary">
-              <icon-mdi-cellphone-link v-if="device.device.includes('iPhone')" class="text-20px" />
-              <icon-mdi-laptop v-else class="text-20px" />
-            </div>
-            <div class="min-w-0 flex-1">
-              <div class="flex-y-center gap-8px">
-                <span class="font-500">{{ device.device }}</span>
-                <NTag v-if="device.current" type="success" size="small" round>当前设备</NTag>
-              </div>
-              <div class="mt-4px text-12px text-gray-5">
-                {{ device.ip }} · {{ device.location }} · {{ device.lastActive }}
-              </div>
-            </div>
-            <NButton v-if="!device.current" size="small" quaternary type="error" @click="removeDevice(device.id)">
-              下线
-            </NButton>
+    <NGrid cols="1 l:24" responsive="screen" :x-gap="16" :y-gap="16">
+      <NGi span="24 l:14">
+        <NCard title="登录设备" :bordered="false" class="card-wrapper h-full">
+          <template #header-extra>
+            <span class="text-12px text-gray-5">共 {{ devices.length }} 台，默认展示 5 条可滚动查看</span>
+          </template>
+          <div class="max-h-348px overflow-y-auto">
+            <NList hoverable>
+              <NListItem v-for="device in devices" :key="device.id">
+                <div class="flex-y-center gap-12px lt-sm:items-start">
+                  <div class="size-36px flex-center rounded-8px bg-primary:10 text-primary">
+                    <icon-mdi-cellphone-link v-if="device.mobile" class="text-20px" />
+                    <icon-mdi-laptop v-else class="text-20px" />
+                  </div>
+                  <div class="min-w-0 flex-1">
+                    <div class="flex-y-center gap-8px">
+                      <span class="truncate font-500">{{ device.device }}</span>
+                      <NTag v-if="device.current" type="success" size="small" round>当前设备</NTag>
+                    </div>
+                    <div class="mt-4px truncate text-12px text-gray-5">{{ device.ip }} · {{ device.lastActive }}</div>
+                  </div>
+                  <NButton v-if="!device.current" size="small" quaternary type="error" @click="removeDevice(device.id)">
+                    下线
+                  </NButton>
+                </div>
+              </NListItem>
+            </NList>
           </div>
-        </NListItem>
-      </NList>
-    </NCard>
-
-    <NCard title="待处理消息" :bordered="false" class="card-wrapper">
-      <template #header-extra><NButton text type="primary" @click="goMessageCenter">查看全部</NButton></template>
-      <NList hoverable>
-        <NListItem
-          v-for="notice in notices.slice(0, 3)"
-          :key="notice.id"
-          class="cursor-pointer"
-          @click="markNoticeRead(notice.id)"
-        >
-          <div class="flex-y-center gap-12px">
-            <span class="size-8px shrink-0 rounded-full" :class="notice.read ? 'bg-gray-3' : 'bg-primary'" />
-            <div class="min-w-0 flex-1">
-              <div class="truncate font-500">{{ notice.title }}</div>
-              <div class="mt-4px truncate text-12px text-gray-5">{{ notice.summary }}</div>
-            </div>
-            <span class="shrink-0 text-12px text-gray-4">{{ notice.publishAt }}</span>
-          </div>
-        </NListItem>
-      </NList>
-    </NCard>
+        </NCard>
+      </NGi>
+      <NGi span="24 l:10">
+        <NCard title="待处理消息" :bordered="false" class="card-wrapper h-full">
+          <template #header-extra><NButton text type="primary" @click="goMessageCenter">查看全部</NButton></template>
+          <NList hoverable>
+            <NListItem
+              v-for="notice in notices.slice(0, 3)"
+              :key="notice.id"
+              class="cursor-pointer"
+              @click="markNoticeRead(notice.id)"
+            >
+              <div class="flex-y-center gap-12px">
+                <span class="size-8px shrink-0 rounded-full" :class="notice.read ? 'bg-gray-3' : 'bg-primary'" />
+                <div class="min-w-0 flex-1">
+                  <div class="truncate font-500">{{ notice.title }}</div>
+                  <div class="mt-4px truncate text-12px text-gray-5">{{ notice.summary }}</div>
+                </div>
+                <span class="shrink-0 text-12px text-gray-4">{{ notice.publishAt }}</span>
+              </div>
+            </NListItem>
+          </NList>
+        </NCard>
+      </NGi>
+    </NGrid>
 
     <NModal v-model:show="profileVisible" preset="card" title="编辑个人资料" class="w-520px">
       <NForm :model="profileForm" label-placement="left" label-width="80">
