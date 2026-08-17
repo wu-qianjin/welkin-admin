@@ -5,13 +5,12 @@ import { enableStatusRecord, userGenderRecord } from '@/constants/business';
 import { batchDeleteUser, deleteUser, fetchGetUserList } from '@/service/api';
 import { useAppStore } from '@/store/modules/app';
 import { defaultTransform, useNaivePaginatedTable, useTableOperate } from '@/hooks/common/table';
-import { useRouter } from 'vue-router';
 import { $t } from '@/locales';
+import UserDetailDrawer from './modules/user-detail-drawer.vue';
 import UserOperateDrawer from './modules/user-operate-drawer.vue';
 import UserSearch from './modules/user-search.vue';
 
 const appStore = useAppStore();
-const router = useRouter();
 
 const searchParams = ref<Api.SystemManage.UserSearchParams>({
   current: 1,
@@ -115,7 +114,7 @@ const { columns, columnChecks, data, getData, getDataByPage, loading, mobilePagi
       width: 200,
       render: row => (
         <div class="flex-center gap-8px">
-          <NButton type="info" ghost size="small" onClick={() => router.push(`/auth/user-detail/${row.id}`)}>
+          <NButton type="info" ghost size="small" onClick={() => openDetail(row.id)}>
             详情
           </NButton>
           <NButton type="primary" ghost size="small" onClick={() => edit(row.id)}>
@@ -163,6 +162,15 @@ function edit(id: string) {
   handleEdit(id);
 }
 
+// detail drawer: show user details without leaving the list
+const detailVisible = ref(false);
+const detailUserId = ref<string | null>(null);
+
+function openDetail(id: string) {
+  detailUserId.value = id;
+  detailVisible.value = true;
+}
+
 async function handleSubmitted(_row: Api.SystemManage.User) {
   await getData();
 }
@@ -201,6 +209,7 @@ async function handleSubmitted(_row: Api.SystemManage.User) {
         :row-data="editingData"
         @submitted="handleSubmitted"
       />
+      <UserDetailDrawer v-model:visible="detailVisible" :user-id="detailUserId" @updated="getData" />
     </NCard>
   </div>
 </template>

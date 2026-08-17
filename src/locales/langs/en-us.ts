@@ -783,6 +783,7 @@ const local: App.I18n.Schema = {
         createTime: 'Create Time',
         addDept: 'Add Department',
         editDept: 'Edit Department',
+        addRootDept: 'Add Root Dept',
         addChildDept: 'Add Child Dept',
         confirmDelete: 'Deletion fails if the dept has children, confirm?',
         form: {

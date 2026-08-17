@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
 import { jsonClone } from '@sa/utils';
-import { enableStatusOptions, userGenderOptions } from '@/constants/business';
+import { userGenderOptions } from '@/constants/business';
 import { addUser, fetchGetAllRoles, updateUser } from '@/service/api';
 import { useFormRules, useNaiveForm } from '@/hooks/common/form';
 import { $t } from '@/locales';
@@ -42,8 +42,10 @@ const title = computed(() => {
 
 type Model = Pick<
   Api.SystemManage.User,
-  'userName' | 'userGender' | 'nickName' | 'userPhone' | 'userEmail' | 'userRoles' | 'status'
->;
+  'userName' | 'userGender' | 'nickName' | 'userPhone' | 'userEmail' | 'userRoles'
+> & {
+  status: Api.Common.EnableStatus;
+};
 
 const model = ref(createDefaultModel());
 
@@ -55,7 +57,7 @@ function createDefaultModel(): Model {
     userPhone: '',
     userEmail: '',
     userRoles: [],
-    status: null
+    status: '1'
   };
 }
 
@@ -148,9 +150,7 @@ watch(visible, () => {
           <NInput v-model:value="model.userEmail" :placeholder="$t('page.manage.user.form.userEmail')" />
         </NFormItem>
         <NFormItem :label="$t('page.manage.user.userStatus')" path="status">
-          <NRadioGroup v-model:value="model.status">
-            <NRadio v-for="item in enableStatusOptions" :key="item.value" :value="item.value" :label="$t(item.label)" />
-          </NRadioGroup>
+          <NSwitch v-model:value="model.status" checked-value="1" unchecked-value="2" />
         </NFormItem>
         <NFormItem :label="$t('page.manage.user.userRole')" path="roles">
           <NSelect

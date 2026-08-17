@@ -943,6 +943,7 @@ declare namespace App {
             createTime: string;
             addDept: string;
             editDept: string;
+            addRootDept: string;
             addChildDept: string;
             confirmDelete: string;
             form: {

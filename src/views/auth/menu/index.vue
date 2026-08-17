@@ -1,5 +1,6 @@
 <script setup lang="tsx">
-import { computed, ref } from 'vue';
+import { computed, reactive, ref } from 'vue';
+import type { PaginationProps } from 'naive-ui';
 import type { Ref } from 'vue';
 import { NButton, NPopconfirm, NTag } from 'naive-ui';
 import { useBoolean } from '@sa/hooks';
@@ -20,14 +21,14 @@ const { bool: visible, setTrue: openModal } = useBoolean();
 const wrapperRef = ref<HTMLElement | null>(null);
 
 const searchParams = ref<Api.SystemManage.MenuSearchParams>({
-  current: 1,
-  size: 100,
+  current: null,
+  size: null,
   menuName: null,
   menuType: null,
   status: null
 });
 
-/** 后端分页 size 上限 100，循环取回全部菜单，前端建树展示 */
+/** 后端分页 size 上限 100，循环取回全部菜单，前端建完整树后本地分页展示 */
 async function fetchAllMenus(): Promise<Api.SystemManage.Menu[]> {
   const filters = {
     menuName: searchParams.value.menuName,
@@ -44,7 +45,7 @@ async function fetchAllMenus(): Promise<Api.SystemManage.Menu[]> {
   return records;
 }
 
-const { columns, columnChecks, data, loading, getData } = useNaiveTable({
+const { columns, columnChecks, data, getData, loading } = useNaiveTable({
   api: () => fetchAllMenus(),
   transform: menus => menus,
   columns: () => [
@@ -191,11 +192,41 @@ const { columns, columnChecks, data, loading, getData } = useNaiveTable({
   ]
 });
 
+/** 本地分页：naive-ui 非 remote 模式按顶层行切片，子级随父行嵌套展示 */
+const pagination = reactive({
+  page: 1,
+  pageSize: 20,
+  showSizePicker: true,
+  pageSizes: [10, 20, 50, 100],
+  onUpdatePage(page: number) {
+    pagination.page = page;
+  },
+  onUpdatePageSize(pageSize: number) {
+    pagination.pageSize = pageSize;
+    pagination.page = 1;
+  }
+}) as PaginationProps;
+
+const mobilePagination = computed(() => {
+  const p: PaginationProps = {
+    ...pagination,
+    pageSlot: appStore.isMobile ? 3 : 9,
+    prefix: info => (appStore.isMobile ? undefined : $t('datatable.itemCount', { total: info.itemCount ?? 0 }))
+  };
+
+  return p;
+});
+
+/** 搜索条件变化后回到第 1 页再取数 */
+async function handleSearch() {
+  pagination.page = 1;
+  await getData();
+}
+
 const { checkedRowKeys } = useTableOperate(data, 'id', getData);
 
 type MenuTreeNode = Omit<Api.SystemManage.Menu, 'children'> & { children?: MenuTreeNode[] };
 
-/** 平铺菜单按 parentId 建树，默认只展示一级、行内展开子级；搜索命中的孤儿节点提升为根节点展示 */
 const treeData = computed<MenuTreeNode[]>(() => {
   const nodes = new Map<string, MenuTreeNode>();
   for (const item of data.value) nodes.set(item.id, { ...item, children: undefined });
@@ -210,7 +241,9 @@ const treeData = computed<MenuTreeNode[]>(() => {
     }
   }
   const sortNodes = (list: MenuTreeNode[]) => {
-    list.sort((a, b) => (a.order ?? 0) - (b.order ?? 0) || a.id.localeCompare(b.id));
+    list.sort(
+      (a, b) => a.menuType.localeCompare(b.menuType) || (a.order ?? 0) - (b.order ?? 0) || a.id.localeCompare(b.id)
+    );
     for (const node of list) {
       if (node.children?.length) {
         sortNodes(node.children);
@@ -259,10 +292,8 @@ function handleAddChildMenu(item: Api.SystemManage.Menu) {
   openModal();
 }
 
-function handleSubmitted(row: Api.SystemManage.Menu) {
-  const index = data.value.findIndex(item => item.id === row.id);
-  if (index >= 0) data.value[index] = row;
-  else data.value.unshift(row);
+async function handleSubmitted(_row: Api.SystemManage.Menu) {
+  await getData();
 }
 
 const allPages = ref<string[]>([]);
@@ -286,7 +317,7 @@ init();
 
 <template>
   <div ref="wrapperRef" class="flex-col-stretch gap-16px overflow-hidden lt-sm:overflow-auto">
-    <MenuSearch v-model:model="searchParams" @search="getData" />
+    <MenuSearch v-model:model="searchParams" @search="handleSearch" />
     <NCard :title="$t('page.manage.menu.title')" :bordered="false" size="small" class="card-wrapper sm:flex-1-hidden">
       <template #header-extra>
         <TableHeaderOperation
@@ -307,7 +338,7 @@ init();
         :scroll-x="998"
         :loading="loading"
         :row-key="row => row.id"
-        :pagination="false"
+        :pagination="mobilePagination"
         class="sm:h-full"
       />
       <MenuOperateModal

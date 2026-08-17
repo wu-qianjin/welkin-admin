@@ -779,6 +779,7 @@ const local: App.I18n.Schema = {
         createTime: '创建时间',
         addDept: '新增部门',
         editDept: '编辑部门',
+        addRootDept: '新增根部门',
         addChildDept: '新增子部门',
         confirmDelete: '若该部门存在子部门将无法删除，确认删除？',
         form: {

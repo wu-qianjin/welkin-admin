@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
 import { jsonClone } from '@sa/utils';
-import { enableStatusOptions } from '@/constants/business';
 import { addRole, updateRole } from '@/service/api';
 import { useFormRules, useNaiveForm } from '@/hooks/common/form';
 import { $t } from '@/locales';
@@ -39,7 +38,9 @@ const title = computed(() => {
   return titles[props.operateType];
 });
 
-type Model = Pick<Api.SystemManage.Role, 'roleName' | 'roleCode' | 'roleDesc' | 'status'>;
+type Model = Pick<Api.SystemManage.Role, 'roleName' | 'roleCode' | 'roleDesc'> & {
+  status: Api.Common.EnableStatus;
+};
 
 const model = ref(createDefaultModel());
 
@@ -48,7 +49,7 @@ function createDefaultModel(): Model {
     roleName: '',
     roleCode: '',
     roleDesc: '',
-    status: null
+    status: '1'
   };
 }
 
@@ -106,12 +107,14 @@ watch(visible, () => {
           <NInput v-model:value="model.roleName" :placeholder="$t('page.manage.role.form.roleName')" />
         </NFormItem>
         <NFormItem :label="$t('page.manage.role.roleCode')" path="roleCode">
-          <NInput v-model:value="model.roleCode" :placeholder="$t('page.manage.role.form.roleCode')" />
+          <NInput
+            v-model:value="model.roleCode"
+            :placeholder="$t('page.manage.role.form.roleCode')"
+            :disabled="props.operateType === 'edit'"
+          />
         </NFormItem>
         <NFormItem :label="$t('page.manage.role.roleStatus')" path="status">
-          <NRadioGroup v-model:value="model.status">
-            <NRadio v-for="item in enableStatusOptions" :key="item.value" :value="item.value" :label="$t(item.label)" />
-          </NRadioGroup>
+          <NSwitch v-model:value="model.status" checked-value="1" unchecked-value="2" />
         </NFormItem>
         <NFormItem :label="$t('page.manage.role.roleDesc')" path="roleDesc">
           <NInput v-model:value="model.roleDesc" :placeholder="$t('page.manage.role.form.roleDesc')" />

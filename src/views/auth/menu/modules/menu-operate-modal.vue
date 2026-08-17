@@ -1,7 +1,8 @@
 <script setup lang="tsx">
 import { computed, ref, watch } from 'vue';
 import type { SelectOption } from 'naive-ui';
-import { enableStatusOptions, menuIconTypeOptions, menuTypeOptions } from '@/constants/business';
+import { menuIconTypeOptions, menuTypeOptions } from '@/constants/business';
+
 import { addMenu, fetchGetAllRoles, updateMenu } from '@/service/api';
 import { useFormRules, useNaiveForm } from '@/hooks/common/form';
 import { getLocalIcons } from '@/utils/icon';
@@ -65,14 +66,9 @@ type Model = Pick<
   | 'i18nKey'
   | 'icon'
   | 'iconType'
-  | 'status'
   | 'parentId'
-  | 'keepAlive'
-  | 'constant'
   | 'href'
-  | 'hideInMenu'
   | 'activeMenu'
-  | 'multiTab'
   | 'fixedIndexInTab'
 > & {
   query: NonNullable<Api.SystemManage.Menu['query']>;
@@ -80,6 +76,11 @@ type Model = Pick<
   layout: string;
   page: string;
   pathParam: string;
+  status: Api.Common.EnableStatus;
+  keepAlive: boolean;
+  constant: boolean;
+  hideInMenu: boolean;
+  multiTab: boolean;
 };
 
 const model = ref(createDefaultModel());
@@ -353,35 +354,19 @@ watch(
             </template>
           </NFormItemGi>
           <NFormItemGi span="24 m:12" :label="$t('page.manage.menu.menuStatus')" path="status">
-            <NRadioGroup v-model:value="model.status">
-              <NRadio
-                v-for="item in enableStatusOptions"
-                :key="item.value"
-                :value="item.value"
-                :label="$t(item.label)"
-              />
-            </NRadioGroup>
+            <NSwitch v-model:value="model.status" checked-value="1" unchecked-value="2" />
           </NFormItemGi>
           <NFormItemGi span="24 m:12" :label="$t('page.manage.menu.keepAlive')" path="keepAlive">
-            <NRadioGroup v-model:value="model.keepAlive">
-              <NRadio :value="true" :label="$t('common.yesOrNo.yes')" />
-              <NRadio :value="false" :label="$t('common.yesOrNo.no')" />
-            </NRadioGroup>
+            <NSwitch v-model:value="model.keepAlive" />
           </NFormItemGi>
           <NFormItemGi span="24 m:12" :label="$t('page.manage.menu.constant')" path="constant">
-            <NRadioGroup v-model:value="model.constant">
-              <NRadio :value="true" :label="$t('common.yesOrNo.yes')" />
-              <NRadio :value="false" :label="$t('common.yesOrNo.no')" />
-            </NRadioGroup>
+            <NSwitch v-model:value="model.constant" />
           </NFormItemGi>
           <NFormItemGi span="24 m:12" :label="$t('page.manage.menu.href')" path="href">
             <NInput v-model:value="model.href" :placeholder="$t('page.manage.menu.form.href')" />
           </NFormItemGi>
           <NFormItemGi span="24 m:12" :label="$t('page.manage.menu.hideInMenu')" path="hideInMenu">
-            <NRadioGroup v-model:value="model.hideInMenu">
-              <NRadio :value="true" :label="$t('common.yesOrNo.yes')" />
-              <NRadio :value="false" :label="$t('common.yesOrNo.no')" />
-            </NRadioGroup>
+            <NSwitch v-model:value="model.hideInMenu" />
           </NFormItemGi>
           <NFormItemGi
             v-if="model.hideInMenu"
@@ -397,10 +382,7 @@ watch(
             />
           </NFormItemGi>
           <NFormItemGi span="24 m:12" :label="$t('page.manage.menu.multiTab')" path="multiTab">
-            <NRadioGroup v-model:value="model.multiTab">
-              <NRadio :value="true" :label="$t('common.yesOrNo.yes')" />
-              <NRadio :value="false" :label="$t('common.yesOrNo.no')" />
-            </NRadioGroup>
+            <NSwitch v-model:value="model.multiTab" />
           </NFormItemGi>
           <NFormItemGi span="24 m:12" :label="$t('page.manage.menu.fixedIndexInTab')" path="fixedIndexInTab">
             <NInputNumber

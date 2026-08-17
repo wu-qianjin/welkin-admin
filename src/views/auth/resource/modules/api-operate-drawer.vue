@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
 import { jsonClone } from '@sa/utils';
-import { apiMethodOptions, enableStatusOptions } from '@/constants/business';
+import { apiMethodOptions } from '@/constants/business';
 import { addApi, updateApi } from '@/service/api';
 import { useFormRules, useNaiveForm } from '@/hooks/common/form';
 import { $t } from '@/locales';
@@ -109,9 +109,7 @@ watch(visible, () => {
           <NInput v-model:value="model.apiModule" :placeholder="$t('page.manage.resource.api.form.apiModule')" />
         </NFormItem>
         <NFormItem :label="$t('page.manage.resource.status')" path="status">
-          <NRadioGroup v-model:value="model.status">
-            <NRadio v-for="item in enableStatusOptions" :key="item.value" :value="item.value" :label="$t(item.label)" />
-          </NRadioGroup>
+          <NSwitch v-model:value="model.status" checked-value="1" unchecked-value="2" />
         </NFormItem>
         <NFormItem :label="$t('page.manage.resource.remark')" path="remark">
           <NInput

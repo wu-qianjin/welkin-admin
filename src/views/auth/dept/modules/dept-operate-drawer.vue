@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref, shallowRef, watch } from 'vue';
 import { jsonClone } from '@sa/utils';
-import { enableStatusOptions } from '@/constants/business';
 import { addDept, fetchGetDeptList, updateDept } from '@/service/api';
 import { useFormRules, useNaiveForm } from '@/hooks/common/form';
 import { $t } from '@/locales';
@@ -175,9 +174,7 @@ watch(visible, async visibleNow => {
           <NInputNumber v-model:value="model.order" class="w-full" :min="1" />
         </NFormItem>
         <NFormItem :label="$t('page.manage.dept.status')" path="status">
-          <NRadioGroup v-model:value="model.status">
-            <NRadio v-for="item in enableStatusOptions" :key="item.value" :value="item.value" :label="$t(item.label)" />
-          </NRadioGroup>
+          <NSwitch v-model:value="model.status" checked-value="1" unchecked-value="2" />
         </NFormItem>
       </NForm>
       <template #footer>

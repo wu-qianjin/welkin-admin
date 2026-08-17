@@ -12,8 +12,8 @@ defineOptions({
   name: 'DeptManage'
 });
 
-/** the type of the operate drawer: addChild / edit */
-type DeptOperateType = 'addChild' | 'edit';
+/** the type of the operate drawer: addRoot / addChild / edit */
+type DeptOperateType = 'addRoot' | 'addChild' | 'edit';
 
 const loading = ref(false);
 const deptTree = shallowRef<Api.SystemManage.Dept[]>([]);
@@ -240,11 +240,20 @@ const parentDept = ref<Api.SystemManage.Dept | null>(null);
 
 const drawerTitle = computed(() => {
   const titles: Record<DeptOperateType, string> = {
+    addRoot: $t('page.manage.dept.addRootDept'),
     addChild: $t('page.manage.dept.addChildDept'),
     edit: $t('page.manage.dept.editDept')
   };
   return titles[deptOperateType.value];
 });
+
+/** create a root dept (parent = 顶级部门), the only entry when the tree is empty */
+function handleAddRoot() {
+  deptOperateType.value = 'addRoot';
+  parentDept.value = null;
+  editingData.value = null;
+  drawerVisible.value = true;
+}
 
 function handleAddChild(dept: Api.SystemManage.Dept | null) {
   deptOperateType.value = 'addChild';
@@ -302,6 +311,14 @@ function renderTreeSuffix({ option }: { option: unknown }) {
         <div class="flex-y-center gap-2px">
           <NTooltip trigger="hover">
             <template #trigger>
+              <NButton size="tiny" quaternary type="primary" class="h-24px px-6px" @click="handleAddRoot">
+                <NIcon size="14"><icon-ic-round-plus class="text-icon" /></NIcon>
+              </NButton>
+            </template>
+            {{ $t('page.manage.dept.addRootDept') }}
+          </NTooltip>
+          <NTooltip trigger="hover">
+            <template #trigger>
               <NButton size="tiny" quaternary class="h-24px px-6px" @click="expandAll">
                 <NIcon size="14"><icon-mdi-unfold-more-horizontal /></NIcon>
               </NButton>
@@ -331,7 +348,16 @@ function renderTreeSuffix({ option }: { option: unknown }) {
           :render-suffix="renderTreeSuffix"
           @update:selected-keys="handleTreeSelect"
         />
-        <NEmpty v-else class="py-60px" :description="$t('page.manage.dept.noMatchDept')" />
+        <NEmpty v-else class="py-60px" :description="$t('page.manage.dept.noMatchDept')">
+          <template #extra>
+            <NButton size="small" type="primary" ghost @click="handleAddRoot">
+              <template #icon>
+                <NIcon><icon-ic-round-plus class="text-icon" /></NIcon>
+              </template>
+              {{ $t('page.manage.dept.addRootDept') }}
+            </NButton>
+          </template>
+        </NEmpty>
       </NSpin>
     </NCard>
 
