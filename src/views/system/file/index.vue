@@ -8,7 +8,11 @@ import { useAppStore } from '@/store/modules/app';
 import { defaultTransform, useNaivePaginatedTable, useTableOperate } from '@/hooks/common/table';
 import { $t } from '@/locales';
 import { localStg } from '@/utils/storage';
+import { getServiceBaseURL } from '@/utils/service';
 import FileSearch from './modules/file-search.vue';
+
+const isHttpProxy = import.meta.env.DEV && import.meta.env.VITE_HTTP_PROXY === 'Y';
+const { baseURL: serviceBaseURL } = getServiceBaseURL(import.meta.env, isHttpProxy);
 
 defineOptions({
   name: 'FileManage'
@@ -162,15 +166,6 @@ function formatFileSize(size: number) {
   return `${(size / 1024 / 1024 / 1024).toFixed(1)} GB`;
 }
 
-function getFileTypeByExtension(fileName: string): Api.SystemManage.FileType {
-  const ext = fileName.split('.').pop()?.toLowerCase() || '';
-
-  if (['png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp', 'svg'].includes(ext)) return '1';
-  if (['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'pdf', 'txt', 'md', 'csv'].includes(ext)) return '2';
-  if (['zip', 'rar', '7z', 'tar', 'gz', 'bz2'].includes(ext)) return '3';
-  return '4';
-}
-
 async function handleUpload({ file, onFinish, onError }: UploadCustomRequestOptions) {
   const raw = file.file;
 
@@ -209,7 +204,7 @@ function preview(row: Api.SystemManage.SystemFile) {
 
 async function fetchFile(row: Api.SystemManage.SystemFile, action: 'preview' | 'download') {
   const token = localStg.get('token');
-  const response = await fetch(`/v1/system/file/${action}/${encodeURIComponent(row.id)}`, {
+  const response = await fetch(`${serviceBaseURL}/v1/system/file/${action}/${encodeURIComponent(row.id)}`, {
     headers: token ? { Authorization: `Bearer ${token}` } : undefined
   });
   if (!response.ok) throw new Error('file request failed');
