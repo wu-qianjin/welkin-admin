@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, h, onMounted, ref } from 'vue';
 import { NTag } from 'naive-ui';
+import dayjs from 'dayjs';
 import type { ECOption } from '@/hooks/common/echarts';
 import { useEcharts } from '@/hooks/common/echarts';
 import {
@@ -23,12 +24,13 @@ const services = ref<Api.Gateway.Service[]>([]);
 const servers = ref<Api.Monitor.Server[]>([]);
 const alerts = ref<import('@/service/api/monitor').MonitorAlertItem[]>([]);
 
+const pendingAlertCount = computed(() => alerts.value.filter(item => item.status === 1 || item.status === 2).length);
+const severeAlertCount = computed(() => alerts.value.filter(item => item.level >= 3 && item.status !== 3).length);
+
 const healthCards = computed(() => {
   const overview = gatewayOverview.value;
-  const online = servers.value.filter(item => item.status === 1 || item.status === '1').length;
-  const total = servers.value.length;
-  const pending = alerts.value.filter(item => item.status === 1 || item.status === 2).length;
-  const severe = alerts.value.filter(item => item.level >= 3 && item.status !== 3).length;
+  const online = overview?.onlineServices ?? 0;
+  const total = overview?.totalServices ?? 0;
   return [
     {
       label: '服务实例',
@@ -36,7 +38,7 @@ const healthCards = computed(() => {
       detail: total && online < total ? `${total - online} 个实例异常` : '全部实例正常',
       icon: 'mdi:server',
       color: '#2563eb',
-      status: 'warning'
+      status: total && online < total ? 'warning' : 'success'
     },
     {
       label: '网关错误率',
@@ -72,8 +74,8 @@ const healthCards = computed(() => {
     },
     {
       label: '待处理告警',
-      value: String(pending),
-      detail: `${severe} 严重 / ${Math.max(0, pending - severe)} 其他`,
+      value: String(pendingAlertCount.value),
+      detail: `${severeAlertCount.value} 严重 / ${Math.max(0, pendingAlertCount.value - severeAlertCount.value)} 其他`,
       icon: 'mdi:bell-alert-outline',
       color: '#dc2626',
       status: 'error'
@@ -81,17 +83,23 @@ const healthCards = computed(() => {
   ];
 });
 
+/** 以网关发现的服务为准（与"基础依赖健康"同源），合并 monitor 上报的实例指标 */
 const serviceHealth = computed(() =>
-  servers.value.map(server => ({
-    name: server.serviceName,
-    code: server.serviceCode,
-    host: `${server.host}:${server.port}`,
-    status: server.status === 1 || server.status === '1' ? '运行中' : '离线',
-    cpu: server.cpuPercent,
-    memory: server.memPercent,
-    qps: 0,
-    version: server.version || server.goVersion
-  }))
+  services.value.map(service => {
+    const server = servers.value.find(item => item.serviceName === service.serviceName);
+    return {
+      name: service.serviceName,
+      code: server?.serviceCode || service.serviceName,
+      host: server
+        ? `${server.host}:${server.port}`
+        : `健康实例 ${service.healthyInstanceCount}/${service.instanceCount}`,
+      status: service.status === 1 ? '运行中' : '离线',
+      cpu: server?.cpuPercent ?? null,
+      memory: server?.memPercent ?? null,
+      routes: service.routeCount,
+      version: server?.version || server?.goVersion || ''
+    };
+  })
 );
 
 const dependencies = computed(() =>
@@ -124,7 +132,11 @@ const trendOption = (): ECOption => ({
   tooltip: { trigger: 'axis' },
   legend: { top: 0, right: 0 },
   grid: { left: 8, right: 16, top: 34, bottom: 8, containLabel: true },
-  xAxis: { type: 'category', boundaryGap: false, data: trendPoints.value.map(item => item.time) },
+  xAxis: {
+    type: 'category',
+    boundaryGap: false,
+    data: trendPoints.value.map(item => dayjs(item.time).format('YYYY-MM-DD HH:mm:ss'))
+  },
   yAxis: { type: 'value', splitNumber: 4 },
   series: [
     {
@@ -213,7 +225,7 @@ onMounted(async () => {
           <NButton type="warning" ghost @click="goAlerts">
             <template #icon><icon-mdi-bell-alert-outline /></template>
             告警中心
-            <NBadge :value="2" class="ml-6px" />
+            <NBadge :value="pendingAlertCount" class="ml-6px" />
           </NButton>
           <NButton type="primary" :loading="refreshing" @click="refresh">
             <template #icon><icon-mdi-refresh /></template>
@@ -290,7 +302,7 @@ onMounted(async () => {
       <template #header-extra>
         <NButton text type="primary" @click="router.push('/monitor/runtime/server')">查看实例监控</NButton>
       </template>
-      <NGrid cols="1 s:2 m:3" responsive="screen" :x-gap="12" :y-gap="12">
+      <NGrid cols="1 s:2 m:4" responsive="screen" :x-gap="12" :y-gap="12">
         <NGi v-for="service in serviceHealth" :key="service.code">
           <div class="rounded-8px border-1px border-gray-2 p-12px transition-all hover:border-primary:50">
             <div class="flex-y-center justify-between">
@@ -317,29 +329,29 @@ onMounted(async () => {
                 <NProgress
                   class="flex-1"
                   type="line"
-                  :percentage="service.cpu"
+                  :percentage="service.cpu ?? 0"
                   :show-indicator="false"
-                  :color="levelColor(service.cpu)"
+                  :color="levelColor(service.cpu ?? 0)"
                   :height="5"
                 />
-                <span class="w-34px text-right">{{ service.cpu }}%</span>
+                <span class="w-34px text-right">{{ service.cpu === null ? '--' : `${service.cpu}%` }}</span>
               </div>
               <div class="flex-y-center gap-8px">
                 <span class="w-40px text-gray-5">内存</span>
                 <NProgress
                   class="flex-1"
                   type="line"
-                  :percentage="service.memory"
+                  :percentage="service.memory ?? 0"
                   :show-indicator="false"
-                  :color="levelColor(service.memory)"
+                  :color="levelColor(service.memory ?? 0)"
                   :height="5"
                 />
-                <span class="w-34px text-right">{{ service.memory }}%</span>
+                <span class="w-34px text-right">{{ service.memory === null ? '--' : `${service.memory}%` }}</span>
               </div>
             </div>
             <div class="mt-10px flex-y-center justify-between text-12px text-gray-4">
-              <span>{{ service.version }}</span>
-              <span>{{ service.qps }} QPS</span>
+              <span>{{ service.version || '-' }}</span>
+              <span>{{ service.routes }} 路由</span>
             </div>
           </div>
         </NGi>
