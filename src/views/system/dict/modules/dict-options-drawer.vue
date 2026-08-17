@@ -42,7 +42,15 @@ const searchParams = reactive<{
 });
 
 const { columns, data, getData, getDataByPage, loading, pagination } = useNaivePaginatedTable({
-  api: () => fetchGetDictOptionList({ ...searchParams, dictType: props.dictType?.dictType || null }),
+  // the drawer is mounted (hidden) with the page, so the table auto-fetches once
+  // on setup; skip the request until a real dict type is selected
+  api: () => {
+    const dictType = props.dictType?.dictType;
+    if (!dictType) {
+      return Promise.resolve({ records: [], current: 1, size: 10, total: 0 });
+    }
+    return fetchGetDictOptionList({ ...searchParams, dictType });
+  },
   transform: response => defaultTransform(response),
   onPaginationParamsChange: params => {
     searchParams.current = params.page ?? 1;
@@ -249,7 +257,7 @@ function openEdit(id: string) {
     <NDrawerContent :title="`${$t('page.manage.dict.dictOptions')} - ${dictType?.dictName || ''}`" closable>
       <div class="flex-col gap-16px">
         <NCard :bordered="false" size="small">
-          <div class="flex-y-center gap-12px lt-sm:flex-col lt-sm:items-stretch">
+          <div class="flex flex-wrap items-center gap-12px lt-sm:flex-col lt-sm:items-stretch">
             <NInput
               v-model:value="searchParams.optionLabel"
               :placeholder="$t('page.manage.dict.option.form.optionLabel')"
@@ -332,14 +340,7 @@ function openEdit(id: string) {
             <NSelect v-model:value="model.colorTag" :options="colorTagOptions" />
           </NFormItem>
           <NFormItem :label="$t('page.manage.dict.status')" path="status">
-            <NRadioGroup v-model:value="model.status">
-              <NRadio
-                v-for="item in enableStatusOptions"
-                :key="item.value"
-                :value="item.value"
-                :label="$t(item.label)"
-              />
-            </NRadioGroup>
+            <NSwitch v-model:value="model.status" checked-value="1" unchecked-value="2" />
           </NFormItem>
           <NFormItem :label="$t('page.manage.dict.remark')" path="remark">
             <NInput
