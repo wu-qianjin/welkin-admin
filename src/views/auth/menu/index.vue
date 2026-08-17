@@ -1,5 +1,5 @@
 <script setup lang="tsx">
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import type { Ref } from 'vue';
 import { NButton, NPopconfirm, NTag } from 'naive-ui';
 import { useBoolean } from '@sa/hooks';
@@ -7,7 +7,7 @@ import { yesOrNoRecord } from '@/constants/common';
 import { enableStatusRecord, menuTypeRecord } from '@/constants/business';
 import { batchDeleteMenu, deleteMenu, fetchGetAllPages, fetchGetMenuList } from '@/service/api';
 import { useAppStore } from '@/store/modules/app';
-import { defaultTransform, useNaivePaginatedTable, useTableOperate } from '@/hooks/common/table';
+import { useNaiveTable, useTableOperate } from '@/hooks/common/table';
 import { $t } from '@/locales';
 import SvgIcon from '@/components/custom/svg-icon.vue';
 import MenuOperateModal, { type OperateType } from './modules/menu-operate-modal.vue';
@@ -21,19 +21,32 @@ const wrapperRef = ref<HTMLElement | null>(null);
 
 const searchParams = ref<Api.SystemManage.MenuSearchParams>({
   current: 1,
-  size: 10,
+  size: 100,
   menuName: null,
   menuType: null,
   status: null
 });
 
-const { columns, columnChecks, data, loading, pagination, getData, getDataByPage } = useNaivePaginatedTable({
-  api: () => fetchGetMenuList(searchParams.value),
-  transform: response => defaultTransform(response),
-  onPaginationParamsChange: params => {
-    searchParams.value.current = params.page;
-    searchParams.value.size = params.pageSize;
-  },
+/** 后端分页 size 上限 100，循环取回全部菜单，前端建树展示 */
+async function fetchAllMenus(): Promise<Api.SystemManage.Menu[]> {
+  const filters = {
+    menuName: searchParams.value.menuName,
+    menuType: searchParams.value.menuType,
+    status: searchParams.value.status
+  };
+  const first = await fetchGetMenuList({ ...filters, current: 1, size: 100 });
+  const records = [...first.records];
+  const pages = Math.ceil(first.total / first.size);
+  for (let page = 2; page <= pages; page += 1) {
+    const rest = await fetchGetMenuList({ ...filters, current: page, size: 100 });
+    records.push(...rest.records);
+  }
+  return records;
+}
+
+const { columns, columnChecks, data, loading, getData } = useNaiveTable({
+  api: () => fetchAllMenus(),
+  transform: menus => menus,
   columns: () => [
     {
       type: 'selection',
@@ -142,12 +155,6 @@ const { columns, columnChecks, data, loading, pagination, getData, getDataByPage
       }
     },
     {
-      key: 'parentId',
-      title: $t('page.manage.menu.parentId'),
-      width: 90,
-      align: 'center'
-    },
-    {
       key: 'order',
       title: $t('page.manage.menu.order'),
       align: 'center',
@@ -185,6 +192,36 @@ const { columns, columnChecks, data, loading, pagination, getData, getDataByPage
 });
 
 const { checkedRowKeys } = useTableOperate(data, 'id', getData);
+
+type MenuTreeNode = Omit<Api.SystemManage.Menu, 'children'> & { children?: MenuTreeNode[] };
+
+/** 平铺菜单按 parentId 建树，默认只展示一级、行内展开子级；搜索命中的孤儿节点提升为根节点展示 */
+const treeData = computed<MenuTreeNode[]>(() => {
+  const nodes = new Map<string, MenuTreeNode>();
+  for (const item of data.value) nodes.set(item.id, { ...item, children: undefined });
+  const roots: MenuTreeNode[] = [];
+  for (const node of nodes.values()) {
+    const parent = node.parentId && node.parentId !== '0' ? nodes.get(node.parentId) : undefined;
+    if (parent) {
+      parent.children = parent.children ?? [];
+      parent.children.push(node);
+    } else {
+      roots.push(node);
+    }
+  }
+  const sortNodes = (list: MenuTreeNode[]) => {
+    list.sort((a, b) => (a.order ?? 0) - (b.order ?? 0) || a.id.localeCompare(b.id));
+    for (const node of list) {
+      if (node.children?.length) {
+        sortNodes(node.children);
+      } else {
+        delete node.children;
+      }
+    }
+  };
+  sortNodes(roots);
+  return roots;
+});
 
 const operateType = ref<OperateType>('add');
 
@@ -249,7 +286,7 @@ init();
 
 <template>
   <div ref="wrapperRef" class="flex-col-stretch gap-16px overflow-hidden lt-sm:overflow-auto">
-    <MenuSearch v-model:model="searchParams" @search="getDataByPage" />
+    <MenuSearch v-model:model="searchParams" @search="getData" />
     <NCard :title="$t('page.manage.menu.title')" :bordered="false" size="small" class="card-wrapper sm:flex-1-hidden">
       <template #header-extra>
         <TableHeaderOperation
@@ -264,14 +301,13 @@ init();
       <NDataTable
         v-model:checked-row-keys="checkedRowKeys"
         :columns="columns"
-        :data="data"
+        :data="treeData"
         size="small"
         :flex-height="!appStore.isMobile"
-        :scroll-x="1088"
+        :scroll-x="998"
         :loading="loading"
         :row-key="row => row.id"
-        remote
-        :pagination="pagination"
+        :pagination="false"
         class="sm:h-full"
       />
       <MenuOperateModal
