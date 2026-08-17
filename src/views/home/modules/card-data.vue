@@ -21,6 +21,8 @@ interface CardData {
   icon: string;
 }
 
+const overview = ref<Api.Gateway.Overview | null>(null);
+
 const cardData = computed<CardData[]>(() => [
   {
     key: 'visitCount',
@@ -68,7 +70,6 @@ const cardData = computed<CardData[]>(() => [
   }
 ]);
 
-const overview = ref<Api.Gateway.Overview | null>(null);
 onMounted(async () => {
   try {
     overview.value = await fetchGetGatewayOverview();
