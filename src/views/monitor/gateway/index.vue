@@ -14,6 +14,7 @@ import {
   fetchGetGatewayTrend
 } from '@/service/api';
 import { $t } from '@/locales';
+import { formatDateTime } from '@/utils/common';
 
 defineOptions({
   name: 'MonitorGateway'
@@ -278,7 +279,7 @@ async function loadAll() {
     updateTopInvoked(() => buildTopOption(invoked, '#3b82f6', ''));
     updateTopSlow(() => buildTopOption(slow, '#f59e0b', ' ms'));
     updateTopError(() => buildTopOption(errors, '#f43f5e', '%'));
-    lastUpdated.value = nextOverview.updatedAt ?? new Date().toLocaleTimeString();
+    lastUpdated.value = formatDateTime(nextOverview.updatedAt ?? Date.now());
     // 预取各服务路由填充树表 children：NDataTable 对 children 为空的行不渲染展开箭头，
     // 不预取则永远无法展开查看服务下的 API 列表。
     await Promise.all(services.value.map(service => loadServiceRoutes(service.serviceName)));
@@ -745,7 +746,7 @@ onUnmounted(() => {
               {{ formatNumber(selectedDetail.route.calls) }}
             </NDescriptionsItem>
             <NDescriptionsItem :label="$t('page.gateway.lastSeen')">
-              {{ selectedDetail.route.lastSeen ?? '-' }}
+              {{ formatDateTime(selectedDetail.route.lastSeen) }}
             </NDescriptionsItem>
           </NDescriptions>
         </div>

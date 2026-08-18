@@ -11,6 +11,7 @@ import {
   type MonitorAlertItem,
   type MonitorAlertRuleItem
 } from '@/service/api';
+import { formatDateTime } from '@/utils/common';
 
 defineOptions({ name: 'MonitorAlert' });
 // Menu metadata is maintained in build/plugins/router.ts alongside the module boundary.
@@ -65,7 +66,7 @@ const alertColumns = computed<NaiveUI.TableColumn<AlertRow>[]>(() => [
         { default: () => row.status }
       )
   },
-  { key: 'occurredAt', title: '发生时间', width: 170 },
+  { key: 'occurredAt', title: '发生时间', width: 170, render: row => formatDateTime(row.occurredAt) },
   {
     key: 'operate',
     title: '操作',
@@ -240,7 +241,7 @@ onMounted(async () => {
           <NDescriptionsItem label="目标">{{ detail.target }}</NDescriptionsItem>
           <NDescriptionsItem label="当前值">{{ detail.value }}</NDescriptionsItem>
           <NDescriptionsItem label="触发条件">{{ detail.threshold }}</NDescriptionsItem>
-          <NDescriptionsItem label="发生时间">{{ detail.occurredAt }}</NDescriptionsItem>
+          <NDescriptionsItem label="发生时间">{{ formatDateTime(detail.occurredAt) }}</NDescriptionsItem>
           <NDescriptionsItem label="说明">{{ detail.description }}</NDescriptionsItem>
         </NDescriptions>
         <template #footer><NButton type="primary" @click="detailVisible = false">关闭</NButton></template>

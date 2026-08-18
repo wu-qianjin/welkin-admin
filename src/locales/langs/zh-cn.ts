@@ -96,7 +96,7 @@ const local: App.I18n.Schema = {
         applySuccess: '预设应用成功',
         default: {
           name: '默认预设',
-          desc: 'Soybean 默认主题预设'
+          desc: 'Welkin 默认主题预设'
         },
         dark: {
           name: '暗色预设',
@@ -228,9 +228,6 @@ const local: App.I18n.Schema = {
     'iframe-page': '外链页面',
     home: '首页',
     document: '文档',
-    document_project: '项目文档',
-    'document_project-link': '项目文档(外链)',
-    document_video: '视频教程',
     document_vue: 'Vue文档',
     document_vite: 'Vite文档',
     document_unocss: 'UnoCSS文档',
@@ -395,7 +392,7 @@ const local: App.I18n.Schema = {
     },
     about: {
       title: '关于',
-      introduction: `SoybeanAdmin 是一个优雅且功能强大的后台管理模板，基于最新的前端技术栈，包括 Vue3, Vite7, TypeScript, Pinia 和 UnoCSS。它内置了丰富的主题配置和组件，代码规范严谨，实现了自动化的文件路由系统。此外，它还采用了基于 ApiFox 的在线Mock数据方案。SoybeanAdmin 为您提供了一站式的后台管理解决方案，无需额外配置，开箱即用。同样是一个快速学习前沿技术的最佳实践。`,
+      introduction: `WelkinAdmin 是一个优雅且功能强大的中后台管理平台，基于最新的前端技术栈，包括 Vue3、Vite、TypeScript、Pinia 和 UnoCSS。它内置了丰富的主题配置和组件，代码规范严谨，实现了自动化的文件路由系统。WelkinAdmin 基于 soybean-admin (MIT) 二次开发，为您提供一站式后台管理解决方案，无需额外配置，开箱即用。`,
       projectInfo: {
         title: '项目信息',
         version: '版本',
@@ -427,11 +424,11 @@ const local: App.I18n.Schema = {
       projectNews: {
         title: '项目动态',
         moreNews: '更多动态',
-        desc1: 'Soybean 在2021年5月28日创建了开源项目 soybean-admin!',
-        desc2: 'Yanbowe 向 soybean-admin 提交了一个bug，多标签栏不会自适应。',
-        desc3: 'Soybean 准备为 soybean-admin 的发布做充分的准备工作!',
-        desc4: 'Soybean 正在忙于为soybean-admin写项目说明文档！',
-        desc5: 'Soybean 刚才把工作台页面随便写了一些，凑合能看了！'
+        desc1: 'Welkin 团队在 2026 年基于 soybean-admin 启动了新的中后台平台 welkin-admin!',
+        desc2: '欢迎在 GitHub 提交 Issue, 帮助 welkin-admin 持续演进。',
+        desc3: 'Welkin 团队正在为 welkin-admin v1.0 发布做充分的准备工作!',
+        desc4: 'Welkin 团队正在为 welkin-admin 补充完整的项目文档!',
+        desc5: 'Welkin 团队把工作台页面又打磨了一遍,欢迎体验!'
       },
       creativity: '创意'
     },
@@ -616,7 +613,6 @@ const local: App.I18n.Schema = {
       menu: {
         home: '首页',
         title: '菜单列表',
-        id: 'ID',
         parentId: '父级菜单ID',
         menuType: '菜单类型',
         menuName: '菜单名称',
@@ -766,6 +762,7 @@ const local: App.I18n.Schema = {
         childCountSuffix: '个子部门',
         expandAll: '展开全部',
         collapseAll: '收起全部',
+        deleteSelectedDept: '删除选中部门',
         noChildDept: '该部门下暂无子部门，可点击右上角「新增子部门」创建',
         noMatchDept: '未找到匹配部门，请调整查询条件',
         deptName: '部门名称',

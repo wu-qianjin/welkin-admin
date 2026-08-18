@@ -45,6 +45,9 @@ async function fetchAllMenus(): Promise<Api.SystemManage.Menu[]> {
   return records;
 }
 
+/** 受控的树形展开行，供名称点击与默认展开箭头共同驱动 */
+const expandedRowKeys = ref<string[]>([]);
+
 const { columns, columnChecks, data, getData, loading } = useNaiveTable({
   api: () => fetchAllMenus(),
   transform: menus => menus,
@@ -55,9 +58,33 @@ const { columns, columnChecks, data, getData, loading } = useNaiveTable({
       width: 48
     },
     {
-      key: 'id',
-      title: $t('page.manage.menu.id'),
-      align: 'center'
+      key: 'menuName',
+      title: $t('page.manage.menu.menuName'),
+      align: 'left',
+      minWidth: 180,
+      render: row => {
+        const { i18nKey, menuName } = row;
+
+        const label = i18nKey ? $t(i18nKey) : menuName;
+
+        if (!row.children?.length) {
+          return <span>{label}</span>;
+        }
+
+        const expanded = expandedRowKeys.value.includes(row.id);
+
+        const toggleExpand = () => {
+          expandedRowKeys.value = expanded
+            ? expandedRowKeys.value.filter(key => key !== row.id)
+            : [...expandedRowKeys.value, row.id];
+        };
+
+        return (
+          <span class="cursor-pointer transition-colors hover:text-primary" onClick={toggleExpand}>
+            {label}
+          </span>
+        );
+      }
     },
     {
       key: 'menuType',
@@ -73,19 +100,6 @@ const { columns, columnChecks, data, getData, loading } = useNaiveTable({
         const label = $t(menuTypeRecord[row.menuType]);
 
         return <NTag type={tagMap[row.menuType]}>{label}</NTag>;
-      }
-    },
-    {
-      key: 'menuName',
-      title: $t('page.manage.menu.menuName'),
-      align: 'center',
-      minWidth: 120,
-      render: row => {
-        const { i18nKey, menuName } = row;
-
-        const label = i18nKey ? $t(i18nKey) : menuName;
-
-        return <span>{label}</span>;
       }
     },
     {
@@ -331,6 +345,7 @@ init();
       </template>
       <NDataTable
         v-model:checked-row-keys="checkedRowKeys"
+        v-model:expanded-row-keys="expandedRowKeys"
         :columns="columns"
         :data="treeData"
         size="small"

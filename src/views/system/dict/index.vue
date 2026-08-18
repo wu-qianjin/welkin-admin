@@ -10,6 +10,7 @@ import {
 import { useAppStore } from '@/store/modules/app';
 import { defaultTransform, useNaivePaginatedTable, useTableOperate } from '@/hooks/common/table';
 import { $t } from '@/locales';
+import { formatDateTime } from '@/utils/common';
 import DictOptionsDrawer from './modules/dict-options-drawer.vue';
 import DictSearch from './modules/dict-search.vue';
 import DictTypeOperateDrawer from './modules/dict-type-operate-drawer.vue';
@@ -90,7 +91,8 @@ const { columns, columnChecks, data, getData, getDataByPage, loading, mobilePagi
       key: 'updateTime',
       title: $t('page.manage.dict.updateTime'),
       align: 'center',
-      width: 170
+      width: 170,
+      render: row => formatDateTime(row.updateTime)
     },
     {
       key: 'operate',

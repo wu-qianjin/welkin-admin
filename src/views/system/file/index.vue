@@ -9,6 +9,7 @@ import { defaultTransform, useNaivePaginatedTable, useTableOperate } from '@/hoo
 import { $t } from '@/locales';
 import { localStg } from '@/utils/storage';
 import { getServiceBaseURL } from '@/utils/service';
+import { formatDateTime } from '@/utils/common';
 import FileSearch from './modules/file-search.vue';
 
 const isHttpProxy = import.meta.env.DEV && import.meta.env.VITE_HTTP_PROXY === 'Y';
@@ -101,7 +102,8 @@ const { columns, columnChecks, data, getData, getDataByPage, loading, mobilePagi
       key: 'createTime',
       title: $t('page.manage.file.createTime'),
       align: 'center',
-      width: 170
+      width: 170,
+      render: row => formatDateTime(row.createTime)
     },
     {
       key: 'operate',

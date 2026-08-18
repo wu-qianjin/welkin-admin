@@ -5,6 +5,7 @@ import { NButton, NEmpty, NIcon, NPopconfirm, NTag } from 'naive-ui';
 import { enableStatusRecord } from '@/constants/business';
 import { batchDeleteDept, deleteDept, fetchGetDeptList } from '@/service/api';
 import { $t } from '@/locales';
+import { formatDateTime } from '@/utils/common';
 import DeptSearch from './modules/dept-search.vue';
 import DeptOperateDrawer from './modules/dept-operate-drawer.vue';
 
@@ -203,7 +204,8 @@ const columns: NaiveUI.TableColumn<Api.SystemManage.Dept>[] = [
     key: 'createTime',
     title: $t('page.manage.dept.createTime'),
     align: 'center',
-    width: 170
+    width: 170,
+    render: row => formatDateTime(row.createTime)
   },
   {
     key: 'operate',
@@ -279,6 +281,13 @@ async function handleDelete(id: string) {
   }
 }
 
+/** 删除树中当前选中的部门（顶级部门在右侧表格无行入口，只能从这里删） */
+function handleDeleteSelected() {
+  if (selectedDept.value) {
+    handleDelete(selectedDept.value.id);
+  }
+}
+
 async function handleBatchDelete() {
   try {
     await batchDeleteDept(checkedRowKeys.value.map(String));
@@ -317,6 +326,20 @@ function renderTreeSuffix({ option }: { option: unknown }) {
             </template>
             {{ $t('page.manage.dept.addRootDept') }}
           </NTooltip>
+          <NPopconfirm @positive-click="handleDeleteSelected">
+            <template #trigger>
+              <NTooltip trigger="hover">
+                <template #trigger>
+                  <NButton size="tiny" quaternary type="error" class="h-24px px-6px" :disabled="!selectedDept">
+                    <NIcon size="14"><icon-ic-round-delete-outline class="text-icon" /></NIcon>
+                  </NButton>
+                </template>
+                {{ $t('page.manage.dept.deleteSelectedDept') }}
+              </NTooltip>
+            </template>
+            <span class="font-500">{{ selectedDept?.deptName }}：</span>
+            {{ $t('page.manage.dept.confirmDelete') }}
+          </NPopconfirm>
           <NTooltip trigger="hover">
             <template #trigger>
               <NButton size="tiny" quaternary class="h-24px px-6px" @click="expandAll">

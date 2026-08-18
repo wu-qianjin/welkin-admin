@@ -72,7 +72,7 @@ const serverProfiles: ServerProfile[] = [
     serviceName: '网关服务',
     serviceCode: 'gateway',
     host: '192.168.1.10',
-    port: 8080,
+    port: 41528,
     version: 'v2.4.1',
     goVersion: 'go1.23.4',
     cpuCores: 8,

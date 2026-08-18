@@ -36,6 +36,7 @@ declare module 'vue' {
     IconGridiconsFullscreenExit: typeof import('~icons/gridicons/fullscreen-exit')['default']
     IconIconParkOutlineEqualRatio: typeof import('~icons/icon-park-outline/equal-ratio')['default']
     IconIcRoundDelete: typeof import('~icons/ic/round-delete')['default']
+    IconIcRoundDeleteOutline: typeof import('~icons/ic/round-delete-outline')['default']
     IconIcRoundPlus: typeof import('~icons/ic/round-plus')['default']
     IconIcRoundRefresh: typeof import('~icons/ic/round-refresh')['default']
     IconIcRoundRemove: typeof import('~icons/ic/round-remove')['default']
@@ -175,7 +176,6 @@ declare module 'vue' {
     RichTextEditor: typeof import('./../components/custom/rich-text-editor.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
-    SoybeanAvatar: typeof import('./../components/custom/soybean-avatar.vue')['default']
     SvgIcon: typeof import('./../components/custom/svg-icon.vue')['default']
     SystemLogo: typeof import('./../components/common/system-logo.vue')['default']
     TableColumnSetting: typeof import('./../components/advanced/table-column-setting.vue')['default']
@@ -183,6 +183,7 @@ declare module 'vue' {
     ThemeSchemaSwitch: typeof import('./../components/common/theme-schema-switch.vue')['default']
     WaveBg: typeof import('./../components/custom/wave-bg.vue')['default']
     WebSiteLink: typeof import('./../components/custom/web-site-link.vue')['default']
+    WelkinAvatar: typeof import('./../components/custom/welkin-avatar.vue')['default']
   }
 }
 
@@ -212,6 +213,7 @@ declare global {
   const IconGridiconsFullscreenExit: typeof import('~icons/gridicons/fullscreen-exit')['default']
   const IconIconParkOutlineEqualRatio: typeof import('~icons/icon-park-outline/equal-ratio')['default']
   const IconIcRoundDelete: typeof import('~icons/ic/round-delete')['default']
+  const IconIcRoundDeleteOutline: typeof import('~icons/ic/round-delete-outline')['default']
   const IconIcRoundPlus: typeof import('~icons/ic/round-plus')['default']
   const IconIcRoundRefresh: typeof import('~icons/ic/round-refresh')['default']
   const IconIcRoundRemove: typeof import('~icons/ic/round-remove')['default']
@@ -351,7 +353,6 @@ declare global {
   const RichTextEditor: typeof import('./../components/custom/rich-text-editor.vue')['default']
   const RouterLink: typeof import('vue-router')['RouterLink']
   const RouterView: typeof import('vue-router')['RouterView']
-  const SoybeanAvatar: typeof import('./../components/custom/soybean-avatar.vue')['default']
   const SvgIcon: typeof import('./../components/custom/svg-icon.vue')['default']
   const SystemLogo: typeof import('./../components/common/system-logo.vue')['default']
   const TableColumnSetting: typeof import('./../components/advanced/table-column-setting.vue')['default']
@@ -359,4 +360,5 @@ declare global {
   const ThemeSchemaSwitch: typeof import('./../components/common/theme-schema-switch.vue')['default']
   const WaveBg: typeof import('./../components/custom/wave-bg.vue')['default']
   const WebSiteLink: typeof import('./../components/custom/web-site-link.vue')['default']
+  const WelkinAvatar: typeof import('./../components/custom/welkin-avatar.vue')['default']
 }

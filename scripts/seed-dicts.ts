@@ -9,7 +9,7 @@
  * 用法：IAM_USERNAME=admin IAM_PASSWORD=... npx tsx scripts/seed-dicts.ts
  * 幂等：已存在的字典类型（按 dictType）跳过；选项按 dictType + optionValue 比对后只补缺。
  */
-const GATEWAY_BASE = process.env.GATEWAY_BASE ?? 'http://127.0.0.1:8080';
+const GATEWAY_BASE = process.env.GATEWAY_BASE ?? 'http://127.0.0.1:41528';
 const IAM_USERNAME = process.env.IAM_USERNAME;
 const IAM_PASSWORD = process.env.IAM_PASSWORD;
 

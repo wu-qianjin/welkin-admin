@@ -7,6 +7,7 @@ import { batchDeleteConfig, deleteConfig, fetchConfigHistory, fetchGetConfigList
 import { useAppStore } from '@/store/modules/app';
 import { defaultTransform, useNaivePaginatedTable, useTableOperate } from '@/hooks/common/table';
 import { $t } from '@/locales';
+import { formatDateTime } from '@/utils/common';
 import ConfigOperateDrawer from './modules/config-operate-drawer.vue';
 import ConfigSearch from './modules/config-search.vue';
 
@@ -123,7 +124,8 @@ const { columns, columnChecks, data, getData, getDataByPage, loading, mobilePagi
       key: 'updateTime',
       title: $t('page.manage.config.updateTime'),
       align: 'center',
-      width: 170
+      width: 170,
+      render: row => formatDateTime(row.updateTime)
     },
     {
       key: 'operate',
@@ -225,7 +227,7 @@ async function handleDelete(id: string) {
             { key: 'beforeValue', title: '修改前', minWidth: 120 },
             { key: 'afterValue', title: '修改后', minWidth: 120 },
             { key: 'operator', title: '操作人', width: 90 },
-            { key: 'operatedAt', title: '变更时间', width: 170 },
+            { key: 'operatedAt', title: '变更时间', width: 170, render: (row: ConfigHistoryItem) => formatDateTime(row.operatedAt) },
             { key: 'reason', title: '变更原因', minWidth: 150 }
           ]"
           :scroll-x="980"

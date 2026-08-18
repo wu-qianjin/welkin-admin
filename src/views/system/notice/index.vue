@@ -7,6 +7,7 @@ import { batchDeleteNotice, deleteNotice, fetchGetNoticeList, updateNotice } fro
 import { useAppStore } from '@/store/modules/app';
 import { defaultTransform, useNaivePaginatedTable, useTableOperate } from '@/hooks/common/table';
 import { $t } from '@/locales';
+import { formatDateTime } from '@/utils/common';
 import NoticeOperateDrawer from './modules/notice-operate-drawer.vue';
 import NoticeSearch from './modules/notice-search.vue';
 
@@ -99,13 +100,15 @@ const { columns, columnChecks, data, getData, getDataByPage, loading, mobilePagi
       key: 'createTime',
       title: $t('page.manage.notice.createTime'),
       align: 'center',
-      width: 170
+      width: 170,
+      render: row => formatDateTime(row.createTime)
     },
     {
       key: 'updateTime',
       title: $t('page.manage.notice.updateTime'),
       align: 'center',
-      width: 170
+      width: 170,
+      render: row => formatDateTime(row.updateTime)
     },
     {
       key: 'operate',

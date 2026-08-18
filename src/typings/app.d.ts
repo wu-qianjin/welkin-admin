@@ -780,7 +780,6 @@ declare namespace App {
           menu: {
             home: string;
             title: string;
-            id: string;
             parentId: string;
             menuType: string;
             menuName: string;
@@ -930,6 +929,7 @@ declare namespace App {
             childCountSuffix: string;
             expandAll: string;
             collapseAll: string;
+            deleteSelectedDept: string;
             noChildDept: string;
             noMatchDept: string;
             deptName: string;

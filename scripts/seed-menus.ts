@@ -7,7 +7,7 @@
  */
 import { generatedRoutes } from '../src/router/elegant/routes';
 
-const IAM_BASE = process.env.IAM_BASE ?? 'http://127.0.0.1:8091';
+const IAM_BASE = process.env.IAM_BASE ?? 'http://127.0.0.1:41529';
 const IAM_USERNAME = process.env.IAM_USERNAME;
 const IAM_PASSWORD = process.env.IAM_PASSWORD;
 

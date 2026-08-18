@@ -11,6 +11,7 @@ import {
 import { defaultTransform, useNaivePaginatedTable } from '@/hooks/common/table';
 import { useAppStore } from '@/store/modules/app';
 import { $t } from '@/locales';
+import { formatDateTime } from '@/utils/common';
 import OperateLogSearch from './operate-log-search.vue';
 
 defineOptions({
@@ -121,7 +122,8 @@ const { columns, data, getData, getDataByPage, loading, mobilePagination } = use
       key: 'operateTime',
       title: $t('page.manage.log.operate.operateTime'),
       align: 'center',
-      width: 170
+      width: 170,
+      render: row => formatDateTime(row.operateTime)
     },
     {
       key: 'operate',
@@ -275,7 +277,7 @@ function exportLogs() {
           </NDescriptionsItem>
           <NDescriptionsItem :label="$t('page.manage.log.operate.ipaddr')">{{ detailData.ipaddr }}</NDescriptionsItem>
           <NDescriptionsItem :label="$t('page.manage.log.operate.operateTime')">
-            {{ detailData.operateTime }}
+            {{ formatDateTime(detailData.operateTime) }}
           </NDescriptionsItem>
         </NDescriptions>
       </NDrawerContent>

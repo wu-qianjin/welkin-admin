@@ -6,6 +6,7 @@ import { batchDeleteButton, deleteButton, fetchGetButtonList } from '@/service/a
 import { useAppStore } from '@/store/modules/app';
 import { defaultTransform, useNaivePaginatedTable, useTableOperate } from '@/hooks/common/table';
 import { $t } from '@/locales';
+import { formatDateTime } from '@/utils/common';
 import ButtonOperateDrawer from './button-operate-drawer.vue';
 import ButtonResourceSearch from './button-resource-search.vue';
 
@@ -92,7 +93,8 @@ const { columns, columnChecks, data, getData, getDataByPage, loading, mobilePagi
       key: 'createTime',
       title: $t('page.manage.resource.button.createTime'),
       align: 'center',
-      width: 170
+      width: 170,
+      render: row => formatDateTime(row.createTime)
     },
     {
       key: 'operate',

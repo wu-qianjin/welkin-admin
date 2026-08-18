@@ -1,29 +1,30 @@
 {
-  "name": "soybean-admin",
-  "version": "2.2.0",
-  "description": "A fresh and elegant admin template, based on Vue3、Vite8、TypeScript、NaiveUI and UnoCSS. 一个基于Vue3、Vite8、TypeScript、NaiveUI and UnoCSS的清新优雅的中后台模版。",
+  "name": "welkin-admin",
+  "version": "0.1.0",
+  "description": "Welkin Admin — an elegant admin platform based on Vue3, Vite, TypeScript, NaiveUI and UnoCSS. Forked from soybean-admin (MIT). 一个基于 Vue3、Vite、TypeScript、NaiveUI、UnoCSS 的清爽优雅中后台平台，基于 soybean-admin (MIT) 二次开发。",
   "keywords": [
     "TypeScript",
     "UnoCSS",
-    "Vite8",
-    "Vue3 admin ",
-    "ant-design-vue v4",
+    "Vite",
+    "Vue3",
+    "admin",
+    "admin-template",
     "naive-ui",
-    "naive-ui-admin",
-    "vue-admin-template"
+    "welkin-admin"
   ],
-  "homepage": "https://github.com/soybeanjs/soybean-admin",
+  "homepage": "https://github.com/wu-qianjin/welkin-admin",
   "bugs": {
-    "url": "https://github.com/soybeanjs/soybean-admin/issues"
+    "url": "https://github.com/wu-qianjin/welkin-admin/issues"
   },
   "license": "MIT",
   "author": {
-    "name": "Soybean",
-    "email": "soybeanjs@outlook.com",
-    "url": "https://github.com/soybeanjs"
+    "name": "wu-qianjin",
+    "email": "wu.qianjin@outlook.com",
+    "url": "https://github.com/wu-qianjin"
   },
   "repository": {
-    "url": "https://github.com/soybeanjs/soybean-admin.git"
+    "type": "git",
+    "url": "https://github.com/wu-qianjin/welkin-admin.git"
   },
   "type": "module",
   "scripts": {
@@ -131,5 +132,5 @@
     "node": ">=20.19.0",
     "pnpm": ">=10.5.0"
   },
-  "website": "https://admin.soybeanjs.cn"
+  "website": "https://github.com/wu-qianjin/welkin-admin"
 }

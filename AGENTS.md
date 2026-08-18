@@ -11,7 +11,7 @@ Fork of [soybean-admin](https://github.com/soybeanjs/soybean-admin) (MIT) mainta
 
 ## Commands
 
-- `pnpm dev` — dev server on port **9527** (mode: test, backend = Apifox mock). `pnpm dev:prod` for prod mode.
+- `pnpm dev` — dev server on port **41527** (mode: test, backend = Apifox mock). `pnpm dev:prod` for prod mode.
 - `pnpm typecheck` — `vue-tsc --noEmit --skipLibCheck`
 - `pnpm lint` — `oxlint --fix && eslint --fix .`; `pnpm fmt` — `oxfmt`
 - `pnpm build` / `pnpm build:test` — vite build (prod/test mode)

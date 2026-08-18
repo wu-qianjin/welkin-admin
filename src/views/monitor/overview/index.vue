@@ -9,8 +9,10 @@ import {
   fetchGetGatewayTrend,
   fetchGetGatewayServiceList,
   fetchGetServerList,
+  fetchGetServerMetrics,
   fetchMonitorAlertList
 } from '@/service/api';
+import { formatDateTime } from '@/utils/common';
 import { useRouter } from 'vue-router';
 
 defineOptions({ name: 'MonitorOverview' });
@@ -83,10 +85,18 @@ const healthCards = computed(() => {
   ];
 });
 
+/** 逐实例 metrics 快照：server/list 缺少 cpuPercent 时（metrics 未接入）回落到 metrics 接口补齐 */
+const serverMetrics = ref<Partial<Record<number, Api.Monitor.ServerMetrics>>>({});
+
 /** 以网关发现的服务为准（与"基础依赖健康"同源），合并 monitor 上报的实例指标 */
 const serviceHealth = computed(() =>
   services.value.map(service => {
-    const server = servers.value.find(item => item.serviceName === service.serviceName);
+    const server = servers.value.find(
+      item => item.serviceName === service.serviceName || item.serviceCode === service.serviceName
+    );
+    const metrics = server ? serverMetrics.value[server.id] : undefined;
+    const metricsAvailable =
+      server !== undefined && server.metricsAvailable !== false && metrics?.metricsAvailable !== false;
     return {
       name: service.serviceName,
       code: server?.serviceCode || service.serviceName,
@@ -94,8 +104,16 @@ const serviceHealth = computed(() =>
         ? `${server.host}:${server.port}`
         : `健康实例 ${service.healthyInstanceCount}/${service.instanceCount}`,
       status: service.status === 1 ? '运行中' : '离线',
-      cpu: server?.cpuPercent ?? null,
-      memory: server?.memPercent ?? null,
+      metricsAvailable,
+      metricsMessage: server?.metricsMessage || metrics?.metricsMessage || '',
+      cpu:
+        server?.metricsAvailable === false || metrics?.metricsAvailable === false
+          ? null
+          : (server?.cpuPercent ?? metrics?.cpuPercent ?? null),
+      memory:
+        server?.metricsAvailable === false || metrics?.metricsAvailable === false
+          ? null
+          : (server?.memPercent ?? metrics?.memPercent ?? null),
       routes: service.routeCount,
       version: server?.version || server?.goVersion || ''
     };
@@ -169,21 +187,42 @@ function goAlerts() {
   router.push('/monitor/alert');
 }
 
+/** 各请求独立降级：单个数据源失败不拖垮整页 */
 async function loadData() {
   const [overview, trend, serviceList, serverList, alertPage] = await Promise.all([
-    fetchGetGatewayOverview(),
-    fetchGetGatewayTrend({ startTime: Date.now() - 60 * 60 * 1000, endTime: Date.now() }),
-    fetchGetGatewayServiceList(),
-    fetchGetServerList(),
-    fetchMonitorAlertList({ current: 1, size: 20 })
+    fetchGetGatewayOverview().catch(() => null),
+    fetchGetGatewayTrend({ startTime: Date.now() - 60 * 60 * 1000, endTime: Date.now() }).catch(() => null),
+    fetchGetGatewayServiceList().catch(() => null),
+    fetchGetServerList().catch(() => null),
+    fetchMonitorAlertList({ current: 1, size: 20 }).catch(() => null)
   ]);
   gatewayOverview.value = overview;
-  trendPoints.value = trend;
-  services.value = serviceList;
-  servers.value = serverList;
-  alerts.value = alertPage.records;
-  lastUpdated.value = overview.updatedAt ?? new Date().toLocaleTimeString();
+  trendPoints.value = trend ?? [];
+  services.value = serviceList ?? [];
+  servers.value = serverList ?? [];
+  alerts.value = alertPage?.records ?? [];
+  lastUpdated.value = formatDateTime(overview?.updatedAt ?? Date.now());
   updateTrend(trendOption);
+  await loadServerMetrics();
+}
+
+/** server/list 无指标快照时，逐实例拉取 metrics 补齐 CPU/内存 */
+async function loadServerMetrics() {
+  const missing = servers.value.filter(server => server.cpuPercent == null || server.memPercent == null);
+  if (!missing.length) return;
+
+  const results = await Promise.all(
+    missing.map(server => fetchGetServerMetrics({ serverId: server.id }).catch(() => null))
+  );
+
+  const next: Partial<Record<number, Api.Monitor.ServerMetrics>> = { ...serverMetrics.value };
+  missing.forEach((server, index) => {
+    const metrics = results[index];
+    if (metrics) {
+      next[server.id] = metrics;
+    }
+  });
+  serverMetrics.value = next;
 }
 
 async function refresh() {
@@ -334,7 +373,9 @@ onMounted(async () => {
                   :color="levelColor(service.cpu ?? 0)"
                   :height="5"
                 />
-                <span class="w-34px text-right">{{ service.cpu === null ? '--' : `${service.cpu}%` }}</span>
+                <span class="w-56px text-right" :title="service.metricsMessage">
+                  {{ service.metricsAvailable ? `${service.cpu ?? 0}%` : '未采集' }}
+                </span>
               </div>
               <div class="flex-y-center gap-8px">
                 <span class="w-40px text-gray-5">内存</span>
@@ -346,7 +387,9 @@ onMounted(async () => {
                   :color="levelColor(service.memory ?? 0)"
                   :height="5"
                 />
-                <span class="w-34px text-right">{{ service.memory === null ? '--' : `${service.memory}%` }}</span>
+                <span class="w-56px text-right" :title="service.metricsMessage">
+                  {{ service.metricsAvailable ? `${service.memory ?? 0}%` : '未采集' }}
+                </span>
               </div>
             </div>
             <div class="mt-10px flex-y-center justify-between text-12px text-gray-4">
@@ -382,7 +425,12 @@ onMounted(async () => {
           { key: 'title', title: '告警内容', minWidth: 220 },
           { key: 'target', title: '目标', minWidth: 170 },
           { key: 'statusLabel', title: '状态', width: 100 },
-          { key: 'occurredAt', title: '发生时间', width: 170 }
+          {
+            key: 'occurredAt',
+            title: '发生时间',
+            width: 170,
+            render: row => formatDateTime(row.occurredAt)
+          }
         ]"
       />
     </NCard>

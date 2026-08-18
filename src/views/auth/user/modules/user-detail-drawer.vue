@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
 import { fetchGetUserDetail, resetUserPassword, updateUserStatus } from '@/service/api';
+import { formatDateTime } from '@/utils/common';
 
 defineOptions({
   name: 'UserDetailDrawer'
@@ -72,6 +73,13 @@ const enabled = computed(() => user.value.status === '正常');
 const resetVisible = ref(false);
 const resetPassword = ref('');
 
+const stats = computed(() => [
+  { label: '登录次数', value: String(user.value.loginCount) },
+  { label: '操作次数', value: String(user.value.operationCount) },
+  { label: '角色', value: user.value.role },
+  { label: '加入时间', value: user.value.joinedAt || '-', nowrap: true }
+]);
+
 async function loadUser() {
   if (!props.userId) return;
   loading.value = true;
@@ -88,8 +96,8 @@ async function loadUser() {
       phone: data.userPhone,
       status: data.status === 1 ? '正常' : '锁定',
       avatarText: (data.nickName || data.userName || '用').slice(0, 1),
-      joinedAt: data.createTime,
-      lastLoginAt: data.lastLoginAt || '暂无',
+      joinedAt: formatDateTime(data.createTime),
+      lastLoginAt: data.lastLoginAt ? formatDateTime(data.lastLoginAt) : '暂无',
       lastLoginIp: data.lastLoginIp || '暂无',
       permissions: data.userRoles || []
     };
@@ -166,25 +174,15 @@ function forceLogout() {
             </NSpace>
           </div>
 
-          <NGrid cols="2 s:4" responsive="screen" :x-gap="12" :y-gap="12" class="stat-grid">
-            <NGi>
+          <NGrid cols="2 s:4" responsive="screen" :x-gap="12" :y-gap="12">
+            <NGi v-for="stat in stats" :key="stat.label">
               <NCard :bordered="false" size="small" class="card-wrapper">
-                <NStatistic label="登录次数" :value="user.loginCount" />
-              </NCard>
-            </NGi>
-            <NGi>
-              <NCard :bordered="false" size="small" class="card-wrapper">
-                <NStatistic label="操作次数" :value="user.operationCount" />
-              </NCard>
-            </NGi>
-            <NGi>
-              <NCard :bordered="false" size="small" class="card-wrapper">
-                <NStatistic label="角色" :value="user.role" />
-              </NCard>
-            </NGi>
-            <NGi>
-              <NCard :bordered="false" size="small" class="card-wrapper">
-                <NStatistic label="加入时间" :value="user.joinedAt" />
+                <div class="flex flex-col gap-4px">
+                  <span class="text-12px text-gray-5">{{ stat.label }}</span>
+                  <span class="text-14px" :class="stat.nowrap ? 'whitespace-nowrap text-13px' : 'break-all'">
+                    {{ stat.value }}
+                  </span>
+                </div>
               </NCard>
             </NGi>
           </NGrid>
@@ -243,13 +241,4 @@ function forceLogout() {
   </NDrawer>
 </template>
 
-<style scoped>
-/* 抽屉内统计卡片紧凑字号：NStatistic 默认 24px 值在长文本（角色、时间）下失衡，且该组件无 label/value-style props */
-.stat-grid :deep(.n-statistic__label) {
-  font-size: 12px;
-}
-
-.stat-grid :deep(.n-statistic-value) {
-  font-size: 16px;
-}
-</style>
+<style scoped></style>

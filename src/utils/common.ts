@@ -1,3 +1,4 @@
+import dayjs from 'dayjs';
 import { $t } from '@/locales';
 
 /**
@@ -35,6 +36,25 @@ export function translateOptions(options: CommonType.Option<string, App.I18n.I18
     ...option,
     label: $t(option.label)
   }));
+}
+
+/**
+ * Format a backend timestamp as `yyyy-MM-dd HH:mm:ss`.
+ *
+ * Go services serialize time as RFC3339 UTC (`2026-08-18T13:21:35.1873916Z`);
+ * dayjs normalizes it to the browser timezone, while already-formatted strings
+ * (`2026-08-18 13:21:35`) pass through unchanged. Empty or invalid values render as `-`.
+ *
+ * @param value timestamp from the backend: ISO string, formatted string, ms or Date
+ */
+export function formatDateTime(value?: string | number | Date | null): string {
+  if (value === null || value === undefined || value === '') {
+    return '-';
+  }
+
+  const date = dayjs(value);
+
+  return date.isValid() ? date.format('YYYY-MM-DD HH:mm:ss') : String(value);
 }
 
 /**

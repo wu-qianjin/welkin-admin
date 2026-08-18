@@ -333,7 +333,7 @@ const routes: MockRoute[] = [
 
       // the token-expired demo (code 9999) triggers a refresh + auto retry;
       // once the client carries a refreshed token, let the retry succeed to end the loop
-      if (code === '9999' && decodeTokenUser(req.headers.authorization) === 'Soybean') {
+      if (code === '9999' && decodeTokenUser(req.headers.authorization) === 'Welkin') {
         sendData(res, null);
         return;
       }
