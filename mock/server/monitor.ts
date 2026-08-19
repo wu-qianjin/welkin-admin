@@ -543,7 +543,7 @@ export const monitorRoutes: Array<{ method: string; path: string; handler: Monit
   // ---------------- server monitor ----------------
   {
     method: 'GET',
-    path: '/monitor/getServerList',
+    path: '/v1/monitor/server/list',
     handler({ res }) {
       const now = Date.now();
       sendData(
@@ -562,7 +562,7 @@ export const monitorRoutes: Array<{ method: string; path: string; handler: Monit
   },
   {
     method: 'GET',
-    path: '/monitor/getServerMetrics',
+    path: '/v1/monitor/server/metrics',
     handler({ res, query }) {
       const id = Number(query.get('serverId'));
       const profile = serverProfiles.find(item => item.id === id);
@@ -575,7 +575,7 @@ export const monitorRoutes: Array<{ method: string; path: string; handler: Monit
   },
   {
     method: 'GET',
-    path: '/monitor/getServerMetricHistory',
+    path: '/v1/monitor/server/metricHistory',
     handler({ res, query }) {
       const id = Number(query.get('serverId'));
       const profile = serverProfiles.find(item => item.id === id) ?? serverProfiles[0];

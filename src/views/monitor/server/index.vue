@@ -266,31 +266,6 @@ function barItemsFor(item: Api.Monitor.Server) {
       </NGi>
     </NGrid>
 
-    <!-- runtime info -->
-    <NCard :title="$t('page.monitor.runtimeInfo')" :bordered="false" size="small" class="card-wrapper">
-      <NDescriptions v-if="metrics" label-placement="left" bordered :column="3" size="small">
-        <NDescriptionsItem :label="$t('page.monitor.goVersion')">
-          {{ selectedServer?.goVersion }}
-        </NDescriptionsItem>
-        <NDescriptionsItem :label="$t('page.monitor.version')">{{ selectedServer?.version }}</NDescriptionsItem>
-        <NDescriptionsItem :label="$t('page.monitor.uptime')">{{ selectedServer?.uptime }}</NDescriptionsItem>
-        <NDescriptionsItem :label="$t('page.monitor.cpuCores')">{{ selectedServer?.cpuCores }}</NDescriptionsItem>
-        <NDescriptionsItem :label="$t('page.monitor.goroutines')">{{ metrics.goroutines }}</NDescriptionsItem>
-        <NDescriptionsItem :label="$t('page.monitor.threads')">{{ metrics.threads }}</NDescriptionsItem>
-        <NDescriptionsItem :label="$t('page.monitor.gcPause')">{{ metrics.gcPauseMs }} ms</NDescriptionsItem>
-        <NDescriptionsItem :label="$t('page.monitor.openFds')">{{ metrics.openFds }}</NDescriptionsItem>
-        <NDescriptionsItem :label="$t('page.monitor.memUsage')">
-          {{ metrics.memUsed }} / {{ metrics.memTotal }} GB
-        </NDescriptionsItem>
-        <NDescriptionsItem :label="$t('page.monitor.diskUsage')">
-          {{ metrics.diskUsed }} / {{ metrics.diskTotal }} GB
-        </NDescriptionsItem>
-        <NDescriptionsItem :label="$t('page.monitor.netIn')">{{ metrics.netIn }} KB/s</NDescriptionsItem>
-        <NDescriptionsItem :label="$t('page.monitor.netOut')">{{ metrics.netOut }} KB/s</NDescriptionsItem>
-      </NDescriptions>
-      <NEmpty v-else class="h-120px" :description="$t('page.monitor.selectFirst')" />
-    </NCard>
-
     <!-- service instance cards -->
     <NCard :title="$t('page.monitor.serverList')" :bordered="false" size="small" class="card-wrapper">
       <template #header-extra>
@@ -341,6 +316,7 @@ function barItemsFor(item: Api.Monitor.Server) {
           </NGi>
         </NGrid>
       </NSpin>
+      <NEmpty v-if="!loading && !servers.length" class="h-120px" :description="$t('common.noData')" />
     </NCard>
   </div>
 </template>

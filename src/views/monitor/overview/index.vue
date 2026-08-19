@@ -19,6 +19,7 @@ defineOptions({ name: 'MonitorOverview' });
 
 const router = useRouter();
 const refreshing = ref(false);
+const runtimeLoading = ref(false);
 const lastUpdated = ref('刚刚');
 const gatewayOverview = ref<Api.Gateway.Overview | null>(null);
 const trendPoints = ref<Api.Gateway.TrendPoint[]>([]);
@@ -85,9 +86,12 @@ const healthCards = computed(() => {
   ];
 });
 
-/** 逐实例 metrics 快照：server/list 缺少 cpuPercent 时（metrics 未接入）回落到 metrics 接口补齐 */
+/** Runtime metrics are loaded for each instance; the first instance is the overview's primary runtime. */
 const serverMetrics = ref<Partial<Record<number, Api.Monitor.ServerMetrics>>>({});
-
+const runtimeServer = computed(() => servers.value[0] ?? null);
+const runtimeMetrics = computed(() =>
+  runtimeServer.value ? (serverMetrics.value[runtimeServer.value.id] ?? null) : null
+);
 /** 以网关发现的服务为准（与"基础依赖健康"同源），合并 monitor 上报的实例指标 */
 const serviceHealth = computed(() =>
   services.value.map(service => {
@@ -206,23 +210,22 @@ async function loadData() {
   await loadServerMetrics();
 }
 
-/** server/list 无指标快照时，逐实例拉取 metrics 补齐 CPU/内存 */
+/** Load detailed runtime metrics so the overview always has process/runtime fields. */
 async function loadServerMetrics() {
-  const missing = servers.value.filter(server => server.cpuPercent == null || server.memPercent == null);
-  if (!missing.length) return;
-
-  const results = await Promise.all(
-    missing.map(server => fetchGetServerMetrics({ serverId: server.id }).catch(() => null))
-  );
-
-  const next: Partial<Record<number, Api.Monitor.ServerMetrics>> = { ...serverMetrics.value };
-  missing.forEach((server, index) => {
-    const metrics = results[index];
-    if (metrics) {
-      next[server.id] = metrics;
-    }
-  });
-  serverMetrics.value = next;
+  runtimeLoading.value = true;
+  try {
+    const results = await Promise.all(
+      servers.value.map(server => fetchGetServerMetrics({ serverId: server.id }).catch(() => null))
+    );
+    const next: Partial<Record<number, Api.Monitor.ServerMetrics>> = {};
+    servers.value.forEach((server, index) => {
+      const metrics = results[index];
+      if (metrics) next[server.id] = metrics;
+    });
+    serverMetrics.value = next;
+  } finally {
+    runtimeLoading.value = false;
+  }
 }
 
 async function refresh() {
@@ -339,32 +342,19 @@ onMounted(async () => {
 
     <NCard title="服务实例状态" :bordered="false" class="card-wrapper">
       <template #header-extra>
-        <NButton text type="primary" @click="router.push('/monitor/runtime/server')">查看实例监控</NButton>
+        <NButton text type="primary" @click="router.push('/monitor/server')">查看实例监控</NButton>
       </template>
       <NGrid cols="1 s:2 m:4" responsive="screen" :x-gap="12" :y-gap="12">
         <NGi v-for="service in serviceHealth" :key="service.code">
-          <div class="rounded-8px border-1px border-gray-2 p-12px transition-all hover:border-primary:50">
+          <div class="rounded-8px border-1px border-gray-2 p-12px">
             <div class="flex-y-center justify-between">
-              <div class="flex-y-center gap-8px">
-                <span
-                  class="size-8px rounded-full"
-                  :class="
-                    service.status === '离线' ? 'bg-error' : service.status === '资源偏高' ? 'bg-warning' : 'bg-success'
-                  "
-                />
-                <span class="font-500">{{ service.name }}</span>
-              </div>
-              <NTag
-                size="small"
-                :type="service.status === '离线' ? 'error' : service.status === '资源偏高' ? 'warning' : 'success'"
-              >
-                {{ service.status }}
-              </NTag>
+              <span class="font-500">{{ service.name }}</span>
+              <NTag size="small" :type="service.status === '离线' ? 'error' : 'success'">{{ service.status }}</NTag>
             </div>
             <div class="mt-6px text-12px text-gray-5">{{ service.code }} · {{ service.host }}</div>
-            <div class="mt-12px flex flex-col gap-7px text-12px">
+            <div class="mt-10px flex flex-col gap-6px text-12px">
               <div class="flex-y-center gap-8px">
-                <span class="w-40px text-gray-5">CPU</span>
+                <span class="w-36px text-gray-5">CPU</span>
                 <NProgress
                   class="flex-1"
                   type="line"
@@ -373,12 +363,10 @@ onMounted(async () => {
                   :color="levelColor(service.cpu ?? 0)"
                   :height="5"
                 />
-                <span class="w-56px text-right" :title="service.metricsMessage">
-                  {{ service.metricsAvailable ? `${service.cpu ?? 0}%` : '未采集' }}
-                </span>
+                <span class="w-45px text-right">{{ service.metricsAvailable ? `${service.cpu}%` : '未采集' }}</span>
               </div>
               <div class="flex-y-center gap-8px">
-                <span class="w-40px text-gray-5">内存</span>
+                <span class="w-36px text-gray-5">内存</span>
                 <NProgress
                   class="flex-1"
                   type="line"
@@ -387,53 +375,81 @@ onMounted(async () => {
                   :color="levelColor(service.memory ?? 0)"
                   :height="5"
                 />
-                <span class="w-56px text-right" :title="service.metricsMessage">
-                  {{ service.metricsAvailable ? `${service.memory ?? 0}%` : '未采集' }}
-                </span>
+                <span class="w-45px text-right">{{ service.metricsAvailable ? `${service.memory}%` : '未采集' }}</span>
               </div>
-            </div>
-            <div class="mt-10px flex-y-center justify-between text-12px text-gray-4">
-              <span>{{ service.version || '-' }}</span>
-              <span>{{ service.routes }} 路由</span>
             </div>
           </div>
         </NGi>
       </NGrid>
+      <NEmpty v-if="!serviceHealth.length" class="h-100px" :description="$t('common.noData')" />
     </NCard>
 
-    <NCard title="最近告警" :bordered="false" class="card-wrapper">
-      <template #header-extra><NButton text type="primary" @click="goAlerts">处理告警</NButton></template>
-      <NDataTable
-        :data="alertRows.slice(0, 3)"
-        :pagination="false"
-        size="small"
-        :columns="[
-          {
-            key: 'level',
-            title: '级别',
-            width: 90,
-            render: row =>
-              h(
-                NTag,
-                {
-                  type: row.levelLabel === '严重' ? 'error' : row.levelLabel === '警告' ? 'warning' : 'info',
-                  size: 'small'
-                },
-                { default: () => row.levelLabel }
-              )
-          },
-          { key: 'title', title: '告警内容', minWidth: 220 },
-          { key: 'target', title: '目标', minWidth: 170 },
-          { key: 'statusLabel', title: '状态', width: 100 },
-          {
-            key: 'occurredAt',
-            title: '发生时间',
-            width: 170,
-            render: row => formatDateTime(row.occurredAt)
-          }
-        ]"
-      />
-    </NCard>
+    <NGrid cols="1 l:24" responsive="screen" :x-gap="16" :y-gap="16">
+      <NGi span="24 l:15">
+        <NCard :title="$t('page.monitor.runtimeInfo')" :bordered="false" class="card-wrapper h-full">
+          <NSpin :show="runtimeLoading">
+            <NDescriptions
+              v-if="runtimeServer && runtimeMetrics"
+              label-placement="left"
+              bordered
+              :column="3"
+              size="small"
+            >
+              <NDescriptionsItem :label="$t('page.monitor.version')">{{ runtimeServer.version }}</NDescriptionsItem>
+              <NDescriptionsItem :label="$t('page.monitor.goVersion')">{{ runtimeServer.goVersion }}</NDescriptionsItem>
+              <NDescriptionsItem :label="$t('page.monitor.uptime')">{{ runtimeServer.uptime }}</NDescriptionsItem>
+              <NDescriptionsItem :label="$t('page.monitor.cpuCores')">{{ runtimeServer.cpuCores }}</NDescriptionsItem>
+              <NDescriptionsItem :label="$t('page.monitor.goroutines')">
+                {{ runtimeMetrics.goroutines }}
+              </NDescriptionsItem>
+              <NDescriptionsItem :label="$t('page.monitor.threads')">{{ runtimeMetrics.threads }}</NDescriptionsItem>
+              <NDescriptionsItem :label="$t('page.monitor.gcPause')">
+                {{ runtimeMetrics.gcPauseMs }} ms
+              </NDescriptionsItem>
+              <NDescriptionsItem :label="$t('page.monitor.openFds')">{{ runtimeMetrics.openFds }}</NDescriptionsItem>
+              <NDescriptionsItem :label="$t('page.monitor.memUsage')">
+                {{ runtimeMetrics.memUsed }} / {{ runtimeMetrics.memTotal }} GB
+              </NDescriptionsItem>
+              <NDescriptionsItem :label="$t('page.monitor.diskUsage')">
+                {{ runtimeMetrics.diskUsed }} / {{ runtimeMetrics.diskTotal }} GB
+              </NDescriptionsItem>
+              <NDescriptionsItem :label="$t('page.monitor.netIn')">{{ runtimeMetrics.netIn }} KB/s</NDescriptionsItem>
+              <NDescriptionsItem :label="$t('page.monitor.netOut')">{{ runtimeMetrics.netOut }} KB/s</NDescriptionsItem>
+            </NDescriptions>
+            <NEmpty v-else class="h-180px" :description="$t('page.monitor.selectFirst')" />
+          </NSpin>
+        </NCard>
+      </NGi>
+      <NGi span="24 l:9">
+        <NCard title="最近告警" :bordered="false" class="card-wrapper h-full">
+          <template #header-extra><NButton text type="primary" @click="goAlerts">处理告警</NButton></template>
+          <NDataTable
+            :data="alertRows.slice(0, 3)"
+            :pagination="false"
+            size="small"
+            :columns="[
+              {
+                key: 'level',
+                title: '级别',
+                width: 70,
+                render: row =>
+                  h(
+                    NTag,
+                    {
+                      type: row.levelLabel === '严重' ? 'error' : row.levelLabel === '警告' ? 'warning' : 'info',
+                      size: 'small'
+                    },
+                    { default: () => row.levelLabel }
+                  )
+              },
+              { key: 'title', title: '告警内容', minWidth: 150 },
+              { key: 'statusLabel', title: '状态', width: 80 }
+            ]"
+          />
+          <NEmpty v-if="!alertRows.length" class="h-120px" :description="$t('common.noData')" />
+        </NCard>
+      </NGi>
+    </NGrid>
   </div>
 </template>
 
