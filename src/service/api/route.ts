@@ -22,6 +22,7 @@ interface BackendMenuItem {
   activeMenu: string;
   multiTab: boolean;
   fixedIndexInTab?: number | null;
+  query?: { key: string; value: string }[];
   children?: BackendMenuItem[];
 }
 
@@ -39,7 +40,8 @@ function toMenuRoute(item: BackendMenuItem): Api.Route.MenuRoute {
     hideInMenu: item.hideInMenu,
     activeMenu: (item.activeMenu || null) as RouteMeta['activeMenu'],
     multiTab: item.multiTab,
-    fixedIndexInTab: item.fixedIndexInTab ?? null
+    fixedIndexInTab: item.fixedIndexInTab ?? null,
+    query: Array.isArray(item.query) ? item.query : []
   };
   return {
     id: item.id,

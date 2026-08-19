@@ -2,6 +2,37 @@ const LAYOUT_PREFIX = 'layout.';
 const VIEW_PREFIX = 'view.';
 const FIRST_LEVEL_ROUTE_COMPONENT_SPLIT = '$';
 
+export interface PageEntry {
+  routeName: string;
+  viewPath: string;
+}
+
+const VIEW_PATH_PREFIX = '/src/views/';
+
+export function normalizeViewPath(viewPath: string) {
+  const normalized = viewPath
+    .trim()
+    .replace(/^@\//, '/src/')
+    .replace(/^src\//, '/src/');
+
+  return normalized.startsWith(VIEW_PATH_PREFIX) ? normalized : viewPath.trim();
+}
+
+export function getRouteNameByViewPath(viewPath: string) {
+  const normalized = normalizeViewPath(viewPath);
+
+  if (!normalized.startsWith(VIEW_PATH_PREFIX)) {
+    return normalized;
+  }
+
+  const relativePath = normalized
+    .slice(VIEW_PATH_PREFIX.length)
+    .replace(/^_builtin\//, '')
+    .replace(/(?:\/index|\/\[[^/]+\])\.vue$/, '');
+
+  return relativePath.replaceAll('/', '_');
+}
+
 export function getLayoutAndPage(component?: string | null) {
   let layout = '';
   let page = '';
@@ -48,32 +79,4 @@ export function transformLayoutAndPageToComponent(layout: string, page: string) 
  */
 export function getRoutePathByRouteName(routeName: string) {
   return `/${routeName.replace(/_/g, '/')}`;
-}
-
-/**
- * Get path param from route path
- *
- * @param routePath route path
- */
-export function getPathParamFromRoutePath(routePath: string) {
-  const [path, param = ''] = routePath.split('/:');
-
-  return {
-    path,
-    param
-  };
-}
-
-/**
- * Get route path with param
- *
- * @param routePath route path
- * @param param path param
- */
-export function getRoutePathWithParam(routePath: string, param: string) {
-  if (param.trim()) {
-    return `${routePath}/:${param}`;
-  }
-
-  return routePath;
 }
