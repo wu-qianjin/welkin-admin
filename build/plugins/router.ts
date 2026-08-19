@@ -21,7 +21,6 @@ const routeMetaByName: Record<string, Partial<RouteMeta>> = {
   system_file: { icon: 'mdi:folder-file-outline', order: 4, roles: ['R_ADMIN'], keepAlive: true },
   monitor: { icon: 'mdi:monitor-dashboard', order: 10, roles: ['R_SUPER'] },
   monitor_overview: { icon: 'mdi:view-dashboard-outline', order: 1, roles: ['R_SUPER'], keepAlive: true },
-  monitor_server: { icon: 'mdi:server', order: 2, roles: ['R_SUPER'], keepAlive: true },
   monitor_gateway: { icon: 'mdi:transit-connection-variant', order: 3, roles: ['R_SUPER'], keepAlive: true },
   monitor_alert: { icon: 'mdi:bell-alert-outline', order: 4, roles: ['R_SUPER'], keepAlive: true },
   monitor_log: { icon: 'mdi:file-document-multiple-outline', order: 5, roles: ['R_SUPER'], keepAlive: true },

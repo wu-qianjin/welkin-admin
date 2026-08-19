@@ -416,19 +416,6 @@ export const generatedRoutes: GeneratedRoute[] = [
           roles: ['R_SUPER'],
           keepAlive: true
         }
-      },
-      {
-        name: 'monitor_server',
-        path: '/monitor/server',
-        component: 'view.monitor_server',
-        meta: {
-          title: 'monitor_server',
-          i18nKey: 'route.monitor_server',
-          icon: 'mdi:server',
-          order: 2,
-          roles: ['R_SUPER'],
-          keepAlive: true
-        }
       }
     ]
   },

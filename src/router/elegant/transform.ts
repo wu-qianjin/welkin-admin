@@ -209,7 +209,6 @@ const routeMap: RouteMap = {
   "monitor_log": "/monitor/log",
   "monitor_online": "/monitor/online",
   "monitor_overview": "/monitor/overview",
-  "monitor_server": "/monitor/server",
   "multi-menu": "/multi-menu",
   "multi-menu_first": "/multi-menu/first",
   "multi-menu_first_child": "/multi-menu/first/child",

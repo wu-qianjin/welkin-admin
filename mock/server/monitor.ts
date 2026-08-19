@@ -573,30 +573,6 @@ export const monitorRoutes: Array<{ method: string; path: string; handler: Monit
       sendData(res, buildMetrics(profile, Date.now()));
     }
   },
-  {
-    method: 'GET',
-    path: '/v1/monitor/server/metricHistory',
-    handler({ res, query }) {
-      const id = Number(query.get('serverId'));
-      const profile = serverProfiles.find(item => item.id === id) ?? serverProfiles[0];
-      const now = Date.now();
-      const points: Api.Monitor.MetricHistoryPoint[] = [];
-
-      // last 5 minutes, one point every 5 seconds
-      for (let i = 59; i >= 0; i -= 1) {
-        const ts = now - i * 5000;
-        const idx = 59 - i;
-        points.push({
-          time: fmtClock(new Date(ts)),
-          cpu: Number(cpuAt(profile, ts, (seeded(idx, profile.id) - 0.5) * 6).toFixed(1)),
-          mem: Number(memAt(profile, ts, (seeded(idx, profile.id + 50) - 0.5) * 3).toFixed(1)),
-          disk: Number(diskAt(profile, seeded(idx, profile.id + 90) * 0.4).toFixed(1))
-        });
-      }
-
-      sendData(res, points);
-    }
-  },
 
   // ---------------- gateway analytics ----------------
   {

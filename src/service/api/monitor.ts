@@ -12,9 +12,21 @@ export function fetchGetServerMetrics(params: { serverId: number }) {
   return alova.Get<Api.Monitor.ServerMetrics>('/v1/monitor/server/metrics', { params });
 }
 
-/** get metric history of one server (last 5 minutes, 5s step) */
-export function fetchGetServerMetricHistory(params: { serverId: number }) {
-  return alova.Get<Api.Monitor.MetricHistoryPoint[]>('/v1/monitor/server/metricHistory', { params });
+/** database connection pool stats of the monitor datasource */
+export interface MonitorDBPoolStats {
+  maxOpenConnections: number;
+  openConnections: number;
+  inUse: number;
+  idle: number;
+  waitCount: number;
+  waitDurationMs: number;
+  maxIdleClosed: number;
+  maxLifetimeClosed: number;
+}
+
+/** get database connection pool stats */
+export function fetchGetMonitorDBPool() {
+  return alova.Get<MonitorDBPoolStats>('/v1/monitor/server/dbPool');
 }
 
 // ---------------- gateway analytics ----------------

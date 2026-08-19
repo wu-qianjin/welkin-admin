@@ -272,7 +272,6 @@ const local: App.I18n.Schema = {
     message: 'Message Center',
     monitor: 'Operations Center',
     monitor_overview: 'Monitor Overview',
-    monitor_server: 'Instance Monitor',
     monitor_gateway: 'Gateway Monitor',
     monitor_alert: 'Alert Center',
     monitor_log: 'Audit Logs',

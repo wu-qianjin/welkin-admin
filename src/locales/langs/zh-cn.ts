@@ -268,7 +268,6 @@ const local: App.I18n.Schema = {
     message: '消息中心',
     monitor: '运维监控',
     monitor_overview: '监控总览',
-    monitor_server: '实例监控',
     monitor_gateway: '网关监控',
     monitor_alert: '告警中心',
     monitor_log: '日志管理',

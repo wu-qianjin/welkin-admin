@@ -237,7 +237,6 @@ export const mockPermissionTree = [
     label: '运维监控',
     children: [
       { key: 'monitor_overview', label: '监控总览', children: [] },
-      { key: 'monitor_server', label: '实例监控', children: [] },
       { key: 'monitor_gateway', label: '网关治理', children: [] },
       { key: 'monitor_alert', label: '告警中心', children: [] },
       { key: 'monitor_log', label: '日志管理', children: [] },

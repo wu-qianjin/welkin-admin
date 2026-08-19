@@ -39,13 +39,6 @@ declare namespace Api {
       metricsAvailable?: boolean;
       metricsMessage?: string;
     }
-
-    interface MetricHistoryPoint {
-      time: string;
-      cpu: number;
-      mem: number;
-      disk: number;
-    }
   }
 
   /** monitoring module: gateway analytics */

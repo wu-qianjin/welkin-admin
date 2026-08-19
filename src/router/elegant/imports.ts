@@ -44,7 +44,6 @@ export const views: Record<LastLevelRouteKey, RouteComponent | (() => Promise<Ro
   monitor_log: () => import("@/views/monitor/log/index.vue"),
   monitor_online: () => import("@/views/monitor/online/index.vue"),
   monitor_overview: () => import("@/views/monitor/overview/index.vue"),
-  monitor_server: () => import("@/views/monitor/server/index.vue"),
   "multi-menu_first_child": () => import("@/views/multi-menu/first_child/index.vue"),
   "multi-menu_second_child_home": () => import("@/views/multi-menu/second_child_home/index.vue"),
   plugin_barcode: () => import("@/views/plugin/barcode/index.vue"),
