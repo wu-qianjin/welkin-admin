@@ -63,7 +63,6 @@ declare module "@elegant-router/types" {
     "monitor_log": "/monitor/log";
     "monitor_online": "/monitor/online";
     "monitor_overview": "/monitor/overview";
-    "monitor_server": "/monitor/server";
     "multi-menu": "/multi-menu";
     "multi-menu_first": "/multi-menu/first";
     "multi-menu_first_child": "/multi-menu/first/child";
@@ -215,7 +214,6 @@ declare module "@elegant-router/types" {
     | "monitor_log"
     | "monitor_online"
     | "monitor_overview"
-    | "monitor_server"
     | "multi-menu_first_child"
     | "multi-menu_second_child_home"
     | "plugin_barcode"
