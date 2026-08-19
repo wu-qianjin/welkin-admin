@@ -506,6 +506,7 @@ interface BackendDictTypeItem {
   id: string;
   dictName: string;
   dictType: string;
+  module: string;
   status: number;
   remark: string;
   createTime: string;
@@ -528,6 +529,7 @@ function adaptDictTypeItem(item: BackendDictTypeItem): Api.SystemManage.DictType
     id: item.id,
     dictName: item.dictName,
     dictType: item.dictType,
+    module: item.module,
     status: item.status === 1 ? '1' : '2',
     remark: item.remark,
     createTime: item.createTime,
@@ -554,7 +556,7 @@ function adaptDictOptionItem(item: BackendDictOptionItem): Api.SystemManage.Dict
   };
 }
 
-export type DictTypeModel = Pick<Api.SystemManage.DictType, 'dictName' | 'dictType' | 'status' | 'remark'>;
+export type DictTypeModel = Pick<Api.SystemManage.DictType, 'dictName' | 'dictType' | 'module' | 'status' | 'remark'>;
 
 /** get dict type list */
 export function fetchGetDictTypeList(params?: Api.SystemManage.DictTypeSearchParams) {
@@ -566,6 +568,7 @@ export function fetchGetDictTypeList(params?: Api.SystemManage.DictTypeSearchPar
         size: params?.size ?? 10,
         dictName: params?.dictName ?? '',
         dictType: params?.dictType ?? '',
+        module: params?.module ?? '',
         status: params?.status ? (params.status === '1' ? 1 : 0) : undefined
       }
     )

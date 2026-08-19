@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
 import { jsonClone } from '@sa/utils';
-import { addDictType, updateDictType } from '@/service/api';
+import { addDictType, fetchGetDictTypeList, updateDictType } from '@/service/api';
 import { useFormRules, useNaiveForm } from '@/hooks/common/form';
 import { $t } from '@/locales';
 
@@ -42,11 +42,13 @@ const title = computed(() => {
 const model = ref(createDefaultModel());
 
 function createDefaultModel(): Pick<Api.SystemManage.DictType, 'dictName' | 'dictType' | 'remark'> & {
+  module: string | null;
   status: Api.Common.EnableStatus;
 } {
   return {
     dictName: '',
     dictType: '',
+    module: null,
     status: '1',
     remark: ''
   };
@@ -57,6 +59,20 @@ const rules: Record<string, App.Global.FormRule[]> = {
   dictType: [defaultRequiredRule],
   status: [defaultRequiredRule]
 };
+
+/** module options sourced from existing dict types; new values can be typed in via the tag select */
+const moduleOptions = ref<{ label: string; value: string }[]>([]);
+
+async function loadModuleOptions() {
+  const response = await fetchGetDictTypeList({ current: 1, size: 100 });
+  const modules = new Set<string>();
+  response.records.forEach(item => {
+    if (item.module) {
+      modules.add(item.module);
+    }
+  });
+  moduleOptions.value = [...modules].sort().map(value => ({ label: value, value }));
+}
 
 function handleInitModel() {
   model.value = createDefaultModel();
@@ -73,13 +89,15 @@ function closeDrawer() {
 async function handleSubmit() {
   await validate();
 
+  const payload = { ...model.value, module: model.value.module || '' };
+
   try {
     if (props.operateType === 'add') {
-      await addDictType(model.value);
+      await addDictType(payload);
     } else {
       await updateDictType({
         ...(props.rowData as Api.SystemManage.DictType),
-        ...model.value
+        ...payload
       });
     }
 
@@ -91,10 +109,11 @@ async function handleSubmit() {
   }
 }
 
-watch(visible, () => {
-  if (visible.value) {
+watch(visible, value => {
+  if (value) {
     handleInitModel();
     restoreValidation();
+    loadModuleOptions();
   }
 });
 </script>
@@ -108,6 +127,16 @@ watch(visible, () => {
         </NFormItem>
         <NFormItem :label="$t('page.manage.dict.dictType')" path="dictType">
           <NInput v-model:value="model.dictType" :placeholder="$t('page.manage.dict.form.dictType')" />
+        </NFormItem>
+        <NFormItem :label="$t('page.manage.dict.module')" path="module">
+          <NSelect
+            v-model:value="model.module"
+            :options="moduleOptions"
+            :placeholder="$t('page.manage.dict.form.module')"
+            filterable
+            tag
+            clearable
+          />
         </NFormItem>
         <NFormItem :label="$t('page.manage.dict.status')" path="status">
           <NSwitch v-model:value="model.status" checked-value="1" unchecked-value="2" />

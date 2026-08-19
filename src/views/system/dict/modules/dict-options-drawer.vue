@@ -258,13 +258,15 @@ function openEdit(id: string) {
       <div class="flex-col gap-16px">
         <NCard :bordered="false" size="small">
           <div class="flex flex-wrap items-center gap-12px lt-sm:flex-col lt-sm:items-stretch">
-            <NInput
-              v-model:value="searchParams.optionLabel"
-              :placeholder="$t('page.manage.dict.option.form.optionLabel')"
-              clearable
-              class="w-200px lt-sm:w-full"
-              @keydown.enter="search"
-            />
+            <!-- the width sits on the wrapper: naive-ui injects .n-input{width:100%} after unocss, which would otherwise stretch the input to the full row -->
+            <div class="w-200px lt-sm:w-full">
+              <NInput
+                v-model:value="searchParams.optionLabel"
+                :placeholder="$t('page.manage.dict.option.form.optionLabel')"
+                clearable
+                @keydown.enter="search"
+              />
+            </div>
             <NSelect
               v-model:value="searchParams.status"
               :placeholder="$t('page.manage.dict.form.status')"

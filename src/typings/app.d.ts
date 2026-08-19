@@ -956,6 +956,7 @@ declare namespace App {
             title: string;
             dictName: string;
             dictType: string;
+            module: string;
             status: string;
             remark: string;
             updateTime: string;
@@ -965,6 +966,7 @@ declare namespace App {
             form: {
               dictName: string;
               dictType: string;
+              module: string;
               status: string;
               remark: string;
             };

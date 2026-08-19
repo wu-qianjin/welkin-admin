@@ -262,6 +262,8 @@ declare namespace Api {
         dictName: string;
         /** dict type key, unique */
         dictType: string;
+        /** business module the dict belongs to */
+        module: string;
         /** remark */
         remark?: string;
       }>,
@@ -273,7 +275,7 @@ declare namespace Api {
 
     /** dict type search params */
     type DictTypeSearchParams = CommonType.RecordNullable<
-      Pick<Api.SystemManage.DictType, 'dictName' | 'dictType' | 'status'> & CommonSearchParams
+      Pick<Api.SystemManage.DictType, 'dictName' | 'dictType' | 'module' | 'status'> & CommonSearchParams
     >;
 
     /** tag color of a dict option, mapped to NTag type */

@@ -792,16 +792,18 @@ const local: App.I18n.Schema = {
       dict: {
         title: 'Dict List',
         dictName: 'Dict Name',
-        dictType: 'Dict Type',
+        dictType: 'Dict Code',
+        module: 'Module',
         status: 'Status',
         remark: 'Remark',
         updateTime: 'Update Time',
         dictOptions: 'Dict Options',
-        addDictType: 'Add Dict Type',
-        editDictType: 'Edit Dict Type',
+        addDictType: 'Add Dict Code',
+        editDictType: 'Edit Dict Code',
         form: {
           dictName: 'Please enter dict name',
-          dictType: 'Please enter dict type',
+          dictType: 'Please enter dict code',
+          module: 'Please select or enter module',
           status: 'Please select status',
           remark: 'Please enter remark'
         },

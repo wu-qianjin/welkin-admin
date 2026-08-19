@@ -788,16 +788,18 @@ const local: App.I18n.Schema = {
       dict: {
         title: '字典列表',
         dictName: '字典名称',
-        dictType: '字典类型',
+        dictType: '字典编码',
+        module: '所属模块',
         status: '状态',
         remark: '备注',
         updateTime: '更新时间',
         dictOptions: '字典选项',
-        addDictType: '新增字典类型',
-        editDictType: '编辑字典类型',
+        addDictType: '新增字典编码',
+        editDictType: '编辑字典编码',
         form: {
           dictName: '请输入字典名称',
-          dictType: '请输入字典类型',
+          dictType: '请输入字典编码',
+          module: '请选择或输入所属模块',
           status: '请选择状态',
           remark: '请输入备注'
         },

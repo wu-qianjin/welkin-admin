@@ -100,6 +100,7 @@ export interface MockDictType {
   id: number;
   dictName: string;
   dictType: string;
+  module: string;
   remark?: string;
   status: string;
   [key: string]: unknown;

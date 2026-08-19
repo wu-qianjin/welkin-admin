@@ -40,6 +40,9 @@ function search() {
             <NFormItemGi span="24 s:12 m:6" :label="$t('page.manage.dict.dictType')" path="dictType" class="pr-24px">
               <NInput v-model:value="model.dictType" :placeholder="$t('page.manage.dict.form.dictType')" />
             </NFormItemGi>
+            <NFormItemGi span="24 s:12 m:6" :label="$t('page.manage.dict.module')" path="module" class="pr-24px">
+              <NInput v-model:value="model.module" :placeholder="$t('page.manage.dict.form.module')" clearable />
+            </NFormItemGi>
             <NFormItemGi span="24 s:12 m:6" :label="$t('page.manage.dict.status')" path="status" class="pr-24px">
               <NSelect
                 v-model:value="model.status"

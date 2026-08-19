@@ -26,6 +26,7 @@ const searchParams = ref<Api.SystemManage.DictTypeSearchParams>({
   size: 10,
   dictName: null,
   dictType: null,
+  module: null,
   status: null
 });
 
@@ -60,6 +61,13 @@ const { columns, columnChecks, data, getData, getDataByPage, loading, mobilePagi
       title: $t('page.manage.dict.dictType'),
       align: 'center',
       minWidth: 160
+    },
+    {
+      key: 'module',
+      title: $t('page.manage.dict.module'),
+      align: 'center',
+      minWidth: 90,
+      render: row => row.module || '-'
     },
     {
       key: 'status',
