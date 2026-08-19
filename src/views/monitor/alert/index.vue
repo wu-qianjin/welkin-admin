@@ -5,9 +5,11 @@ import {
   acknowledgeMonitorAlert,
   recoverMonitorAlert,
   createMonitorAlertRule,
+  deleteMonitorAlertRules,
   fetchMonitorAlertList,
   fetchMonitorAlertRuleList,
   setMonitorAlertRuleStatus,
+  updateMonitorAlertRule,
   type MonitorAlertItem,
   type MonitorAlertRuleItem
 } from '@/service/api';
@@ -111,17 +113,62 @@ async function toggleRule(rule: (typeof rules.value)[number]) {
   window.$message?.success(rule.enabled ? '告警规则已启用' : '告警规则已停用');
 }
 
+/** 规则编辑弹窗（新建/修改共用） */
+const ruleEditVisible = ref(false);
+const editingRuleId = ref<string | null>(null);
+const ruleModel = ref({
+  name: '',
+  target: '',
+  condition: '',
+  level: 2 as 1 | 2 | 3,
+  channels: '站内信',
+  enabled: true
+});
+const levelOptions = [
+  { label: '提示', value: 1 },
+  { label: '警告', value: 2 },
+  { label: '严重', value: 3 }
+];
+
 async function addRule() {
-  await createMonitorAlertRule({
-    name: '新告警规则',
-    target: '未指定服务',
-    condition: '请编辑规则条件',
-    level: 2,
-    channels: '站内信',
-    enabled: false
-  });
+  editingRuleId.value = null;
+  ruleModel.value = { name: '', target: '', condition: '', level: 2, channels: '站内信', enabled: true };
+  ruleEditVisible.value = true;
+}
+
+function editRule(row: AlertRuleRow) {
+  editingRuleId.value = row.id;
+  ruleModel.value = {
+    name: row.name,
+    target: row.target,
+    condition: row.condition,
+    level: row.level === '严重' ? 3 : row.level === '警告' ? 2 : 1,
+    channels: row.channels,
+    enabled: row.enabled
+  };
+  ruleEditVisible.value = true;
+}
+
+async function saveRule() {
+  const model = ruleModel.value;
+  if (!model.name || !model.target || !model.condition) {
+    window.$message?.error('规则名称、监控对象、触发条件均为必填');
+    return;
+  }
+  if (editingRuleId.value) {
+    await updateMonitorAlertRule(editingRuleId.value, model);
+  } else {
+    await createMonitorAlertRule(model);
+  }
+  ruleEditVisible.value = false;
   await loadRules();
-  window.$message?.success('告警规则已创建，请继续完善条件');
+  window.$message?.success(editingRuleId.value ? '告警规则已更新' : '告警规则已创建');
+}
+
+async function removeRule(row: AlertRuleRow) {
+  await deleteMonitorAlertRules([row.id]);
+  await loadRules();
+  window.$message?.success('告警规则已删除');
 }
 
 async function loadAlerts() {
@@ -248,22 +295,40 @@ onMounted(async () => {
       </NDrawerContent>
     </NDrawer>
 
-    <NModal v-model:show="ruleVisible" preset="card" title="告警规则" class="w-820px">
+    <NModal v-model:show="ruleVisible" preset="card" title="告警规则" class="w-900px">
       <NDataTable
         :data="rules"
         :pagination="false"
         size="small"
         :columns="[
-          { key: 'name', title: '规则名称', minWidth: 140 },
-          { key: 'target', title: '监控对象', minWidth: 140 },
-          { key: 'condition', title: '触发条件', minWidth: 200 },
-          { key: 'level', title: '级别', width: 80 },
-          { key: 'channels', title: '通知渠道', minWidth: 150 },
+          { key: 'name', title: '规则名称', minWidth: 130 },
+          { key: 'target', title: '监控对象', minWidth: 120 },
+          { key: 'condition', title: '触发条件', minWidth: 220, ellipsis: { tooltip: true } },
+          { key: 'level', title: '级别', width: 70 },
+          { key: 'channels', title: '通知渠道', minWidth: 100 },
           {
             key: 'enabled',
-            title: '状态',
-            width: 80,
+            title: '启用',
+            width: 70,
             render: row => h(NSwitch, { value: row.enabled, size: 'small', 'onUpdate:value': () => toggleRule(row) })
+          },
+          {
+            key: 'operate',
+            title: '操作',
+            width: 130,
+            render: row =>
+              h('div', { class: 'flex-center gap-6px' }, [
+                h(
+                  NButton,
+                  { size: 'small', type: 'primary', ghost: true, onClick: () => editRule(row) },
+                  { default: () => '编辑' }
+                ),
+                h(
+                  NButton,
+                  { size: 'small', type: 'error', ghost: true, onClick: () => removeRule(row) },
+                  { default: () => '删除' }
+                )
+              ])
           }
         ]"
       />
@@ -271,6 +336,48 @@ onMounted(async () => {
         <NSpace justify="end">
           <NButton @click="ruleVisible = false">关闭</NButton>
           <NButton type="primary" @click="addRule">新增规则</NButton>
+        </NSpace>
+      </template>
+    </NModal>
+
+    <NModal
+      v-model:show="ruleEditVisible"
+      preset="card"
+      :title="editingRuleId ? '编辑告警规则' : '新增告警规则'"
+      class="w-560px"
+    >
+      <NForm :model="ruleModel" label-placement="left" :label-width="80">
+        <NFormItem label="规则名称" required>
+          <NInput v-model:value="ruleModel.name" placeholder="如：网关 QPS 过高" />
+        </NFormItem>
+        <NFormItem label="监控对象" required>
+          <NInput v-model:value="ruleModel.target" placeholder="如：api-gateway QPS" />
+        </NFormItem>
+        <NFormItem label="触发条件" required>
+          <NInput
+            v-model:value="ruleModel.condition"
+            type="textarea"
+            :rows="2"
+            placeholder="格式：PromQL 比较符 阈值，如 sum(rate(gateway_request_total[5m])) > 100"
+          />
+          <template #feedback>
+            评估引擎按「PromQL 表达式 比较符(&gt; &gt;= &lt; &lt;= == !=) 阈值」解析，周期 30s
+          </template>
+        </NFormItem>
+        <NFormItem label="告警级别">
+          <NSelect v-model:value="ruleModel.level" :options="levelOptions" />
+        </NFormItem>
+        <NFormItem label="通知渠道">
+          <NInput v-model:value="ruleModel.channels" placeholder="如：站内信" />
+        </NFormItem>
+        <NFormItem label="启用">
+          <NSwitch v-model:value="ruleModel.enabled" />
+        </NFormItem>
+      </NForm>
+      <template #footer>
+        <NSpace justify="end">
+          <NButton @click="ruleEditVisible = false">取消</NButton>
+          <NButton type="primary" @click="saveRule">保存</NButton>
         </NSpace>
       </template>
     </NModal>
