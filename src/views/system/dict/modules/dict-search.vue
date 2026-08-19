@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { toRaw } from 'vue';
+import { onMounted, ref, toRaw } from 'vue';
 import { jsonClone } from '@sa/utils';
 import { enableStatusOptions } from '@/constants/business';
+import { fetchGetDictTypeModules } from '@/service/api';
 import { translateOptions } from '@/utils/common';
 import { $t } from '@/locales';
 
@@ -16,6 +17,22 @@ interface Emits {
 const emit = defineEmits<Emits>();
 
 const model = defineModel<Api.SystemManage.DictTypeSearchParams>('model', { required: true });
+
+/** distinct non-empty modules from dict types */
+const moduleOptions = ref<CommonType.Option<string>[]>([]);
+
+async function getModuleOptions() {
+  try {
+    const modules = await fetchGetDictTypeModules();
+    moduleOptions.value = modules.map(item => ({ label: item, value: item }));
+  } catch {
+    // request errors are surfaced by the request layer
+  }
+}
+
+onMounted(() => {
+  getModuleOptions();
+});
 
 const defaultModel = jsonClone(toRaw(model.value));
 
@@ -41,7 +58,12 @@ function search() {
               <NInput v-model:value="model.dictType" :placeholder="$t('page.manage.dict.form.dictType')" />
             </NFormItemGi>
             <NFormItemGi span="24 s:12 m:6" :label="$t('page.manage.dict.module')" path="module" class="pr-24px">
-              <NInput v-model:value="model.module" :placeholder="$t('page.manage.dict.form.module')" clearable />
+              <NSelect
+                v-model:value="model.module"
+                :placeholder="$t('page.manage.dict.form.module')"
+                :options="moduleOptions"
+                clearable
+              />
             </NFormItemGi>
             <NFormItemGi span="24 s:12 m:6" :label="$t('page.manage.dict.status')" path="status" class="pr-24px">
               <NSelect

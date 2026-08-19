@@ -575,6 +575,11 @@ export function fetchGetDictTypeList(params?: Api.SystemManage.DictTypeSearchPar
     .then(res => ({ ...res, records: res.records.map(adaptDictTypeItem) })) as Promise<Api.SystemManage.DictTypeList>;
 }
 
+/** get distinct non-empty dict modules for the module filter */
+export function fetchGetDictTypeModules() {
+  return alova.Get<string[]>('/v1/system/dictType/modules');
+}
+
 /** add dict type */
 export function addDictType(data: DictTypeModel) {
   return alova.Post<{ id: string }>('/v1/system/dictType/create', { ...data, status: data.status === '2' ? 0 : 1 });
