@@ -277,15 +277,341 @@ type StoredLoginToken = {
   [key: string]: unknown;
 };
 
-function toLoginToken(value: StoredLoginToken) {
-  const { token, accessToken, ...rest } = value;
-  return { ...rest, accessToken: accessToken ?? token };
+const MOCK_ACCESS_TOKEN_TTL_SECONDS = 60 * 60;
+const MOCK_REFRESH_TOKEN_TTL_SECONDS = 30 * 24 * 60 * 60;
+
+function createMockAccessToken(userName: string, expiresAt: number) {
+  const header = Buffer.from(JSON.stringify({ alg: 'none', typ: 'JWT' })).toString('base64url');
+  const payload = Buffer.from(
+    JSON.stringify({
+      data: [{ userName }],
+      sub: userName,
+      iat: expiresAt - MOCK_ACCESS_TOKEN_TTL_SECONDS,
+      exp: expiresAt
+    })
+  ).toString('base64url');
+  return `${header}.${payload}.welkin-mock`;
 }
 
+function issueMockLoginToken(value: StoredLoginToken, userName: string) {
+  const now = Math.floor(Date.now() / 1000);
+  const accessExpiresAt = now + MOCK_ACCESS_TOKEN_TTL_SECONDS;
+  const refreshExpiresAt = now + MOCK_REFRESH_TOKEN_TTL_SECONDS;
+  // strip the legacy token fields so the response always uses the formal accessToken contract
+  const { token: _token, accessToken: _accessToken, ...rest } = value;
+  return {
+    ...rest,
+    accessToken: createMockAccessToken(userName, accessExpiresAt),
+    accessExpiresAt,
+    refreshExpiresAt
+  };
+}
+
+function toLoginToken(value: StoredLoginToken, userName = 'Super') {
+  return issueMockLoginToken(value, userName);
+}
+// The application uses the gateway's /v1 contract; keep the legacy aliases above for older demos.
+type BackendRouteSource = {
+  name?: string;
+  path?: string;
+  component?: string;
+  meta?: Record<string, unknown>;
+  children?: BackendRouteSource[];
+};
+
+type BackendMenuItem = {
+  id: string;
+  parentId: string;
+  menuType: string;
+  menuName: string;
+  routeName: string;
+  routePath: string;
+  component: string;
+  icon: string;
+  iconType: string;
+  status: number;
+  order: number;
+  i18nKey: string;
+  keepAlive: boolean;
+  constant: boolean;
+  href: string;
+  hideInMenu: boolean;
+  activeMenu: string;
+  multiTab: boolean;
+  fixedIndexInTab: number | null;
+  children?: BackendMenuItem[];
+};
+
+function toBackendMenuItem(route: BackendRouteSource, index = 0): BackendMenuItem {
+  const meta = route.meta || {};
+  return {
+    id: String(route.name || index),
+    parentId: '0',
+    menuType: '2',
+    menuName: String(meta.title || route.name || ''),
+    routeName: String(route.name || ''),
+    routePath: String(route.path || '/'),
+    component: String(route.component || ''),
+    icon: String(meta.icon || ''),
+    iconType: '1',
+    status: 1,
+    order: Number(meta.order || index),
+    i18nKey: String(meta.i18nKey || `route.${route.name || ''}`),
+    keepAlive: Boolean(meta.keepAlive),
+    constant: Boolean(meta.constant),
+    href: String(meta.href || ''),
+    hideInMenu: Boolean(meta.hideInMenu),
+    activeMenu: String(meta.activeMenu || ''),
+    multiTab: Boolean(meta.multiTab),
+    fixedIndexInTab: typeof meta.fixedIndexInTab === 'number' ? meta.fixedIndexInTab : null,
+    children: route.children?.map((child, childIndex) => toBackendMenuItem(child, childIndex))
+  };
+}
+
+const v1RouteRoutes: MockRoute[] = [
+  {
+    method: 'GET',
+    path: '/v1/iam/route/constant',
+    handler({ res }) {
+      const routes = db.constantRoutes as BackendRouteSource[];
+      sendData(
+        res,
+        routes.map((route, index) => toBackendMenuItem(route, index))
+      );
+    }
+  },
+  {
+    method: 'GET',
+    path: '/v1/iam/route/user',
+    handler({ req, res }) {
+      const userName = decodeTokenUser(req.headers.authorization);
+      if (!userName) {
+        sendError(res, '3333', '用户已失效或不存在');
+        return;
+      }
+      const userRoutes = db.userRoutes as { routes?: BackendRouteSource[]; home?: string };
+      sendData(res, {
+        routes: (userRoutes.routes || []).map((route, index) => toBackendMenuItem(route, index)),
+        home: userRoutes.home || 'home'
+      });
+    }
+  },
+  {
+    method: 'GET',
+    path: '/v1/iam/route/exists',
+    handler({ res, query }) {
+      sendData(res, db.allPages.includes(query.get('routeName') || ''));
+    }
+  }
+];
+
+const v1AuthRoutes: MockRoute[] = [
+  {
+    method: 'POST',
+    path: '/v1/iam/auth/login',
+    handler({ res, body }) {
+      const account = db.loginTokens[body?.userName];
+      if (account && body?.password === '123456') {
+        sendData(res, issueMockLoginToken(account, body.userName));
+        return;
+      }
+      sendError(res, '1000', '用户名或密码错误（Mock），请使用 Super / Admin / User + 123456');
+    }
+  },
+  {
+    method: 'GET',
+    path: '/v1/iam/auth/userInfo',
+    handler({ req, res }) {
+      const userName = decodeTokenUser(req.headers.authorization);
+      if (!userName) {
+        sendError(res, '3333', '用户已失效或不存在');
+        return;
+      }
+      sendData(res, db.userInfos[userName] ?? db.userInfos.Super);
+    }
+  },
+  {
+    method: 'POST',
+    path: '/v1/iam/auth/refreshToken',
+    handler({ res, body }) {
+      if (!body?.refreshToken) {
+        sendError(res, '8888', '用户状态失效，请重新登录');
+        return;
+      }
+      const userName = decodeTokenUser(`Bearer ${body.refreshToken}`) ?? 'Super';
+      sendData(res, issueMockLoginToken(db.refreshTokenData, userName));
+    }
+  }
+];
+
+const v1MessageRoutes: MockRoute[] = [
+  {
+    method: 'POST',
+    path: '/v1/system/message/page',
+    handler({ res, body }) {
+      const keyword = body?.keyword;
+      const unread = body?.unread;
+      const records = store.notices
+        .filter(notice => notice.noticeStatus === '2')
+        .filter(notice => contains(notice.title, keyword))
+        .map(notice => ({
+          id: String(notice.id),
+          noticeId: String(notice.id),
+          title: notice.title,
+          type: Number(notice.noticeType),
+          summary: notice.content.replace(/<[^>]*>/g, '').slice(0, 120),
+          content: notice.content,
+          author: notice.createBy,
+          publishAt: notice.updateTime || notice.createTime,
+          read: false,
+          top: notice.isTop,
+          scope: 'all'
+        }))
+        .filter(message => unread !== true || !message.read);
+      const query = new URLSearchParams({ current: String(body?.current ?? 1), size: String(body?.size ?? 10) });
+      sendData(res, paginate(records, query));
+    }
+  },
+  {
+    method: 'PUT',
+    path: '/v1/system/message/:id/read',
+    handler({ res }) {
+      sendData(res, null);
+    }
+  },
+  {
+    method: 'PUT',
+    path: '/v1/system/message/readAll',
+    handler({ res }) {
+      sendData(res, null);
+    }
+  },
+  {
+    method: 'GET',
+    path: '/v1/system/message/unreadCount',
+    handler({ res }) {
+      sendData(res, { count: store.notices.filter(notice => notice.noticeStatus === '2').length });
+    }
+  }
+];
+
+function isMockSessionActive(session: { loginTime: string; refreshExpiresAt?: string; revokedAt?: string | null }) {
+  if (session.revokedAt) return false;
+  const loginAt = Date.parse(session.loginTime.replace(' ', 'T'));
+  const expiresAt = session.refreshExpiresAt ? Date.parse(session.refreshExpiresAt.replace(' ', 'T')) : Number.NaN;
+  const effectiveExpiresAt = Number.isNaN(expiresAt)
+    ? Number.isNaN(loginAt)
+      ? Number.POSITIVE_INFINITY
+      : loginAt + 60 * 60 * 1000
+    : expiresAt;
+  return effectiveExpiresAt > Date.now();
+}
+
+const v1AuditRoutes: MockRoute[] = [
+  {
+    method: 'POST',
+    path: '/v1/monitor/loginLog/page',
+    handler({ res, body }) {
+      const logs = store.loginLogs.filter(
+        log =>
+          contains(log.userName, body?.userName) &&
+          contains(log.ipaddr, body?.ipaddr) &&
+          (body?.status === undefined ||
+            body?.status === null ||
+            body?.status === '' ||
+            Number(log.status) === Number(body.status))
+      );
+      sendData(
+        res,
+        paginate(logs, new URLSearchParams({ current: String(body?.current ?? 1), size: String(body?.size ?? 10) }))
+      );
+    }
+  },
+  {
+    method: 'DELETE',
+    path: '/v1/monitor/loginLog/delete',
+    handler({ res, body }) {
+      const ids = (body?.ids || []).map(Number);
+      store.loginLogs = store.loginLogs.filter(log => !ids.includes(log.id));
+      sendData(res, null);
+    }
+  },
+  {
+    method: 'DELETE',
+    path: '/v1/monitor/loginLog/clear',
+    handler({ res }) {
+      store.loginLogs = [];
+      sendData(res, null);
+    }
+  },
+  {
+    method: 'POST',
+    path: '/v1/monitor/operateLog/page',
+    handler({ res, body }) {
+      const logs = store.operateLogs.filter(
+        log =>
+          contains(log.title, body?.title) &&
+          contains(log.userName, body?.userName) &&
+          (body?.businessType === undefined ||
+            body?.businessType === null ||
+            body?.businessType === '' ||
+            Number(log.businessType) === Number(body.businessType))
+      );
+      sendData(
+        res,
+        paginate(logs, new URLSearchParams({ current: String(body?.current ?? 1), size: String(body?.size ?? 10) }))
+      );
+    }
+  },
+  {
+    method: 'DELETE',
+    path: '/v1/monitor/operateLog/delete',
+    handler({ res, body }) {
+      const ids = (body?.ids || []).map(Number);
+      store.operateLogs = store.operateLogs.filter(log => !ids.includes(log.id));
+      sendData(res, null);
+    }
+  },
+  {
+    method: 'DELETE',
+    path: '/v1/monitor/operateLog/clear',
+    handler({ res }) {
+      store.operateLogs = [];
+      sendData(res, null);
+    }
+  },
+  {
+    method: 'POST',
+    path: '/v1/iam/session/page',
+    handler({ res, body }) {
+      const users = store.onlineUsers.filter(
+        user =>
+          isMockSessionActive(user) && contains(user.userName, body?.userName) && contains(user.ipaddr, body?.ipaddr)
+      );
+      sendData(
+        res,
+        paginate(users, new URLSearchParams({ current: String(body?.current ?? 1), size: String(body?.size ?? 10) }))
+      );
+    }
+  },
+  {
+    method: 'DELETE',
+    path: '/v1/iam/session/:id',
+    handler({ res, url }) {
+      const id = Number(url.pathname.split('/').pop());
+      store.onlineUsers = store.onlineUsers.filter(user => user.id !== id);
+      sendData(res, null);
+    }
+  }
+];
+
 const routes: MockRoute[] = [
+  ...v1RouteRoutes,
+  ...v1MessageRoutes,
+  ...v1AuthRoutes,
+  ...v1AuditRoutes,
   ...customMockRoutes,
   ...monitorRoutes,
-
   // ---------------- auth ----------------
   {
     method: 'POST',
@@ -690,7 +1016,123 @@ const routes: MockRoute[] = [
     }
   },
 
-  // ---------------- dict ----------------
+  // ---------------- v1 dict ----------------
+  {
+    method: 'POST',
+    path: '/v1/system/dictType/page',
+    handler({ res, body }) {
+      const types = store.dictTypes.filter(
+        type =>
+          contains(type.dictName, body?.dictName) &&
+          contains(type.dictType, body?.dictType) &&
+          contains(type.module, body?.module) &&
+          (body?.status === undefined ||
+            body?.status === null ||
+            (Number(body.status) === 1 ? String(type.status) === '1' : String(type.status) === '2'))
+      );
+      const query = new URLSearchParams({ current: String(body?.current ?? 1), size: String(body?.size ?? 10) });
+      sendData(res, paginate(types, query));
+    }
+  },
+  {
+    method: 'POST',
+    path: '/v1/system/dictType/create',
+    handler({ res, body }) {
+      if (store.dictTypes.some(type => type.dictType === body?.dictType)) {
+        sendError(res, '1001', `字典编码 ${body?.dictType} 已存在`);
+        return;
+      }
+      const record = dictTypeCrud.add({ ...body, module: body?.module ?? '' });
+      sendData(res, { id: String(record.id) });
+    }
+  },
+  {
+    method: 'PUT',
+    path: '/v1/system/dictType/update/:id',
+    handler({ res, body, url }) {
+      const id = Number(url.pathname.split('/').pop());
+      const conflict = store.dictTypes.find(type => type.dictType === body?.dictType && type.id !== id);
+      if (conflict) {
+        sendError(res, '1001', `字典编码 ${body?.dictType} 已存在`);
+        return;
+      }
+      dictTypeCrud.update({ ...body, id, module: body?.module ?? '' });
+      sendData(res, null);
+    }
+  },
+  {
+    method: 'DELETE',
+    path: '/v1/system/dictType/delete',
+    handler({ res, body }) {
+      const ids = (body?.ids || []).map((id: string | number) => Number(id));
+      const blocked = store.dictTypes.find(
+        type => ids.includes(type.id) && store.dictOptions.some(option => option.dictType === type.dictType)
+      );
+      if (blocked) {
+        sendError(res, '1002', `字典编码 ${blocked.dictType} 下存在选项，请先删除全部选项`);
+        return;
+      }
+      dictTypeCrud.batchRemove(ids);
+      sendData(res, null);
+    }
+  },
+  {
+    method: 'POST',
+    path: '/v1/system/dictOption/page',
+    handler({ res, body }) {
+      const options = store.dictOptions
+        .filter(
+          option =>
+            equals(option.dictType, body?.dictType) &&
+            contains(option.optionLabel, body?.optionLabel) &&
+            (body?.status === undefined ||
+              body?.status === null ||
+              (Number(body.status) === 1 ? String(option.status) === '1' : String(option.status) === '2'))
+        )
+        .sort((a, b) => a.sort - b.sort);
+      const query = new URLSearchParams({ current: String(body?.current ?? 1), size: String(body?.size ?? 10) });
+      sendData(res, paginate(options, query));
+    }
+  },
+  {
+    method: 'POST',
+    path: '/v1/system/dictOption/create',
+    handler({ res, body }) {
+      const conflict = store.dictOptions.some(
+        option => option.dictType === body?.dictType && option.optionValue === body?.optionValue
+      );
+      if (conflict) {
+        sendError(res, '1001', `选项值 ${body?.optionValue} 在该类型下已存在`);
+        return;
+      }
+      const record = dictOptionCrud.add(body);
+      sendData(res, { id: String(record.id) });
+    }
+  },
+  {
+    method: 'PUT',
+    path: '/v1/system/dictOption/update/:id',
+    handler({ res, body, url }) {
+      const id = Number(url.pathname.split('/').pop());
+      const conflict = store.dictOptions.some(
+        option => option.dictType === body?.dictType && option.optionValue === body?.optionValue && option.id !== id
+      );
+      if (conflict) {
+        sendError(res, '1001', `选项值 ${body?.optionValue} 在该类型下已存在`);
+        return;
+      }
+      dictOptionCrud.update({ ...body, id });
+      sendData(res, null);
+    }
+  },
+  {
+    method: 'DELETE',
+    path: '/v1/system/dictOption/delete',
+    handler({ res, body }) {
+      dictOptionCrud.batchRemove((body?.ids || []).map((id: string | number) => Number(id)));
+      sendData(res, null);
+    }
+  },
   {
     method: 'GET',
     path: '/systemManage/getDictTypeList',
@@ -699,6 +1141,7 @@ const routes: MockRoute[] = [
         type =>
           contains(type.dictName, query.get('dictName')) &&
           contains(type.dictType, query.get('dictType')) &&
+          contains(type.module, query.get('module')) &&
           equals(type.status, query.get('status'))
       );
       sendData(res, paginate(types, query));
@@ -1135,7 +1578,7 @@ const routes: MockRoute[] = [
 ];
 
 export interface MockRequestOptions {
-  /** Keep the demo monitor fixtures local; hybrid mode uses the real gateway monitor API. */
+  /** Local monitor fixtures are enabled in hybrid/custom development modes. */
   includeMonitor?: boolean;
 }
 
@@ -1153,7 +1596,12 @@ export async function handleMockRequest(
   const matched = routes.find(
     item =>
       item.method === method &&
-      item.path === route &&
+      (item.path === route ||
+        (item.path.includes('/:') &&
+          item.path.split('/').length === route.split('/').length &&
+          item.path
+            .split('/')
+            .every((segment, index) => segment.startsWith(':') || segment === route.split('/')[index]))) &&
       (options.includeMonitor || !monitorRoutes.includes(item) || !item.path.startsWith('/v1/gateway/monitor/'))
   );
 

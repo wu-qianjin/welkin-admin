@@ -10,14 +10,21 @@ import { handleMockRequest, MOCK_PROXY_PREFIX } from './index';
  */
 export function setupLocalMock(viteEnv: Env.ImportMeta): Plugin {
   const mode = viteEnv.VITE_MOCK_MODE || 'hybrid';
-  const includeMonitor = mode === 'custom';
-
+  const includeMonitor = mode !== 'backend';
   return {
     name: 'welkin:local-mock',
     configureServer(server) {
       if (mode === 'backend') return;
 
       server.middlewares.use((req, res, next) => {
+        const isAuthRequest = req.url?.startsWith(`${MOCK_PROXY_PREFIX}/v1/iam/auth/`);
+
+        // A mock token cannot authenticate requests that hybrid mode forwards to the real gateway.
+        if (mode === 'hybrid' && isAuthRequest) {
+          next();
+          return;
+        }
+
         if (req.url?.startsWith(MOCK_PROXY_PREFIX)) {
           handleMockRequest(req, res, next, { includeMonitor });
           return;
