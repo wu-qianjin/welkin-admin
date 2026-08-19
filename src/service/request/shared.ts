@@ -30,6 +30,8 @@ export async function handleRefreshToken() {
     }
     localStg.set('token', accessToken);
     localStg.set('refreshToken', data.refreshToken);
+    if (data.accessExpiresAt !== undefined) localStg.set('accessExpiresAt', data.accessExpiresAt);
+    if (data.refreshExpiresAt !== undefined) localStg.set('refreshExpiresAt', data.refreshExpiresAt);
   } catch (error) {
     window.$message?.error($t('common.sessionExpired'));
     resetStore();

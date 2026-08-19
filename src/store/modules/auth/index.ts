@@ -154,16 +154,17 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
   }
 
   async function loginByToken(loginToken: Api.Auth.LoginToken) {
-    // Accept both the formal accessToken contract and legacy/custom Mock
-    // responses that still return `token`.
+    // Accept both the formal accessToken contract and legacy/custom Mock responses.
     const accessToken = loginToken.accessToken || (loginToken as Api.Auth.LoginToken & { token?: string }).token;
     if (!accessToken) {
       throw new Error('登录响应缺少 accessToken');
     }
 
-    // 1. stored in the localStorage, the later requests need it in headers
+    // 1. stored in localStorage; later requests need it in headers
     localStg.set('token', accessToken);
     localStg.set('refreshToken', loginToken.refreshToken);
+    if (loginToken.accessExpiresAt !== undefined) localStg.set('accessExpiresAt', loginToken.accessExpiresAt);
+    if (loginToken.refreshExpiresAt !== undefined) localStg.set('refreshExpiresAt', loginToken.refreshExpiresAt);
 
     // 2. get user info
     const pass = await getUserInfo();

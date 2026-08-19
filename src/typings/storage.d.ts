@@ -12,12 +12,16 @@ declare namespace StorageType {
   interface Local {
     /** The i18n language */
     lang: App.I18n.LangType;
-    /** The token */
+    /** The access token */
     token: string;
-    /** Fixed sider with mix-menu */
-    mixSiderFixed: CommonType.YesOrNo;
+    /** The access token expiry as Unix seconds */
+    accessExpiresAt: number;
     /** The refresh token */
     refreshToken: string;
+    /** The refresh token expiry as Unix seconds */
+    refreshExpiresAt: number;
+    /** Whether the mixed layout sider stays fixed */
+    mixSiderFixed: CommonType.YesOrNo;
     /** The theme color */
     themeColor: string;
     /** The dark mode */

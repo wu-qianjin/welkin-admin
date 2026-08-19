@@ -8,5 +8,7 @@ export function getToken() {
 /** Clear auth storage */
 export function clearAuthStorage() {
   localStg.remove('token');
+  localStg.remove('accessExpiresAt');
   localStg.remove('refreshToken');
+  localStg.remove('refreshExpiresAt');
 }
