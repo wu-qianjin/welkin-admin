@@ -486,6 +486,12 @@ declare namespace Api {
       os: string;
       /** login time */
       loginTime: string;
+      /** session refresh-token expiry, returned by IAM when available */
+      refreshExpiresAt?: string;
+      /** session revocation time */
+      revokedAt?: string | null;
+      /** last activity time, when supplied by the backend */
+      lastActiveAt?: string;
     };
 
     /** online user list */

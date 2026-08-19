@@ -975,14 +975,34 @@ export function clearOperateLog() {
 
 // ---------------- online user ----------------
 
-/** get online user list */
+/**
+ * Keep only active sessions. IAM normally returns refreshExpiresAt/revokedAt;
+ * older responses omit those fields, so retain the documented one-hour fallback.
+ */
+function isOnlineSessionActive(session: Api.SystemManage.OnlineUser) {
+  if (session.revokedAt) return false;
+  const expiresAt = session.refreshExpiresAt ? Date.parse(session.refreshExpiresAt) : Number.NaN;
+  const loginAt = Date.parse(session.loginTime.replace(' ', 'T'));
+  const effectiveExpiresAt = Number.isNaN(expiresAt)
+    ? Number.isNaN(loginAt)
+      ? Number.POSITIVE_INFINITY
+      : loginAt + 60 * 60 * 1000
+    : expiresAt;
+  return effectiveExpiresAt > Date.now();
+}
+
 export function fetchGetOnlineUserList(params?: Api.SystemManage.OnlineUserSearchParams) {
-  return alova.Post<Api.SystemManage.OnlineUserList>('/v1/iam/session/page', {
-    current: params?.current ?? 1,
-    size: params?.size ?? 10,
-    userName: params?.userName ?? '',
-    ipaddr: params?.ipaddr ?? ''
-  });
+  return alova
+    .Post<Api.SystemManage.OnlineUserList>('/v1/iam/session/page', {
+      current: params?.current ?? 1,
+      size: params?.size ?? 10,
+      userName: params?.userName ?? '',
+      ipaddr: params?.ipaddr ?? ''
+    })
+    .then(res => {
+      const records = res.records.filter(isOnlineSessionActive);
+      return { ...res, records, total: records.length };
+    });
 }
 
 /** force logout online users */

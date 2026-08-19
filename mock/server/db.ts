@@ -187,6 +187,9 @@ export interface MockOnlineUser {
   browser: string;
   os: string;
   loginTime: string;
+  /** backend session expiry; old fixtures may omit this and use loginTime + one hour */
+  refreshExpiresAt?: string;
+  revokedAt?: string | null;
 }
 
 /**

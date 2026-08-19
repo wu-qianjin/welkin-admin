@@ -8,7 +8,8 @@
       "loginLocation": "北京市 北京市",
       "browser": "Chrome 150",
       "os": "Windows 11",
-      "loginTime": "2025-08-14 09:15:22"
+      "loginTime": "2026-08-19 09:15:22",
+      "refreshExpiresAt": "2099-01-01 00:00:00"
     },
     {
       "id": 2,
@@ -17,8 +18,8 @@
       "ipaddr": "192.168.1.23",
       "loginLocation": "北京市 北京市",
       "browser": "Chrome 150",
-      "os": "Windows 11",
-      "loginTime": "2025-08-14 09:02:47"
+      "loginTime": "2026-08-19 09:02:47",
+      "refreshExpiresAt": "2099-01-01 00:00:00"
     },
     {
       "id": 3,
@@ -28,7 +29,8 @@
       "loginLocation": "广东省 深圳市",
       "browser": "Edge 150",
       "os": "Windows 10",
-      "loginTime": "2025-08-13 18:23:05"
+      "loginTime": "2025-08-13 18:23:05",
+      "refreshExpiresAt": "2025-08-13 19:23:05"
     },
     {
       "id": 4,
@@ -38,7 +40,8 @@
       "loginLocation": "北京市 北京市",
       "browser": "Chrome 149",
       "os": "Windows 10",
-      "loginTime": "2025-08-13 10:35:19"
+      "loginTime": "2025-08-13 10:35:19",
+      "refreshExpiresAt": "2025-08-13 11:35:19"
     },
     {
       "id": 5,
@@ -48,7 +51,8 @@
       "loginLocation": "浙江省 杭州市",
       "browser": "Chrome 149",
       "os": "Windows 10",
-      "loginTime": "2025-08-12 14:20:15"
+      "loginTime": "2025-08-12 14:20:15",
+      "refreshExpiresAt": "2025-08-12 15:20:15"
     },
     {
       "id": 6,
@@ -58,7 +62,8 @@
       "loginLocation": "北京市 北京市",
       "browser": "Safari 18",
       "os": "macOS 15",
-      "loginTime": "2025-08-11 10:05:36"
+      "loginTime": "2025-08-11 10:05:36",
+      "refreshExpiresAt": "2025-08-11 11:05:36"
     }
   ],
   "current": 1,
