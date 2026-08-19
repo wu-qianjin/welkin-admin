@@ -45,6 +45,10 @@ Technology stack: Vue 3, TypeScript, Vite, Pinia, Vue Router, Naive UI, UnoCSS, 
 - `/Users/wuqianjin/develop_space/timaic/welkin/apps/api-example/`
 - `/Users/wuqianjin/develop_space/timaic/welkin/pkg/`
 
+## Backend Code (Windows)
+
+- `D:\develop_space\timaic\welkin\` (same Go monorepo as the macOS paths above)
+
 ## Development Commands
 
 ```bash
