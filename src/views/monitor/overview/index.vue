@@ -10,8 +10,10 @@ import {
   fetchGetGatewayServiceList,
   fetchGetServerList,
   fetchGetServerMetrics,
+  fetchGetMonitorDBPool,
   fetchMonitorAlertList
 } from '@/service/api';
+import type { MonitorDBPoolStats } from '@/service/api';
 import { formatDateTime } from '@/utils/common';
 import { useRouter } from 'vue-router';
 
@@ -25,7 +27,11 @@ const gatewayOverview = ref<Api.Gateway.Overview | null>(null);
 const trendPoints = ref<Api.Gateway.TrendPoint[]>([]);
 const services = ref<Api.Gateway.Service[]>([]);
 const servers = ref<Api.Monitor.Server[]>([]);
+const dbPool = ref<MonitorDBPoolStats | null>(null);
 const alerts = ref<import('@/service/api/monitor').MonitorAlertItem[]>([]);
+
+/** 趋势展示最近 7 天 */
+const TREND_SPAN_MS = 7 * 24 * 60 * 60 * 1000;
 
 const pendingAlertCount = computed(() => alerts.value.filter(item => item.status === 1 || item.status === 2).length);
 const severeAlertCount = computed(() => alerts.value.filter(item => item.level >= 3 && item.status !== 3).length);
@@ -61,11 +67,11 @@ const healthCards = computed(() => {
     },
     {
       label: '数据库连接',
-      value: '数据源未配置',
-      detail: '数据库池指标待接入 Prometheus',
+      value: dbPool.value ? `${dbPool.value.inUse} / ${dbPool.value.maxOpenConnections}` : '数据源未配置',
+      detail: dbPool.value ? `空闲 ${dbPool.value.idle} · 等待 ${dbPool.value.waitCount} 次` : '连接池指标不可用',
       icon: 'mdi:database-outline',
       color: '#d97706',
-      status: 'warning'
+      status: dbPool.value ? 'success' : 'warning'
     },
     {
       label: '今日请求',
@@ -157,7 +163,7 @@ const trendOption = (): ECOption => ({
   xAxis: {
     type: 'category',
     boundaryGap: false,
-    data: trendPoints.value.map(item => dayjs(item.time).format('YYYY-MM-DD HH:mm:ss'))
+    data: trendPoints.value.map(item => dayjs(item.time).format('MM-DD HH:mm'))
   },
   yAxis: { type: 'value', splitNumber: 4 },
   series: [
@@ -193,17 +199,19 @@ function goAlerts() {
 
 /** 各请求独立降级：单个数据源失败不拖垮整页 */
 async function loadData() {
-  const [overview, trend, serviceList, serverList, alertPage] = await Promise.all([
+  const [overview, trend, serviceList, serverList, pool, alertPage] = await Promise.all([
     fetchGetGatewayOverview().catch(() => null),
-    fetchGetGatewayTrend({ startTime: Date.now() - 60 * 60 * 1000, endTime: Date.now() }).catch(() => null),
+    fetchGetGatewayTrend({ startTime: Date.now() - TREND_SPAN_MS, endTime: Date.now() }).catch(() => null),
     fetchGetGatewayServiceList().catch(() => null),
     fetchGetServerList().catch(() => null),
+    fetchGetMonitorDBPool().catch(() => null),
     fetchMonitorAlertList({ current: 1, size: 20 }).catch(() => null)
   ]);
   gatewayOverview.value = overview;
   trendPoints.value = trend ?? [];
   services.value = serviceList ?? [];
   servers.value = serverList ?? [];
+  dbPool.value = pool;
   alerts.value = alertPage?.records ?? [];
   lastUpdated.value = formatDateTime(overview?.updatedAt ?? Date.now());
   updateTrend(trendOption);
@@ -341,9 +349,6 @@ onMounted(async () => {
     </NGrid>
 
     <NCard title="服务实例状态" :bordered="false" class="card-wrapper">
-      <template #header-extra>
-        <NButton text type="primary" @click="router.push('/monitor/server')">查看实例监控</NButton>
-      </template>
       <NGrid cols="1 s:2 m:4" responsive="screen" :x-gap="12" :y-gap="12">
         <NGi v-for="service in serviceHealth" :key="service.code">
           <div class="rounded-8px border-1px border-gray-2 p-12px">
@@ -408,10 +413,10 @@ onMounted(async () => {
               </NDescriptionsItem>
               <NDescriptionsItem :label="$t('page.monitor.openFds')">{{ runtimeMetrics.openFds }}</NDescriptionsItem>
               <NDescriptionsItem :label="$t('page.monitor.memUsage')">
-                {{ runtimeMetrics.memUsed }} / {{ runtimeMetrics.memTotal }} GB
+                {{ runtimeMetrics.memUsed }} / {{ runtimeMetrics.memTotal }} MB
               </NDescriptionsItem>
               <NDescriptionsItem :label="$t('page.monitor.diskUsage')">
-                {{ runtimeMetrics.diskUsed }} / {{ runtimeMetrics.diskTotal }} GB
+                {{ runtimeMetrics.diskPercent }}%
               </NDescriptionsItem>
               <NDescriptionsItem :label="$t('page.monitor.netIn')">{{ runtimeMetrics.netIn }} KB/s</NDescriptionsItem>
               <NDescriptionsItem :label="$t('page.monitor.netOut')">{{ runtimeMetrics.netOut }} KB/s</NDescriptionsItem>
@@ -446,7 +451,6 @@ onMounted(async () => {
               { key: 'statusLabel', title: '状态', width: 80 }
             ]"
           />
-          <NEmpty v-if="!alertRows.length" class="h-120px" :description="$t('common.noData')" />
         </NCard>
       </NGi>
     </NGrid>
