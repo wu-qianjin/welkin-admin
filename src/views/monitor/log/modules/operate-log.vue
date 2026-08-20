@@ -9,7 +9,6 @@ import {
   fetchGetOperateLogList
 } from '@/service/api';
 import { defaultTransform, useNaivePaginatedTable } from '@/hooks/common/table';
-import { useAppStore } from '@/store/modules/app';
 import { $t } from '@/locales';
 import { formatDateTime } from '@/utils/common';
 import OperateLogSearch from './operate-log-search.vue';
@@ -17,8 +16,6 @@ import OperateLogSearch from './operate-log-search.vue';
 defineOptions({
   name: 'OperateLog'
 });
-
-const appStore = useAppStore();
 
 const searchParams = ref<Api.SystemManage.OperateLogSearchParams>({
   current: 1,
@@ -87,7 +84,8 @@ const { columns, data, getData, getDataByPage, loading, mobilePagination } = use
       key: 'method',
       title: $t('page.manage.log.operate.method'),
       align: 'center',
-      width: 90
+      width: 100,
+      render: row => <NTag type={methodTagType(row.method)} size="small">{row.method}</NTag>
     },
     {
       key: 'url',
@@ -100,10 +98,7 @@ const { columns, data, getData, getDataByPage, loading, mobilePagination } = use
       title: $t('page.manage.log.operate.code'),
       align: 'center',
       width: 90,
-      render: row => {
-        const isSuccess = row.code === '0000';
-        return <NTag type={isSuccess ? 'success' : 'error'}>{row.code}</NTag>;
-      }
+      render: row => <NTag type={statusTagType(row.code)}>{row.code}</NTag>
     },
     {
       key: 'costTime',
@@ -156,6 +151,28 @@ function viewDetail(row: Api.SystemManage.OperateLog) {
   detailVisible.value = true;
 }
 
+/** 请求方式标签色：GET 绿 / POST 蓝 / PUT 橙 / DELETE 红 */
+function methodTagType(method: string): NaiveUI.ThemeColor {
+  const map: Record<string, NaiveUI.ThemeColor> = {
+    GET: 'success',
+    POST: 'info',
+    PUT: 'warning',
+    PATCH: 'warning',
+    DELETE: 'error'
+  };
+  return map[method.toUpperCase()] ?? 'default';
+}
+
+/** HTTP 状态码标签色：2xx 绿 / 3xx 蓝 / 4xx 橙 / 5xx 红 */
+function statusTagType(code: string): NaiveUI.ThemeColor {
+  const status = Number(code);
+  if (status >= 200 && status < 300) return 'success';
+  if (status >= 300 && status < 400) return 'info';
+  if (status >= 400 && status < 500) return 'warning';
+  if (status >= 500) return 'error';
+  return 'default';
+}
+
 async function handleDelete(id: string) {
   try {
     await deleteOperateLog(id);
@@ -191,7 +208,7 @@ function maskParams(params?: string | null) {
 }
 
 function exportLogs() {
-  const header = ['模块', '操作类型', '操作人员', '请求方式', '请求地址', '结果码', '耗时(ms)', 'IP', '操作时间'];
+  const header = ['模块', '操作类型', '操作人员', '请求方式', '请求地址', '状态码', '耗时(ms)', 'IP', '操作时间'];
   const rows = data.value.map(row => [row.title, row.businessType, row.userName, row.method, row.url, row.code, row.costTime, row.ipaddr, row.operateTime]);
   const csv = [header, ...rows].map(row => row.map(value => `"${String(value).replaceAll('"', '""')}"`).join(',')).join('\n');
   const url = URL.createObjectURL(new Blob([`\ufeff${csv}`], { type: 'text/csv;charset=utf-8' }));
@@ -208,7 +225,7 @@ function exportLogs() {
   <div class="flex-col-stretch gap-16px">
     <OperateLogSearch v-model:model="searchParams" @search="getDataByPage" />
 
-    <NCard :title="$t('page.manage.log.operateTab')" :bordered="false" size="small" class="card-wrapper flex-1-hidden">
+    <NCard :title="$t('page.manage.log.operateTab')" :bordered="false" size="small" class="card-wrapper">
       <template #header-extra>
         <NSpace align="center">
           <NButton size="small" @click="getData">
@@ -244,13 +261,11 @@ function exportLogs() {
         :columns="columns"
         :data="data"
         size="small"
-        :flex-height="!appStore.isMobile"
         :loading="loading"
         remote
         :scroll-x="1600"
         :row-key="row => row.id"
         :pagination="mobilePagination"
-        class="sm:h-full"
       />
     </NCard>
 
@@ -264,14 +279,18 @@ function exportLogs() {
           <NDescriptionsItem :label="$t('page.manage.log.operate.userName')">
             {{ detailData.userName }}
           </NDescriptionsItem>
-          <NDescriptionsItem :label="$t('page.manage.log.operate.method')">{{ detailData.method }}</NDescriptionsItem>
+          <NDescriptionsItem :label="$t('page.manage.log.operate.method')">
+            <NTag :type="methodTagType(detailData.method)" size="small">{{ detailData.method }}</NTag>
+          </NDescriptionsItem>
           <NDescriptionsItem :label="$t('page.manage.log.operate.url')">{{ detailData.url }}</NDescriptionsItem>
           <NDescriptionsItem :label="$t('page.manage.log.operate.params')">
             <pre class="overflow-auto max-h-300px whitespace-pre-wrap break-all text-12px">{{
               maskParams(detailData.params)
             }}</pre>
           </NDescriptionsItem>
-          <NDescriptionsItem :label="$t('page.manage.log.operate.code')">{{ detailData.code }}</NDescriptionsItem>
+          <NDescriptionsItem :label="$t('page.manage.log.operate.code')">
+            <NTag :type="statusTagType(detailData.code)">{{ detailData.code }}</NTag>
+          </NDescriptionsItem>
           <NDescriptionsItem :label="$t('page.manage.log.operate.costTime')">
             {{ detailData.costTime }} ms
           </NDescriptionsItem>

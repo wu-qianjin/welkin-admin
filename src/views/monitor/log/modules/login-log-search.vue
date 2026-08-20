@@ -75,7 +75,7 @@ async function search() {
             <NFormItemGi span="24 s:12 m:6" label="登录时间" class="pr-24px">
               <NDatePicker v-model:value="dateRange" type="datetimerange" clearable class="w-full" />
             </NFormItemGi>
-            <NFormItemGi span="24 m:6" class="pr-24px">
+            <NFormItemGi span="24 m:24">
               <NSpace class="w-full" justify="end">
                 <NButton @click="reset">
                   <template #icon>

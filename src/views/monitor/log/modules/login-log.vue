@@ -2,7 +2,6 @@
 import { ref } from 'vue';
 import { NButton, NPopconfirm, NTag } from 'naive-ui';
 import { clearLoginLog, deleteLoginLog, fetchGetLoginLogList } from '@/service/api';
-import { useAppStore } from '@/store/modules/app';
 import { defaultTransform, useNaivePaginatedTable } from '@/hooks/common/table';
 import { $t } from '@/locales';
 import { formatDateTime } from '@/utils/common';
@@ -11,8 +10,6 @@ import LoginLogSearch from './login-log-search.vue';
 defineOptions({
   name: 'LoginLog'
 });
-
-const appStore = useAppStore();
 
 const searchParams = ref<Api.SystemManage.LoginLogSearchParams>({
   current: 1,
@@ -152,7 +149,7 @@ function exportLogs() {
   <div class="flex-col-stretch gap-16px">
     <LoginLogSearch v-model:model="searchParams" @search="getDataByPage" />
 
-    <NCard :title="$t('page.manage.log.loginTab')" :bordered="false" size="small" class="card-wrapper flex-1-hidden">
+    <NCard :title="$t('page.manage.log.loginTab')" :bordered="false" size="small" class="card-wrapper">
       <template #header-extra>
         <NSpace align="center">
           <NButton size="small" @click="getData">
@@ -179,13 +176,11 @@ function exportLogs() {
         :columns="columns"
         :data="data"
         size="small"
-        :flex-height="!appStore.isMobile"
         :loading="loading"
         remote
         :scroll-x="1300"
         :row-key="row => row.id"
         :pagination="mobilePagination"
-        class="sm:h-full"
       />
     </NCard>
   </div>
