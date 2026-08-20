@@ -1167,6 +1167,9 @@ declare namespace App {
           viewDetail: string;
           routeDetail: string;
           routeName: string;
+          source: string;
+          internalPath: string;
+          mapped: string;
           statusDistribution: string;
           successRate: string;
           lastSeen: string;

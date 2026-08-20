@@ -33,6 +33,15 @@ const alerts = ref<import('@/service/api/monitor').MonitorAlertItem[]>([]);
 /** 趋势展示最近 7 天 */
 const TREND_SPAN_MS = 7 * 24 * 60 * 60 * 1000;
 
+const trendRange = ref<[number, number] | null>([Date.now() - TREND_SPAN_MS, Date.now()]);
+
+function trendParams() {
+  return {
+    startTime: trendRange.value?.[0] ?? Date.now() - TREND_SPAN_MS,
+    endTime: trendRange.value?.[1] ?? Date.now()
+  };
+}
+
 const pendingAlertCount = computed(() => alerts.value.filter(item => item.status === 1 || item.status === 2).length);
 const severeAlertCount = computed(() => alerts.value.filter(item => item.level >= 3 && item.status !== 3).length);
 
@@ -76,7 +85,7 @@ const healthCards = computed(() => {
     {
       label: '今日请求',
       value: formatCompact(overview?.todayCalls ?? 0),
-      detail: `当前 QPS ${(overview?.qps ?? 0).toFixed(1)}`,
+      detail: `近1分钟平均 QPS ${(overview?.qps ?? 0).toFixed(1)}`,
       icon: 'mdi:chart-line',
       color: '#0891b2',
       status: 'success'
@@ -99,8 +108,8 @@ const runtimeMetrics = computed(() =>
   runtimeServer.value ? (serverMetrics.value[runtimeServer.value.id] ?? null) : null
 );
 /** 以网关发现的服务为准（与"基础依赖健康"同源），合并 monitor 上报的实例指标 */
-const serviceHealth = computed(() =>
-  services.value.map(service => {
+const serviceHealth = computed(() => {
+  const rows = services.value.map(service => {
     const server = servers.value.find(
       item => item.serviceName === service.serviceName || item.serviceCode === service.serviceName
     );
@@ -127,16 +136,35 @@ const serviceHealth = computed(() =>
       routes: service.routeCount,
       version: server?.version || server?.goVersion || ''
     };
-  })
-);
+  });
+  // 网关自身不在上游发现列表，但实例指标同样上报 InfluxDB，补进服务实例卡片
+  const covered = new Set(rows.map(row => row.code));
+  for (const server of servers.value) {
+    const code = server.serviceCode || server.serviceName;
+    if (covered.has(code)) continue;
+    rows.push({
+      name: server.serviceName,
+      code,
+      host: `${server.host}:${server.port}`,
+      status: server.status === 1 ? '运行中' : '离线',
+      metricsAvailable: server.metricsAvailable !== false,
+      metricsMessage: server.metricsMessage || '',
+      cpu: server.metricsAvailable === false ? null : (server.cpuPercent ?? null),
+      memory: server.metricsAvailable === false ? null : (server.memPercent ?? null),
+      routes: 0,
+      version: server.version || server.goVersion || ''
+    });
+  }
+  return rows;
+});
 
+/** 基础依赖健康与实例状态同源：后端启动了几个服务就列几个（含网关自身） */
 const dependencies = computed(() =>
-  services.value.map(service => ({
-    name: service.serviceName,
-    type: 'upstream',
-    address: service.serviceName,
-    status: service.status === 1 ? '正常' : '异常',
-    latency: service.discoveryStatus === 'fresh' ? '已发现' : '待探测'
+  serviceHealth.value.map(item => ({
+    name: item.name,
+    type: item.name === 'api-gateway' ? 'gateway' : 'upstream',
+    address: item.host,
+    status: item.status === '运行中' ? '正常' : '异常'
   }))
 );
 
@@ -157,7 +185,7 @@ function formatCompact(value: number) {
 }
 
 const trendOption = (): ECOption => ({
-  tooltip: { trigger: 'axis' },
+  tooltip: { trigger: 'axis', valueFormatter: value => Number(value).toFixed(2) },
   legend: { top: 0, right: 0 },
   grid: { left: 8, right: 16, top: 34, bottom: 8, containLabel: true },
   xAxis: {
@@ -168,7 +196,7 @@ const trendOption = (): ECOption => ({
   yAxis: { type: 'value', splitNumber: 4 },
   series: [
     {
-      name: 'QPS',
+      name: 'QPS（分钟均值）',
       type: 'line',
       smooth: true,
       symbol: 'none',
@@ -197,11 +225,23 @@ function goAlerts() {
   router.push('/monitor/alert');
 }
 
+/** 时间范围切换后仅重拉趋势，避免整页刷新 */
+async function onTrendRangeChange() {
+  const trend = await fetchGetGatewayTrend(trendParams()).catch(() => null);
+  trendPoints.value = trend ?? [];
+  updateTrend(trendOption);
+}
+
+/** 内存由 MB 换算 GB 展示 */
+function memGB(mb: number) {
+  return (mb / 1024).toFixed(2);
+}
+
 /** 各请求独立降级：单个数据源失败不拖垮整页 */
 async function loadData() {
   const [overview, trend, serviceList, serverList, pool, alertPage] = await Promise.all([
     fetchGetGatewayOverview().catch(() => null),
-    fetchGetGatewayTrend({ startTime: Date.now() - TREND_SPAN_MS, endTime: Date.now() }).catch(() => null),
+    fetchGetGatewayTrend(trendParams()).catch(() => null),
     fetchGetGatewayServiceList().catch(() => null),
     fetchGetServerList().catch(() => null),
     fetchGetMonitorDBPool().catch(() => null),
@@ -305,42 +345,46 @@ onMounted(async () => {
       </NGi>
     </NGrid>
 
-    <NGrid cols="1 l:24" responsive="screen" :x-gap="16" :y-gap="16">
-      <NGi span="24 l:15">
+    <NGrid cols="1 l:6" responsive="screen" :x-gap="12" :y-gap="16">
+      <NGi span="1 l:4">
         <NCard title="流量与错误率趋势" :bordered="false" class="card-wrapper h-full">
           <template #header-extra>
-            <div class="flex-y-center gap-8px text-12px text-gray-5">
-              <span class="size-8px rounded-full bg-primary" />
-              请求量
-              <span class="ml-8px size-8px rounded-full bg-error" />
-              错误率
+            <div class="flex flex-wrap-y-center gap-12px">
+              <NDatePicker
+                v-model:value="trendRange"
+                type="datetimerange"
+                size="small"
+                clearable
+                class="w-310px"
+                @update:value="onTrendRangeChange"
+              />
+              <div class="flex-y-center gap-8px text-12px text-gray-5">
+                <span class="size-8px rounded-full bg-primary" />
+                请求量
+                <span class="ml-8px size-8px rounded-full bg-error" />
+                错误率
+              </div>
             </div>
           </template>
           <div ref="trendRef" class="h-300px lt-sm:h-240px" />
         </NCard>
       </NGi>
-      <NGi span="24 l:9">
+      <NGi span="1 l:2">
         <NCard title="基础依赖健康" :bordered="false" class="card-wrapper h-full">
-          <NList hoverable>
+          <NList hoverable size="small">
             <NListItem v-for="dependency in dependencies" :key="dependency.name">
-              <div class="flex-y-center gap-10px">
+              <div class="flex items-center gap-8px">
                 <span
-                  class="size-8px rounded-full"
+                  class="size-8px shrink-0 rounded-full"
                   :class="dependency.status === '正常' ? 'bg-success' : 'bg-warning'"
                 />
-                <div class="min-w-0 flex-1">
-                  <div class="font-500">
-                    {{ dependency.name }}
-                    <span class="ml-6px text-12px text-gray-4">{{ dependency.type }}</span>
-                  </div>
-                  <div class="mt-4px truncate text-12px text-gray-5">{{ dependency.address }}</div>
+                <div class="min-w-0 flex-1 overflow-hidden">
+                  <div class="truncate text-13px font-500">{{ dependency.name }}</div>
+                  <div class="mt-2px truncate text-12px text-gray-4">{{ dependency.address }}</div>
                 </div>
-                <div class="text-right">
-                  <div class="text-13px font-500">{{ dependency.latency }}</div>
-                  <div class="mt-4px text-12px" :class="dependency.status === '正常' ? 'text-success' : 'text-warning'">
-                    {{ dependency.status }}
-                  </div>
-                </div>
+                <NTag size="small" :type="dependency.status === '正常' ? 'success' : 'warning'">
+                  {{ dependency.status }}
+                </NTag>
               </div>
             </NListItem>
           </NList>
@@ -349,7 +393,7 @@ onMounted(async () => {
     </NGrid>
 
     <NCard title="服务实例状态" :bordered="false" class="card-wrapper">
-      <NGrid cols="1 s:2 m:4" responsive="screen" :x-gap="12" :y-gap="12">
+      <NGrid cols="1 s:2 m:5 l:5" responsive="screen" :x-gap="12" :y-gap="12">
         <NGi v-for="service in serviceHealth" :key="service.code">
           <div class="rounded-8px border-1px border-gray-2 p-12px">
             <div class="flex-y-center justify-between">
@@ -413,7 +457,7 @@ onMounted(async () => {
               </NDescriptionsItem>
               <NDescriptionsItem :label="$t('page.monitor.openFds')">{{ runtimeMetrics.openFds }}</NDescriptionsItem>
               <NDescriptionsItem :label="$t('page.monitor.memUsage')">
-                {{ runtimeMetrics.memUsed }} / {{ runtimeMetrics.memTotal }} MB
+                {{ memGB(runtimeMetrics.memUsed) }} / {{ memGB(runtimeMetrics.memTotal) }} GB
               </NDescriptionsItem>
               <NDescriptionsItem :label="$t('page.monitor.diskUsage')">
                 {{ runtimeMetrics.diskPercent }}%

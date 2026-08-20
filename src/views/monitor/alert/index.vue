@@ -1,11 +1,12 @@
 <script setup lang="tsx">
 import { computed, h, onMounted, ref } from 'vue';
-import { NButton, NTag, NSwitch } from 'naive-ui';
+import { NButton, NPopconfirm, NTag, NSwitch } from 'naive-ui';
 import {
   acknowledgeMonitorAlert,
   recoverMonitorAlert,
   createMonitorAlertRule,
   deleteMonitorAlertRules,
+  deleteMonitorAlerts,
   fetchMonitorAlertList,
   fetchMonitorAlertRuleList,
   setMonitorAlertRuleStatus,
@@ -72,7 +73,7 @@ const alertColumns = computed<NaiveUI.TableColumn<AlertRow>[]>(() => [
   {
     key: 'operate',
     title: '操作',
-    width: 190,
+    width: 250,
     render: row =>
       h('div', { class: 'flex-center gap-6px' }, [
         h(
@@ -86,7 +87,15 @@ const alertColumns = computed<NaiveUI.TableColumn<AlertRow>[]>(() => [
               { size: 'small', type: 'primary', ghost: true, onClick: () => acknowledge(row) },
               { default: () => (row.status === '待处理' ? '确认处理' : '标记恢复') }
             )
-          : null
+          : null,
+        h(
+          NPopconfirm,
+          { onPositiveClick: () => removeAlert(row) },
+          {
+            trigger: () => h(NButton, { size: 'small', type: 'error', ghost: true }, { default: () => '删除' }),
+            default: () => '确认删除该告警？'
+          }
+        )
       ])
   }
 ]);
@@ -104,6 +113,16 @@ async function acknowledge(row: AlertRow) {
   }
   row.status = row.status === '待处理' ? '处理中' : '已恢复';
   window.$message?.success(row.status === '处理中' ? '告警已确认，进入处理中' : '告警已标记为恢复');
+}
+
+async function removeAlert(row: AlertRow) {
+  await deleteMonitorAlerts([row.id]);
+  alerts.value = alerts.value.filter(item => item.id !== row.id);
+  if (detail.value?.id === row.id) {
+    detailVisible.value = false;
+    detail.value = null;
+  }
+  window.$message?.success('告警已删除');
 }
 
 async function toggleRule(rule: (typeof rules.value)[number]) {

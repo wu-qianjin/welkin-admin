@@ -101,7 +101,7 @@ function formatNumber(value: number) {
 const statCards = computed(() => {
   const data = overview.value;
   return [
-    { key: 'qps', label: $t('page.gateway.qps'), value: data?.qps ?? 0, icon: 'mdi:speedometer', color: '#3b82f6', suffix: '' },
+    { key: 'qps', label: $t('page.gateway.qps'), value: data?.qps ?? 0, icon: 'mdi:speedometer', color: '#3b82f6', suffix: '', decimals: 2 },
     {
       key: 'requestCount',
       label: $t('page.gateway.requestCount'),
@@ -194,11 +194,11 @@ function buildTrendOption(points: Api.Gateway.TrendPoint[], metric: TrendMetric)
 
   return {
     animationDurationUpdate: 300,
-    tooltip: { trigger: 'axis', valueFormatter: value => `${value} QPS` },
+    tooltip: { trigger: 'axis', valueFormatter: value => `${Number(value).toFixed(2)} QPS` },
     ...axes,
     grid: { ...axes.grid, top: 18 },
     yAxis: { type: 'value', axisLabel: { formatter: '{value}' }, splitNumber: 4, axisLine: { show: false }, axisTick: { show: false } },
-    series: [{ ...common, name: $t('page.gateway.qps'), areaStyle: { color: area('#3b82f6') }, itemStyle: { color: '#3b82f6' }, data: points.map(point => point.qps) }]
+    series: [{ ...common, name: $t('page.gateway.qpsAxis'), areaStyle: { color: area('#3b82f6') }, itemStyle: { color: '#3b82f6' }, data: points.map(point => point.qps) }]
   };
 }
 
@@ -209,7 +209,7 @@ function buildTopOption(items: Api.Gateway.TopItem[], color: string, unit: strin
     tooltip: { trigger: 'axis', valueFormatter: value => `${value}${unit}` },
     grid: { left: 8, right: 58, top: 8, bottom: 0, containLabel: true },
     xAxis: { type: 'value', show: false },
-    yAxis: { type: 'category', data: sorted.map(item => item.name), axisTick: { show: false }, axisLine: { show: false }, axisLabel: { width: 170, overflow: 'truncate' } },
+    yAxis: { type: 'category', data: sorted.map(item => item.name), axisTick: { show: false }, axisLine: { show: false }, axisLabel: { width: 200, fontSize: 11, overflow: 'truncate' } },
     series: [
       {
         type: 'bar',
@@ -252,7 +252,8 @@ async function loadServiceRoutes(serviceName: string) {
     keyword: keyword.value,
     method: methodFilter.value,
     status: statusFilter.value,
-    serviceName
+    serviceName,
+    ...rangeParams()
   });
   routes.value = [...routes.value.filter(route => route.serviceName !== serviceName), ...nextRoutes];
 }
@@ -332,7 +333,7 @@ function errorCallsOf(route: Api.Gateway.Route) {
 }
 
 function renderLatency(value: number) {
-  return <span class="tabular-nums">{value > 0 ? `${value} ms` : '-'}</span>;
+  return <span class="tabular-nums">{value > 0 ? `${value.toFixed(1)} ms` : '-'}</span>;
 }
 
 function renderErrorRate(value: number) {
@@ -359,7 +360,10 @@ type RouteTableRow = ServiceRow | (Api.Gateway.Route & { isService?: false });
 const routeTree = computed<RouteTableRow[]>(() => {
   if (services.value.length > 0) {
     return services.value.map(service => {
-      const children = routes.value.filter(route => route.serviceName === service.serviceName);
+      // 按调用量倒序：常用的接口排前面，零调用路由沉底。
+      const children = routes.value
+        .filter(route => route.serviceName === service.serviceName)
+        .sort((a, b) => b.calls - a.calls);
       const calls = children.reduce((sum, route) => sum + route.calls, 0);
       const errors = children.reduce((sum, route) => sum + errorCallsOf(route), 0);
       const weightedAvg = calls > 0 ? children.reduce((sum, route) => sum + route.avgCostMs * route.calls, 0) / calls : 0;
@@ -387,23 +391,24 @@ const routeTree = computed<RouteTableRow[]>(() => {
   }
 
   return Array.from(groups.entries()).map(([serviceName, list]) => {
-    const calls = list.reduce((sum, route) => sum + route.calls, 0);
-    const errors = list.reduce((sum, route) => sum + errorCallsOf(route), 0);
-    const weightedAvg = calls > 0 ? list.reduce((sum, route) => sum + route.avgCostMs * route.calls, 0) / calls : 0;
+    const sorted = [...list].sort((a, b) => b.calls - a.calls);
+    const calls = sorted.reduce((sum, route) => sum + route.calls, 0);
+    const errors = sorted.reduce((sum, route) => sum + errorCallsOf(route), 0);
+    const weightedAvg = calls > 0 ? sorted.reduce((sum, route) => sum + route.avgCostMs * route.calls, 0) / calls : 0;
 
     return {
       isService: true,
       id: `svc:${serviceName}`,
       serviceName,
-      upstream: list[0].upstream ?? serviceName,
-      qps: list.reduce((sum, route) => sum + route.qps, 0),
+      upstream: sorted[0].upstream ?? serviceName,
+      qps: sorted.reduce((sum, route) => sum + route.qps, 0),
       avgCostMs: Number(weightedAvg.toFixed(1)),
-      p95CostMs: Math.max(...list.map(route => p95Of(route))),
+      p95CostMs: Math.max(...sorted.map(route => p95Of(route))),
       errorRate: calls > 0 ? Number(((errors / calls) * 100).toFixed(2)) : 0,
       errorCalls: errors,
       calls,
-      allEnabled: list.every(route => isEnabled(route.status)),
-      children: list
+      allEnabled: sorted.every(route => isEnabled(route.status)),
+      children: sorted
     };
   });
 });
@@ -447,6 +452,27 @@ const selectedDetail = computed(() => {
   };
 });
 
+/** 详情抽屉同行展示的指标与元信息清单（QPS 等指标按所选区间聚合） */
+const detailStats = computed(() => {
+  const detail = selectedDetail.value;
+  if (!detail) return [];
+  const route = detail.route;
+  return [
+    { label: $t('page.gateway.qpsCol'), value: route.qps.toFixed(2) },
+    { label: $t('page.gateway.callsCol'), value: formatNumber(route.calls) },
+    { label: $t('page.gateway.avgCostCol'), value: `${route.avgCostMs.toFixed(1)} ms` },
+    { label: $t('page.gateway.p95CostCol'), value: `${(route.p95CostMs ?? p95Of(route)).toFixed(1)} ms` },
+    { label: $t('page.gateway.errorRateCol'), value: `${detail.errorRate.toFixed(2)}%` },
+    { label: $t('page.gateway.errorCalls'), value: formatNumber(detail.errorCalls) },
+    { label: $t('page.gateway.routeName'), value: route.routeName || '-' },
+    { label: $t('page.gateway.source'), value: route.source || '-' },
+    { label: $t('page.gateway.internalPath'), value: route.internalPath || '-' },
+    { label: $t('page.gateway.mapped'), value: route.mapped === false ? 'No' : 'Yes' },
+    { label: $t('page.gateway.strategy'), value: route.strategy || '-' },
+    { label: $t('page.gateway.lastSeen'), value: route.lastSeen ? formatDateTime(route.lastSeen) : '-' }
+  ];
+});
+
 const columns = computed<NaiveUI.TableColumn<RouteTableRow>[]>(() => [
   {
     key: 'name',
@@ -479,7 +505,7 @@ const columns = computed<NaiveUI.TableColumn<RouteTableRow>[]>(() => [
         <NTag type={isEnabled(row.status) ? 'success' : 'error'} size="small">{isEnabled(row.status) ? $t('page.gateway.enabled') : $t('page.gateway.disabled')}</NTag>
       )
   },
-  { key: 'qps', title: $t('page.gateway.qpsCol'), align: 'center', width: 90, render: row => <span class="tabular-nums">{row.qps}</span> },
+  { key: 'qps', title: $t('page.gateway.qpsCol'), align: 'center', width: 120, render: row => <span class="tabular-nums">{row.qps.toFixed(2)}</span> },
   { key: 'avgCostMs', title: $t('page.gateway.avgCostCol'), align: 'center', width: 120, render: row => renderLatency(row.avgCostMs) },
   { key: 'p95CostMs', title: $t('page.gateway.p95CostCol'), align: 'center', width: 120, render: row => renderLatency(row.isService ? row.p95CostMs : p95Of(row)) },
   { key: 'errorRate', title: $t('page.gateway.errorRateCol'), align: 'center', width: 110, render: row => renderErrorRate(row.isService ? row.errorRate : errorRateOf(row)) },
@@ -532,6 +558,7 @@ onUnmounted(() => {
           type="datetimerange"
           size="small"
           clearable
+          format="yyyy-MM-dd HH:mm"
           class="w-330px shrink-0"
           @update:value="onRangeChange"
         />
@@ -587,17 +614,17 @@ onUnmounted(() => {
     <NGrid cols="1 m:3" responsive="screen" :x-gap="16" :y-gap="16">
       <NGi>
         <NCard :title="$t('page.gateway.topInvoked')" :bordered="false" size="small" class="card-wrapper h-full">
-          <div ref="topInvokedRef" class="h-260px" />
+          <div ref="topInvokedRef" class="h-200px" />
         </NCard>
       </NGi>
       <NGi>
         <NCard :title="$t('page.gateway.topSlow')" :bordered="false" size="small" class="card-wrapper h-full">
-          <div ref="topSlowRef" class="h-260px" />
+          <div ref="topSlowRef" class="h-200px" />
         </NCard>
       </NGi>
       <NGi>
         <NCard :title="$t('page.gateway.topError')" :bordered="false" size="small" class="card-wrapper h-full">
-          <div ref="topErrorRef" class="h-260px" />
+          <div ref="topErrorRef" class="h-200px" />
         </NCard>
       </NGi>
     </NGrid>
@@ -679,20 +706,16 @@ onUnmounted(() => {
               </NTag>
             </div>
           </div>
-          <NGrid cols="2 s:4" responsive="screen" :x-gap="10" :y-gap="10">
-            <NGi><NStatistic :label="$t('page.gateway.qpsCol')" :value="selectedDetail.route.qps" /></NGi>
-            <NGi>
-              <NStatistic
-                :label="$t('page.gateway.p95CostCol')"
-                :value="selectedDetail.route.p95CostMs ?? p95Of(selectedDetail.route)"
-                suffix=" ms"
-              />
-            </NGi>
-            <NGi><NStatistic :label="$t('page.gateway.errorCalls')" :value="selectedDetail.errorCalls" /></NGi>
-            <NGi>
-              <NStatistic :label="$t('page.gateway.instanceCount')" :value="selectedDetail.route.instanceCount ?? 0" />
-            </NGi>
-          </NGrid>
+          <div class="rounded-6px border-1px border-gray-2 of-hidden">
+            <div
+              v-for="item in detailStats"
+              :key="item.label"
+              class="flex-y-center justify-between border-b-1px border-gray-2 px-14px py-8px last:border-b-none"
+            >
+              <span class="text-13px text-gray-5">{{ item.label }}</span>
+              <span class="text-14px tabular-nums">{{ item.value }}</span>
+            </div>
+          </div>
           <NCard :title="$t('page.gateway.statusDistribution')" size="small" :bordered="false" class="bg-gray-1">
             <div class="flex-col-stretch gap-10px">
               <div class="flex-y-center gap-10px">
@@ -727,28 +750,6 @@ onUnmounted(() => {
               </div>
             </div>
           </NCard>
-          <NDescriptions bordered size="small" :column="1">
-            <NDescriptionsItem :label="$t('page.gateway.routeName')">
-              {{ selectedDetail.route.routeName }}
-            </NDescriptionsItem>
-            <NDescriptionsItem label="Source">{{ selectedDetail.route.source ?? '-' }}</NDescriptionsItem>
-            <NDescriptionsItem label="Internal Path">{{ selectedDetail.route.internalPath ?? '-' }}</NDescriptionsItem>
-            <NDescriptionsItem label="Mapped">
-              {{ selectedDetail.route.mapped === false ? 'No' : 'Yes' }}
-            </NDescriptionsItem>
-            <NDescriptionsItem :label="$t('page.gateway.strategy')">
-              {{ selectedDetail.route.strategy }}
-            </NDescriptionsItem>
-            <NDescriptionsItem :label="$t('page.gateway.avgCostCol')">
-              {{ selectedDetail.route.avgCostMs }} ms
-            </NDescriptionsItem>
-            <NDescriptionsItem :label="$t('page.gateway.callsCol')">
-              {{ formatNumber(selectedDetail.route.calls) }}
-            </NDescriptionsItem>
-            <NDescriptionsItem :label="$t('page.gateway.lastSeen')">
-              {{ formatDateTime(selectedDetail.route.lastSeen) }}
-            </NDescriptionsItem>
-          </NDescriptions>
         </div>
       </NDrawerContent>
     </NDrawer>

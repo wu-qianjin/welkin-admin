@@ -130,6 +130,10 @@ export function recoverMonitorAlert(id: string) {
   return alova.Put<null>(`/v1/monitor/alert/recover/${id}`, {});
 }
 
+export function deleteMonitorAlerts(ids: string[]) {
+  return alova.Delete<null>('/v1/monitor/alert/delete', { ids });
+}
+
 export interface MonitorAlertRuleItem {
   id: string;
   name: string;
