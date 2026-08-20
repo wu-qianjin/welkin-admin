@@ -73,7 +73,7 @@ function search() {
                 clearable
               />
             </NFormItemGi>
-            <NFormItemGi span="24 s:12 m:6">
+            <NFormItemGi span="24 m:24">
               <NSpace class="w-full" justify="end">
                 <NButton @click="resetModel">
                   <template #icon>
