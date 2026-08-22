@@ -81,7 +81,11 @@ function handleDropdown(key: DropdownKey) {
   <NDropdown v-else placement="bottom" trigger="click" :options="options" @select="handleDropdown">
     <div>
       <ButtonIcon>
-        <SvgIcon icon="ph:user-circle" class="text-icon-large" />
+        <AuthAvatar
+          :path="authStore.userInfo.avatar"
+          :text="authStore.userInfo.userName.slice(0, 1).toUpperCase()"
+          :size="26"
+        />
         <span class="text-16px font-medium">{{ authStore.userInfo.userName }}</span>
       </ButtonIcon>
     </div>

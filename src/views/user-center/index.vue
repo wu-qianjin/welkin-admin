@@ -9,8 +9,9 @@ import {
   updateProfile,
   uploadFile
 } from '@/service/api';
-import { localStg } from '@/utils/storage';
-import { getServiceBaseURL } from '@/utils/service';
+import { useAuthStore } from '@/store/modules/auth';
+import { findDeptLabel, useDeptTreeOptions } from '@/hooks/common/dept';
+import { parseUserAgent } from '@/utils/user-agent';
 import { useNoticeFeed } from '@/views/message/modules/notice-feed';
 
 defineOptions({
@@ -18,8 +19,7 @@ defineOptions({
 });
 
 const router = useRouter();
-const isHttpProxy = import.meta.env.DEV && import.meta.env.VITE_HTTP_PROXY === 'Y';
-const { baseURL: serviceBaseURL } = getServiceBaseURL(import.meta.env, isHttpProxy);
+const authStore = useAuthStore();
 const profile = reactive({
   userId: '',
   userName: '',
@@ -29,6 +29,7 @@ const profile = reactive({
   email: '',
   gender: 0,
   roles: [] as string[],
+  deptId: '0',
   department: '',
   lastLoginAt: '',
   lastLoginIp: '',
@@ -37,42 +38,15 @@ const profile = reactive({
   role: '',
   joinedAt: ''
 });
-const avatarSrc = ref('');
 const avatarUploading = ref(false);
 const devices = ref<
   Array<{ id: string; device: string; mobile: boolean; current: boolean; ip: string; lastActive: string }>
 >([]);
-
-/** 把原始 User-Agent 解析成短标签（如 "Chrome 151 · macOS"），避免整串 UA 撑坏列表 */
-function parseUserAgent(ua: string) {
-  if (!ua) return { label: '未知设备', mobile: false };
-  let browser = '未知设备';
-  if (/Edg\//.test(ua)) browser = 'Edge';
-  else if (/OPR\//.test(ua)) browser = 'Opera';
-  else if (/Chrome\//.test(ua)) browser = 'Chrome';
-  else if (/Firefox\//.test(ua)) browser = 'Firefox';
-  else if (/Safari\//.test(ua)) browser = 'Safari';
-  else if (/curl\//.test(ua)) browser = 'curl';
-  else if (/Go-http-client/.test(ua)) browser = 'Go HTTP Client';
-
-  let os = '';
-  if (/Windows NT 10/.test(ua)) os = 'Windows';
-  else if (/iPhone/.test(ua)) os = 'iPhone';
-  else if (/Android/.test(ua)) os = 'Android';
-  else if (/Mac OS X/.test(ua)) os = 'macOS';
-  else if (/Linux/.test(ua)) os = 'Linux';
-
-  const version = ua.match(/(?:Chrome|Firefox|Safari|Edge|OPR)\/(\d+)/)?.[1];
-  const label = version ? `${browser} ${version}` : browser;
-  return {
-    label: os ? `${label} · ${os}` : label,
-    mobile: /iPhone|Android|Mobile/i.test(ua)
-  };
-}
 const { notices, unreadCount, load: loadMessages, markRead: markMessageRead } = useNoticeFeed();
 const profileVisible = ref(false);
 const passwordVisible = ref(false);
-const profileForm = reactive({ nickName: profile.nickName, phone: profile.phone, email: profile.email });
+const profileForm = reactive({ nickName: profile.nickName, phone: profile.phone, email: profile.email, deptId: '0' });
+const { deptOptions, deptLoading, loadDeptOptions } = useDeptTreeOptions();
 const passwordForm = reactive({ current: '', next: '', confirm: '' });
 
 const securityScore = computed(() => {
@@ -84,28 +58,24 @@ const securityScore = computed(() => {
 });
 
 function openProfile() {
-  Object.assign(profileForm, { nickName: profile.nickName, phone: profile.phone, email: profile.email });
+  Object.assign(profileForm, {
+    nickName: profile.nickName,
+    phone: profile.phone,
+    email: profile.email,
+    deptId: profile.deptId || '0'
+  });
+  void loadDeptOptions('未分配部门');
   profileVisible.value = true;
 }
 
 async function saveProfile() {
   await updateProfile({ ...profileForm, gender: profile.gender, avatar: profile.avatar });
   Object.assign(profile, profileForm);
+  // 部门名同步展示（选项树里找不到说明后端返回了新数据，回读兜底）
+  const selected = findDeptLabel(deptOptions.value, profileForm.deptId);
+  if (selected !== null) profile.department = selected;
   profileVisible.value = false;
   window.$message?.success('个人资料已保存');
-}
-
-/** 头像存的是鉴权预览路径，<img> 无法携带 Authorization 头，需 fetch 成 blob 再生成 objectURL；必须拼 serviceBaseURL，直连 /v1 会被 Vite SPA fallback 吞掉 */
-async function loadAvatarBlob(path: string) {
-  if (avatarSrc.value) URL.revokeObjectURL(avatarSrc.value);
-  avatarSrc.value = '';
-  if (!path) return;
-  const token = localStg.get('token');
-  const res = await fetch(`${serviceBaseURL}${path}`, {
-    headers: token ? { Authorization: `Bearer ${token}` } : undefined
-  });
-  if (!res.ok) throw new Error('avatar request failed');
-  avatarSrc.value = URL.createObjectURL(await res.blob());
 }
 
 async function onAvatarChange(event: Event) {
@@ -127,7 +97,8 @@ async function onAvatarChange(event: Event) {
     const avatar = `/v1/system/file/preview/${uploaded.id}`;
     await updateProfile({ ...profileForm, gender: profile.gender, avatar });
     profile.avatar = avatar;
-    await loadAvatarBlob(avatar);
+    // 同步全局登录态，右上角头像等处即时生效
+    authStore.userInfo.avatar = avatar;
     window.$message?.success('头像已更新');
   } finally {
     avatarUploading.value = false;
@@ -168,15 +139,17 @@ async function loadProfile() {
     role: data.roles[0] || 'user',
     joinedAt: '—'
   });
-  Object.assign(profileForm, { nickName: data.nickName, phone: data.phone, email: data.email });
-  void loadAvatarBlob(data.avatar).catch(() => {
-    avatarSrc.value = '';
+  Object.assign(profileForm, {
+    nickName: data.nickName,
+    phone: data.phone,
+    email: data.email,
+    deptId: data.deptId || '0'
   });
   devices.value = sessions.map((item, index) => {
     const parsed = parseUserAgent(item.userAgent || '');
     return {
       id: item.id,
-      device: parsed.label,
+      device: parsed.label || '未知设备',
       mobile: parsed.mobile,
       current: index === 0,
       ip: item.ip || '—',
@@ -270,12 +243,9 @@ onMounted(() => {
         <NCard title="账户信息" :bordered="false" class="card-wrapper h-full">
           <div class="flex items-center gap-20px lt-sm:flex-col lt-sm:items-start">
             <label class="group relative inline-flex shrink-0 cursor-pointer select-none" title="点击上传头像">
-              <!-- naive-ui Avatar：默认插槽有内容时永远渲染文字分支，src 仅在插槽为空时生效，因此有头像时不渲染兜底文字 -->
-              <NAvatar :size="64" round :color="profile.avatarColor" :src="avatarSrc || undefined">
-                <template v-if="!avatarSrc">{{ profile.avatarText }}</template>
-              </NAvatar>
+              <AuthAvatar :path="profile.avatar" :text="profile.avatarText" :color="profile.avatarColor" :size="64" />
               <div
-                class="absolute inset-0 flex-center gap-2px rounded-full bg-black:45 text-12px text-white opacity-0 transition-opacity group-hover:opacity-100"
+                class="absolute inset-0 flex-center gap-2px rounded-full bg-black/45 text-12px text-white opacity-0 transition-opacity group-hover:opacity-100"
               >
                 <icon-mdi-camera-outline class="text-14px" />
                 {{ avatarUploading ? '上传中' : '上传' }}
@@ -377,6 +347,18 @@ onMounted(() => {
         <NFormItem label="昵称"><NInput v-model:value="profileForm.nickName" /></NFormItem>
         <NFormItem label="手机号"><NInput v-model:value="profileForm.phone" /></NFormItem>
         <NFormItem label="邮箱"><NInput v-model:value="profileForm.email" /></NFormItem>
+        <NFormItem label="部门">
+          <NTreeSelect
+            v-model:value="profileForm.deptId"
+            :options="deptOptions"
+            :loading="deptLoading"
+            key-field="key"
+            label-field="label"
+            children-field="children"
+            placeholder="请选择所属部门"
+            default-expand-all
+          />
+        </NFormItem>
       </NForm>
       <template #footer>
         <NSpace justify="end">

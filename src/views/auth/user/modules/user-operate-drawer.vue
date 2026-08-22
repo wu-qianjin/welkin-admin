@@ -4,6 +4,7 @@ import { jsonClone } from '@sa/utils';
 import { userGenderOptions } from '@/constants/business';
 import { addUser, fetchGetAllRoles, updateUser } from '@/service/api';
 import { useFormRules, useNaiveForm } from '@/hooks/common/form';
+import { useDeptTreeOptions } from '@/hooks/common/dept';
 import { $t } from '@/locales';
 
 defineOptions({
@@ -42,12 +43,14 @@ const title = computed(() => {
 
 type Model = Pick<
   Api.SystemManage.User,
-  'userName' | 'userGender' | 'nickName' | 'userPhone' | 'userEmail' | 'userRoles'
+  'userName' | 'userGender' | 'nickName' | 'userPhone' | 'userEmail' | 'userRoles' | 'deptId'
 > & {
   status: Api.Common.EnableStatus;
 };
 
 const model = ref(createDefaultModel());
+
+const { deptOptions, deptLoading, loadDeptOptions } = useDeptTreeOptions();
 
 function createDefaultModel(): Model {
   return {
@@ -57,6 +60,7 @@ function createDefaultModel(): Model {
     userPhone: '',
     userEmail: '',
     userRoles: [],
+    deptId: '0',
     status: '1'
   };
 }
@@ -100,6 +104,10 @@ function handleInitModel() {
   if (props.operateType === 'edit' && props.rowData) {
     Object.assign(model.value, jsonClone(props.rowData));
   }
+  if (!model.value.deptId) {
+    model.value.deptId = '0';
+  }
+  void loadDeptOptions($t('page.manage.user.noDept'));
 }
 
 function closeDrawer() {
@@ -151,6 +159,18 @@ watch(visible, () => {
         </NFormItem>
         <NFormItem :label="$t('page.manage.user.userStatus')" path="status">
           <NSwitch v-model:value="model.status" checked-value="1" unchecked-value="2" />
+        </NFormItem>
+        <NFormItem :label="$t('page.manage.user.userDept')" path="deptId">
+          <NTreeSelect
+            v-model:value="model.deptId"
+            :options="deptOptions"
+            :loading="deptLoading"
+            key-field="key"
+            label-field="label"
+            children-field="children"
+            :placeholder="$t('page.manage.user.form.userDept')"
+            default-expand-all
+          />
         </NFormItem>
         <NFormItem :label="$t('page.manage.user.userRole')" path="roles">
           <NSelect

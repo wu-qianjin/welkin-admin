@@ -74,6 +74,8 @@ export interface ProfileData {
   email: string;
   gender: number;
   roles: string[];
+  /** 部门 ID（十进制字符串，"0" 表示未分配） */
+  deptId: string;
   department: string;
   lastLoginAt?: string;
   lastLoginIp: string;
@@ -94,7 +96,9 @@ export function fetchGetProfile() {
   return alova.Get<ProfileData>('/v1/iam/profile');
 }
 
-export function updateProfile(data: Pick<ProfileData, 'nickName' | 'phone' | 'email' | 'gender' | 'avatar'>) {
+export function updateProfile(
+  data: Pick<ProfileData, 'nickName' | 'phone' | 'email' | 'gender' | 'avatar' | 'deptId'>
+) {
   return alova.Put<null>('/v1/iam/profile', data);
 }
 
