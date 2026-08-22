@@ -76,3 +76,22 @@ export function toggleHtmlClass(className: string) {
     remove
   };
 }
+
+/**
+ * 后端分页 size 上限 100，按 total 循环拉齐全部页。
+ * 供角色授权资源、菜单选择等需要完整数据源的场景使用。
+ */
+export async function fetchAllPages<T>(
+  fetchPage: (current: number, size: number) => Promise<{ records: T[]; total: number; size: number }>
+): Promise<T[]> {
+  const first = await fetchPage(1, 100);
+  const records = [...first.records];
+  const pages = Math.ceil(first.total / (first.size || 100));
+
+  for (let current = 2; current <= pages; current += 1) {
+    const rest = await fetchPage(current, 100);
+    records.push(...rest.records);
+  }
+
+  return records;
+}

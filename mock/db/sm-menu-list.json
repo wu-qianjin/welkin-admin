@@ -476,20 +476,6 @@
           "iconType": "1"
         },
         {
-          "id": 37,
-          "status": "1",
-          "parentId": 35,
-          "menuType": "2",
-          "menuName": "实例监控",
-          "routeName": "monitor_server",
-          "routePath": "/monitor/server",
-          "component": "view.monitor_server",
-          "order": 2,
-          "i18nKey": "route.monitor_server",
-          "icon": "mdi:server",
-          "iconType": "1"
-        },
-        {
           "id": 38,
           "status": "1",
           "parentId": 35,

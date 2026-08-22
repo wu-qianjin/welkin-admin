@@ -21,12 +21,6 @@ defineOptions({
 
 const appStore = useAppStore();
 const storageVisible = ref(false);
-const storageForm = ref({ provider: 'MinIO 对象存储', maxSize: 50, retentionDays: 90, publicAccess: false });
-
-function saveStorageSettings() {
-  storageVisible.value = false;
-  window.$message?.success('存储设置已保存');
-}
 
 const searchParams = ref<Api.SystemManage.SystemFileSearchParams>({
   current: 1,
@@ -189,19 +183,26 @@ async function handleUpload({ file, onFinish, onError }: UploadCustomRequestOpti
 const previewVisible = ref(false);
 const previewFile = ref<Api.SystemManage.SystemFile | null>(null);
 const previewSrc = ref('');
-
-/** render an inline svg placeholder so the preview works fully offline */
-function buildPreviewSrc(file: Api.SystemManage.SystemFile) {
-  const text = file.fileName.replace(/[<>&]/g, '');
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="480" height="320"><rect width="100%" height="100%" fill="#f0f2f5"/><text x="50%" y="46%" text-anchor="middle" fill="#646cff" font-size="20" font-family="sans-serif">${text}</text><text x="50%" y="56%" text-anchor="middle" fill="#999" font-size="14" font-family="sans-serif">${formatFileSize(file.fileSize)}</text></svg>`;
-
-  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
-}
+const previewLoading = ref(false);
+const previewError = ref('');
 
 function preview(row: Api.SystemManage.SystemFile) {
   previewFile.value = row;
-  void fetchFile(row, 'preview').then(url => { previewSrc.value = url; }).catch(() => { previewSrc.value = buildPreviewSrc(row); });
+  previewSrc.value = '';
+  previewError.value = '';
   previewVisible.value = true;
+  previewLoading.value = true;
+  fetchFile(row, 'preview')
+    .then(url => {
+      previewSrc.value = url;
+    })
+    .catch(() => {
+      // 预览失败必须显式暴露（鉴权/存储/接口异常），不允许用占位图冒充成功
+      previewError.value = '预览加载失败，请检查文件存储服务与访问权限，或改用下载。';
+    })
+    .finally(() => {
+      previewLoading.value = false;
+    });
 }
 
 async function fetchFile(row: Api.SystemManage.SystemFile, action: 'preview' | 'download') {
@@ -215,13 +216,17 @@ async function fetchFile(row: Api.SystemManage.SystemFile, action: 'preview' | '
 }
 
 async function download(row: Api.SystemManage.SystemFile) {
-  const url = await fetchFile(row, 'download');
-  const anchor = document.createElement('a');
+  try {
+    const url = await fetchFile(row, 'download');
+    const anchor = document.createElement('a');
 
-  anchor.href = url;
-  anchor.download = row.fileName;
-  anchor.click();
-  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+    anchor.href = url;
+    anchor.download = row.fileName;
+    anchor.click();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  } catch {
+    window.$message?.error(`下载 ${row.fileName} 失败，请检查文件存储服务与访问权限`);
+  }
 }
 </script>
 
@@ -240,8 +245,8 @@ async function download(row: Api.SystemManage.SystemFile) {
             </NButton>
           </NUpload>
           <NButton size="small" secondary @click="storageVisible = true">
-            <template #icon><icon-mdi-cog-outline /></template>
-            存储设置
+            <template #icon><icon-mdi-information-outline /></template>
+            存储说明
           </NButton>
           <TableHeaderOperation
             v-model:columns="columnChecks"
@@ -293,41 +298,25 @@ async function download(row: Api.SystemManage.SystemFile) {
       />
       <NModal v-model:show="previewVisible" preset="card" class="w-560px" :title="previewFile?.fileName">
         <div class="flex-center">
-          <NImage :src="previewSrc" class="rounded-4px" />
+          <NSpin v-if="previewLoading" />
+          <NAlert v-else-if="previewError" type="error" :bordered="false" class="w-full">
+            {{ previewError }}
+          </NAlert>
+          <NImage v-else :src="previewSrc" class="rounded-4px" />
         </div>
-        <template #footer>
-          <div class="text-12px text-#999">{{ $t('page.manage.file.previewPlaceholder') }}</div>
-        </template>
       </NModal>
-      <NModal v-model:show="storageVisible" preset="card" title="文件存储设置" class="w-520px">
-        <NAlert type="info" class="mb-16px">当前后端使用受控本地对象存储适配器，生产环境可替换为 MinIO/S3。</NAlert>
-        <NForm :model="storageForm" label-placement="left" label-width="100">
-          <NFormItem label="存储提供方">
-            <NSelect
-              v-model:value="storageForm.provider"
-              :options="[
-                { label: 'MinIO 对象存储', value: 'MinIO 对象存储' },
-                { label: '本地磁盘', value: '本地磁盘' },
-                { label: 'S3 兼容存储', value: 'S3 兼容存储' }
-              ]"
-            />
-          </NFormItem>
-          <NFormItem label="单文件上限">
-            <NInputNumber v-model:value="storageForm.maxSize" :min="1" :max="2048" class="w-full">
-              <template #suffix>MB</template>
-            </NInputNumber>
-          </NFormItem>
-          <NFormItem label="自动清理">
-            <NInputNumber v-model:value="storageForm.retentionDays" :min="0" class="w-full">
-              <template #suffix>天未访问</template>
-            </NInputNumber>
-          </NFormItem>
-          <NFormItem label="公开访问"><NSwitch v-model:value="storageForm.publicAccess" /></NFormItem>
-        </NForm>
+      <NModal v-model:show="storageVisible" preset="card" title="文件存储说明" class="w-520px">
+        <NAlert type="info" class="mb-16px">
+          当前后端已接入 MinIO 对象存储（welkin bucket），文件按 业务/用户/日期 目录存储，经文件接口上传与预览。
+        </NAlert>
+        <NDescriptions bordered label-placement="left" :column="1" size="small">
+          <NDescriptionsItem label="存储提供方">MinIO 对象存储</NDescriptionsItem>
+          <NDescriptionsItem label="访问方式">所有上传、预览、下载均经后端鉴权接口转发</NDescriptionsItem>
+          <NDescriptionsItem label="配置入口">服务端配置（MinIO 地址、桶名、凭证），前端不可修改</NDescriptionsItem>
+        </NDescriptions>
         <template #footer>
           <NSpace justify="end">
-            <NButton @click="storageVisible = false">取消</NButton>
-            <NButton type="primary" @click="saveStorageSettings">保存设置</NButton>
+            <NButton type="primary" @click="storageVisible = false">知道了</NButton>
           </NSpace>
         </template>
       </NModal>

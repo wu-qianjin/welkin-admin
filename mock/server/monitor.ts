@@ -529,6 +529,208 @@ function gatewayTrendByRange(start: number, end: number): Api.Gateway.TrendPoint
   return points;
 }
 
+// ---------------------------------------------------------------- alert center
+
+/** 告警级别：1=提示、2=警告、3=严重；处理状态：1=待处理、2=处理中、3=已恢复 */
+interface AlertRecord {
+  id: string;
+  level: number;
+  title: string;
+  target: string;
+  value: string;
+  threshold: string;
+  status: number;
+  occurredAt: string;
+  description: string;
+}
+
+/** 告警规则（评估引擎按 PromQL 表达式周期性求值） */
+interface AlertRuleRecord {
+  id: string;
+  name: string;
+  target: string;
+  condition: string;
+  level: number;
+  channels: string;
+  enabled: boolean;
+}
+
+// 可变内存数据：确认/恢复/删除操作直接修改，使告警中心在 dev 会话内完整可用
+let alertRecords: AlertRecord[] = [
+  {
+    id: '1',
+    level: 3,
+    title: '网关服务 5xx 错误率过高',
+    target: 'gateway /api/search/query',
+    value: '4.82%',
+    threshold: '> 1%',
+    status: 1,
+    occurredAt: '2026-08-22 09:41:23',
+    description: '检索服务上游持续返回 504，网关重试后错误率仍超出阈值，建议检查 search-svc 实例健康状态。'
+  },
+  {
+    id: '2',
+    level: 3,
+    title: '检索服务 CPU 使用率持续超限',
+    target: 'search-svc (192.168.1.15)',
+    value: '91.6%',
+    threshold: '> 85%',
+    status: 1,
+    occurredAt: '2026-08-22 08:57:04',
+    description: 'CPU 已连续 10 个采集周期高于阈值，goroutine 数量同步攀升，存在 goroutine 泄漏风险。'
+  },
+  {
+    id: '3',
+    level: 2,
+    title: '消息服务内存使用率告警',
+    target: 'message-svc (192.168.1.14)',
+    value: '82.4%',
+    threshold: '> 80%',
+    status: 2,
+    occurredAt: '2026-08-21 22:13:45',
+    description: '推送高峰期内存超阈值，已确认由大促消息积压引起，正在扩容消费者实例。'
+  },
+  {
+    id: '4',
+    level: 2,
+    title: '网关 QPS 临近限流阈值',
+    target: 'gateway /api/message/push',
+    value: '1126',
+    threshold: '> 1000',
+    status: 2,
+    occurredAt: '2026-08-21 20:35:10',
+    description: '晚高峰推送流量超出预期，已开启限流保护并通知业务方错峰重试。'
+  },
+  {
+    id: '5',
+    level: 3,
+    title: '文件服务磁盘空间不足',
+    target: 'file-svc (192.168.1.13)',
+    value: '86.9%',
+    threshold: '> 85%',
+    status: 3,
+    occurredAt: '2026-08-21 16:02:58',
+    description: '对象存储临时分片未及时清理导致磁盘超限，已执行清理任务并恢复到 72%。'
+  },
+  {
+    id: '6',
+    level: 1,
+    title: '系统服务慢查询提示',
+    target: 'system-svc mysql: sm_operate_log',
+    value: '3.2s',
+    threshold: '> 3s',
+    status: 1,
+    occurredAt: '2026-08-21 14:26:31',
+    description: '操作日志按时间范围统计出现慢查询，建议为 operate_time 字段补充复合索引。'
+  },
+  {
+    id: '7',
+    level: 2,
+    title: '用户服务接口平均耗时上升',
+    target: 'user-svc /api/user/list',
+    value: '860ms',
+    threshold: '> 500ms',
+    status: 3,
+    occurredAt: '2026-08-21 11:48:19',
+    description: '批量导出用户占用连接池导致接口变慢，任务完成后耗时已恢复正常区间。'
+  },
+  {
+    id: '8',
+    level: 1,
+    title: '网关证书到期提醒',
+    target: 'gateway tls: *.welkin.local',
+    value: '14 天',
+    threshold: '<= 30 天',
+    status: 3,
+    occurredAt: '2026-08-20 23:55:02',
+    description: '网关 HTTPS 证书剩余有效期不足 30 天，已提交续期申请并完成签发。'
+  },
+  {
+    id: '9',
+    level: 2,
+    title: '数据库连接池等待次数上升',
+    target: 'system-svc db-pool',
+    value: '12 次/分',
+    threshold: '> 10 次/分',
+    status: 1,
+    occurredAt: '2026-08-20 19:12:40',
+    description: '连接池等待次数在晚高峰超出阈值，建议评估 max_open_connections 是否需要扩容。'
+  },
+  {
+    id: '10',
+    level: 1,
+    title: '消息服务队列积压提示',
+    target: 'message-svc queue: notice-push',
+    value: '3862 条',
+    threshold: '> 3000 条',
+    status: 2,
+    occurredAt: '2026-08-20 15:37:55',
+    description: '公告推送队列出现积压，消费者已在扩容过程中，预计 30 分钟内消化完毕。'
+  },
+  {
+    id: '11',
+    level: 3,
+    title: '检索服务实例失联',
+    target: 'search-svc (192.168.1.15)',
+    value: '失联 5 分钟',
+    threshold: '> 1 分钟',
+    status: 3,
+    occurredAt: '2026-08-20 10:04:17',
+    description: '实例心跳丢失超过阈值，切换备用实例后服务已恢复，根因为宿主机网络抖动。'
+  },
+  {
+    id: '12',
+    level: 1,
+    title: '网关服务 GC 暂停时间提示',
+    target: 'gateway runtime',
+    value: '4.6ms',
+    threshold: '> 4ms',
+    status: 3,
+    occurredAt: '2026-08-19 21:44:08',
+    description: 'GC 暂停时间轻微超出经验阈值，当前不影响请求耗时，继续观察即可。'
+  }
+];
+
+let alertRules: AlertRuleRecord[] = [
+  {
+    id: '1',
+    name: '网关 5xx 错误率过高',
+    target: 'api-gateway 错误率',
+    condition: 'sum(rate(gateway_request_total{code=~"5.."}[5m])) / sum(rate(gateway_request_total[5m])) > 0.01',
+    level: 3,
+    channels: '站内信,邮件',
+    enabled: true
+  },
+  {
+    id: '2',
+    name: '服务 CPU 持续超阈值',
+    target: '各服务实例 CPU',
+    condition: 'avg(rate(cpu_usage_percent[5m])) by (service) > 85',
+    level: 2,
+    channels: '站内信',
+    enabled: true
+  },
+  {
+    id: '3',
+    name: '磁盘使用率提醒',
+    target: '各节点磁盘',
+    condition: 'max(disk_usage_percent) by (host) > 85',
+    level: 1,
+    channels: '站内信,webhook',
+    enabled: false
+  }
+];
+
+let nextAlertRuleId = alertRules.length + 1;
+
+/** paginate from a POST body ({ current, size }) instead of query params */
+function paginateBody<T>(records: T[], body: { current?: number; size?: number }) {
+  const current = Math.max(1, Number(body?.current ?? 1));
+  const size = Math.max(1, Number(body?.size ?? 10));
+  const start = (current - 1) * size;
+  return { records: records.slice(start, start + size), current, size, total: records.length };
+}
+
 // ---------------------------------------------------------------- routes
 
 type MonitorHandler = (ctx: {
@@ -694,6 +896,136 @@ export const monitorRoutes: Array<{ method: string; path: string; handler: Monit
         .slice(0, limit);
 
       sendData(res, items);
+    }
+  },
+
+  // ---------------- database connection pool ----------------
+  {
+    method: 'GET',
+    path: '/v1/monitor/server/dbPool',
+    handler({ res }) {
+      // 与 metrics 一致：围绕基线做确定性波动，让每次轮询看起来"活着"
+      const wave = Math.sin(Date.now() / 60000);
+      const openConnections = Math.round(38 + wave * 4);
+      const inUse = Math.min(openConnections - 1, Math.round(26 + wave * 6));
+      sendData(res, {
+        maxOpenConnections: 100,
+        openConnections,
+        inUse,
+        idle: openConnections - inUse,
+        waitCount: Math.max(0, Math.round(wave * 3)),
+        waitDurationMs: Math.round(8400 + wave * 1200),
+        maxIdleClosed: 4271,
+        maxLifetimeClosed: 189
+      });
+    }
+  },
+
+  // ---------------- alert center ----------------
+  {
+    method: 'POST',
+    path: '/v1/monitor/alert/page',
+    handler({ res, body }) {
+      const keyword = body?.keyword;
+      const level = body?.level;
+      const status = body?.status;
+      const records = alertRecords.filter(
+        alert =>
+          (!keyword || alert.title.includes(String(keyword)) || alert.target.includes(String(keyword))) &&
+          (level === undefined || level === null || level === '' || alert.level === Number(level)) &&
+          (status === undefined || status === null || status === '' || alert.status === Number(status))
+      );
+      sendData(res, paginateBody(records, body));
+    }
+  },
+  {
+    method: 'PUT',
+    path: '/v1/monitor/alert/:id/ack',
+    handler({ res, url }) {
+      // /v1/monitor/alert/{id}/ack → id 位于第 5 段
+      const id = url.pathname.split('/')[4];
+      const alert = alertRecords.find(item => item.id === id);
+      if (alert) alert.status = 2;
+      sendData(res, null);
+    }
+  },
+  {
+    method: 'PUT',
+    path: '/v1/monitor/alert/recover/:id',
+    handler({ res, url }) {
+      const id = url.pathname.split('/').pop();
+      const alert = alertRecords.find(item => item.id === id);
+      if (alert) alert.status = 3;
+      sendData(res, null);
+    }
+  },
+  {
+    method: 'DELETE',
+    path: '/v1/monitor/alert/delete',
+    handler({ res, body }) {
+      const ids: string[] = body?.ids || [];
+      alertRecords = alertRecords.filter(alert => !ids.includes(alert.id));
+      sendData(res, null);
+    }
+  },
+  {
+    method: 'POST',
+    path: '/v1/monitor/alertRule/page',
+    handler({ res, body }) {
+      sendData(res, paginateBody(alertRules, body));
+    }
+  },
+  {
+    method: 'POST',
+    path: '/v1/monitor/alertRule/create',
+    handler({ res, body }) {
+      const rule: AlertRuleRecord = {
+        id: String(nextAlertRuleId++),
+        name: String(body?.name ?? ''),
+        target: String(body?.target ?? ''),
+        condition: String(body?.condition ?? ''),
+        level: Number(body?.level ?? 2),
+        channels: String(body?.channels ?? ''),
+        enabled: body?.enabled !== false
+      };
+      alertRules.unshift(rule);
+      sendData(res, { id: rule.id });
+    }
+  },
+  {
+    method: 'PUT',
+    path: '/v1/monitor/alertRule/update/:id',
+    handler({ res, body, url }) {
+      const id = url.pathname.split('/').pop();
+      const rule = alertRules.find(item => item.id === id);
+      if (rule) {
+        rule.name = body?.name ?? rule.name;
+        rule.target = body?.target ?? rule.target;
+        rule.condition = body?.condition ?? rule.condition;
+        rule.level = body?.level !== undefined ? Number(body.level) : rule.level;
+        rule.channels = body?.channels ?? rule.channels;
+        rule.enabled = body?.enabled !== undefined ? Boolean(body.enabled) : rule.enabled;
+      }
+      sendData(res, null);
+    }
+  },
+  {
+    method: 'PUT',
+    path: '/v1/monitor/alertRule/status/:id',
+    handler({ res, body, url }) {
+      const id = url.pathname.split('/').pop();
+      const rule = alertRules.find(item => item.id === id);
+      if (rule) rule.enabled = body?.enabled !== false;
+      sendData(res, null);
+    }
+  },
+  {
+    method: 'DELETE',
+    path: '/v1/monitor/alertRule/delete',
+    handler({ res, body }) {
+      const ids: string[] = body?.ids || [];
+      alertRules = alertRules.filter(rule => !ids.includes(rule.id));
+      sendData(res, null);
     }
   }
 ];

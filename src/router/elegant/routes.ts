@@ -160,17 +160,6 @@ export const generatedRoutes: GeneratedRoute[] = [
           roles: ['R_ADMIN'],
           keepAlive: true
         }
-      },
-      {
-        name: 'auth_user-detail',
-        path: '/auth/user-detail/:id',
-        component: 'view.auth_user-detail',
-        meta: {
-          title: 'auth_user-detail',
-          i18nKey: 'route.auth_user-detail',
-          hideInMenu: true,
-          activeMenu: 'auth_user'
-        }
       }
     ]
   },

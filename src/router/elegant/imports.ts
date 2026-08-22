@@ -27,7 +27,6 @@ export const views: Record<LastLevelRouteKey, RouteComponent | (() => Promise<Ro
   auth_menu: () => import("@/views/auth/menu/index.vue"),
   auth_resource: () => import("@/views/auth/resource/index.vue"),
   auth_role: () => import("@/views/auth/role/index.vue"),
-  "auth_user-detail": () => import("@/views/auth/user-detail/[id].vue"),
   auth_user: () => import("@/views/auth/user/index.vue"),
   "function_hide-child_one": () => import("@/views/function/hide-child/one/index.vue"),
   "function_hide-child_three": () => import("@/views/function/hide-child/three/index.vue"),

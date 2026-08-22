@@ -188,7 +188,6 @@ const routeMap: RouteMap = {
   "auth_resource": "/auth/resource",
   "auth_role": "/auth/role",
   "auth_user": "/auth/user",
-  "auth_user-detail": "/auth/user-detail/:id",
   "function": "/function",
   "function_hide-child": "/function/hide-child",
   "function_hide-child_one": "/function/hide-child/one",

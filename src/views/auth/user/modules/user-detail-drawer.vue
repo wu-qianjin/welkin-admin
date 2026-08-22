@@ -1,6 +1,13 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
-import { fetchGetUserDetail, resetUserPassword, updateUserStatus } from '@/service/api';
+import {
+  fetchGetLoginLogList,
+  fetchGetOperateLogList,
+  fetchGetUserDetail,
+  resetUserPassword,
+  revokeUserSessions,
+  updateUserStatus
+} from '@/service/api';
 import { formatDateTime } from '@/utils/common';
 
 defineOptions({
@@ -28,6 +35,7 @@ type DetailView = {
   id: string;
   userName: string;
   nickName: string;
+  avatar: string;
   department: string;
   role: string;
   email: string;
@@ -51,6 +59,7 @@ function createEmptyDetail(): DetailView {
     id: '',
     userName: '',
     nickName: '',
+    avatar: '',
     department: '未分配（部门ID：0）',
     role: '未分配',
     email: '',
@@ -69,6 +78,7 @@ function createEmptyDetail(): DetailView {
 }
 
 const loading = ref(false);
+const logoutLoading = ref(false);
 const enabled = computed(() => user.value.status === '正常');
 const resetVisible = ref(false);
 const resetPassword = ref('');
@@ -90,6 +100,7 @@ async function loadUser() {
       id: data.id,
       userName: data.userName,
       nickName: data.nickName,
+      avatar: data.avatar || '',
       department: `部门ID：${data.deptId || '0'}`,
       role: data.userRoles?.join('、') || '未分配',
       email: data.userEmail,
@@ -101,11 +112,29 @@ async function loadUser() {
       lastLoginIp: data.lastLoginIp || '暂无',
       permissions: data.userRoles || []
     };
+    await loadActivityStats(data.userName);
   } catch {
     // request errors are surfaced by the request layer
   } finally {
     loading.value = false;
   }
+}
+
+/** 登录/操作次数与最近登录时间线来自审计日志（按用户名过滤），失败不阻塞详情展示 */
+async function loadActivityStats(userName: string) {
+  const [loginPage, operatePage] = await Promise.all([
+    fetchGetLoginLogList({ userName, current: 1, size: 5 }).catch(() => null),
+    fetchGetOperateLogList({ userName, current: 1, size: 1 }).catch(() => null)
+  ]);
+
+  user.value.loginCount = loginPage?.total ?? 0;
+  user.value.operationCount = operatePage?.total ?? 0;
+  user.value.timeline = (loginPage?.records ?? []).map(item => ({
+    title: item.status === '1' ? '登录成功' : '登录失败',
+    time: item.loginTime,
+    description: `${item.ipaddr || '-'}${item.msg ? ` · ${item.msg}` : ''}`,
+    type: item.status === '1' ? 'success' : 'warning'
+  }));
 }
 
 watch(visible, value => {
@@ -137,8 +166,17 @@ async function confirmReset() {
   window.$message?.success('临时密码已生成，请通过安全渠道告知用户');
 }
 
-function forceLogout() {
-  window.$message?.success('已发起强制下线，用户的其它会话将在下一次请求时失效');
+async function forceLogout() {
+  if (!user.value.id) return;
+  logoutLoading.value = true;
+  try {
+    await revokeUserSessions(user.value.id);
+    window.$message?.success('已强制下线该用户的全部会话，其令牌将在下一次请求时失效');
+  } catch {
+    // request errors are surfaced by the request layer
+  } finally {
+    logoutLoading.value = false;
+  }
 }
 </script>
 
@@ -148,7 +186,7 @@ function forceLogout() {
       <NSpin :show="loading">
         <div class="flex flex-col gap-16px">
           <div class="flex items-center gap-18px">
-            <NAvatar :size="64" round :color="user.avatarColor">{{ user.avatarText }}</NAvatar>
+            <AuthAvatar :path="user.avatar" :text="user.avatarText" :color="user.avatarColor" :size="64" />
             <div class="min-w-0 flex-1">
               <div class="flex-y-center gap-10px">
                 <span class="text-20px font-600">{{ user.nickName }}</span>
@@ -160,10 +198,15 @@ function forceLogout() {
               <div class="text-13px text-gray-4">最近登录：{{ user.lastLoginAt }}（IP：{{ user.lastLoginIp }}）</div>
             </div>
             <NSpace size="small">
-              <NButton size="small" @click="forceLogout">
-                <template #icon><icon-mdi-logout-variant /></template>
-                强制下线
-              </NButton>
+              <NPopconfirm @positive-click="forceLogout">
+                <template #trigger>
+                  <NButton size="small" :loading="logoutLoading">
+                    <template #icon><icon-mdi-logout-variant /></template>
+                    强制下线
+                  </NButton>
+                </template>
+                确定强制下线该用户的全部会话？
+              </NPopconfirm>
               <NButton size="small" type="warning" ghost @click="resetVisible = true">
                 <template #icon><icon-mdi-lock-reset /></template>
                 重置密码
@@ -205,20 +248,22 @@ function forceLogout() {
               <NTag v-for="permission in user.permissions" :key="permission" type="info" round size="small">
                 {{ permission }}
               </NTag>
+              <NEmpty v-if="!user.permissions.length" size="small" description="未分配角色" />
             </div>
-            <NDivider />
-            <div class="flex-y-center justify-between text-13px">
-              <span class="text-gray-5">数据范围</span>
-              <span>本部门及下属部门</span>
-            </div>
-            <div class="mt-12px flex-y-center justify-between text-13px">
-              <span class="text-gray-5">多因素认证</span>
-              <NTag type="warning" size="small">未启用</NTag>
-            </div>
-            <div class="mt-12px flex-y-center justify-between text-13px">
-              <span class="text-gray-5">账号有效期</span>
-              <span>长期有效</span>
-            </div>
+          </NCard>
+
+          <NCard title="最近登录记录" :bordered="false" size="small" class="card-wrapper">
+            <NTimeline v-if="user.timeline.length">
+              <NTimelineItem
+                v-for="(item, index) in user.timeline"
+                :key="index"
+                :type="item.type"
+                :title="item.title"
+                :content="item.description"
+                :time="item.time"
+              />
+            </NTimeline>
+            <NEmpty v-else size="small" description="暂无登录记录" />
           </NCard>
         </div>
       </NSpin>

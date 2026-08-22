@@ -183,6 +183,17 @@ export const useRouteStore = defineStore(SetupStoreId.Route, () => {
     tabStore.initHomeTab();
   }
 
+  /**
+   * 权限变更后热刷新授权路由与菜单：清空已安装路由后重新按当前用户加载，
+   * 保留登录态与令牌（区别于 resetStore 的登出语义）。
+   */
+  async function refreshAuthRoute() {
+    setIsInitAuthRoute(false);
+    authRoutes.value = [];
+    resetVueRoutes();
+    await initAuthRoute();
+  }
+
   /** Init static auth route */
   function initStaticAuthRoute() {
     const { authRoutes: staticAuthRoutes } = createStaticRoutes();
@@ -331,6 +342,7 @@ export const useRouteStore = defineStore(SetupStoreId.Route, () => {
     initConstantRoute,
     isInitConstantRoute,
     initAuthRoute,
+    refreshAuthRoute,
     isInitAuthRoute,
     setIsInitAuthRoute,
     getIsAuthRouteExist,

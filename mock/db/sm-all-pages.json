@@ -25,7 +25,6 @@
   "system_file",
   "monitor",
   "monitor_overview",
-  "monitor_server",
   "monitor_gateway",
   "monitor_alert",
   "monitor_log",

@@ -421,7 +421,7 @@ declare namespace Api {
 
     /** login log search params */
     type LoginLogSearchParams = CommonType.RecordNullable<
-      Pick<Api.SystemManage.LoginLog, 'userName' | 'ipaddr' | 'status'> & CommonSearchParams
+      Pick<Api.SystemManage.LoginLog, 'userName' | 'ipaddr' | 'status'> & CommonSearchParams & LogTimeRangeParams
     >;
 
     /**
@@ -466,8 +466,14 @@ declare namespace Api {
 
     /** operation log search params */
     type OperateLogSearchParams = CommonType.RecordNullable<
-      Pick<Api.SystemManage.OperateLog, 'title' | 'userName' | 'businessType'> & CommonSearchParams
+      Pick<Api.SystemManage.OperateLog, 'title' | 'userName' | 'businessType'> & CommonSearchParams & LogTimeRangeParams
     >;
+
+    /** 审计日志时间范围（"YYYY-MM-DD HH:mm:ss"，两端均可缺省） */
+    type LogTimeRangeParams = {
+      beginTime?: string | null;
+      endTime?: string | null;
+    };
 
     /** online user session */
     type OnlineUser = {

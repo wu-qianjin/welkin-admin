@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
 import { jsonClone } from '@sa/utils';
-import { addButton, updateButton } from '@/service/api';
+import { addButton, fetchGetMenuList, updateButton } from '@/service/api';
 import { useFormRules, useNaiveForm } from '@/hooks/common/form';
 import { $t } from '@/locales';
+import { fetchAllPages } from '@/utils/common';
 
 defineOptions({
   name: 'ButtonOperateDrawer'
@@ -56,6 +57,31 @@ const rules: Record<string, App.Global.FormRule[]> = {
   status: [defaultRequiredRule]
 };
 
+/** 按钮只能挂到页面型菜单上，选项从菜单接口全量分页拉取，标签带上级目录便于区分同名页面 */
+const menuOptions = ref<CommonType.Option[]>([]);
+const menuOptionsLoading = ref(false);
+
+async function loadMenuOptions() {
+  menuOptionsLoading.value = true;
+  try {
+    const records = await fetchAllPages((current, size) => fetchGetMenuList({ current, size }));
+    const nameById = new Map(records.map(item => [item.id, item.menuName]));
+    menuOptions.value = records
+      .filter(item => item.menuType === '2')
+      .map(item => {
+        const parentName = item.parentId && item.parentId !== '0' ? nameById.get(item.parentId) : undefined;
+        return {
+          label: parentName ? `${parentName} / ${item.menuName}` : item.menuName,
+          value: item.menuName
+        };
+      });
+  } catch {
+    // request errors are surfaced by the request layer
+  } finally {
+    menuOptionsLoading.value = false;
+  }
+}
+
 function handleInitModel() {
   model.value = createDefaultModel();
   if (props.operateType === 'edit' && props.rowData) {
@@ -87,6 +113,9 @@ watch(visible, () => {
   if (visible.value) {
     handleInitModel();
     restoreValidation();
+    if (!menuOptions.value.length) {
+      loadMenuOptions();
+    }
   }
 });
 </script>
@@ -106,7 +135,13 @@ watch(visible, () => {
           <NInput v-model:value="model.buttonName" :placeholder="$t('page.manage.resource.button.form.buttonName')" />
         </NFormItem>
         <NFormItem :label="$t('page.manage.resource.button.menuName')" path="menuName">
-          <NInput v-model:value="model.menuName" :placeholder="$t('page.manage.resource.button.form.menuName')" />
+          <NSelect
+            v-model:value="model.menuName"
+            :options="menuOptions"
+            :loading="menuOptionsLoading"
+            :placeholder="$t('page.manage.resource.button.form.menuName')"
+            filterable
+          />
         </NFormItem>
         <NFormItem :label="$t('page.manage.resource.status')" path="status">
           <NSwitch v-model:value="model.status" checked-value="1" unchecked-value="2" />

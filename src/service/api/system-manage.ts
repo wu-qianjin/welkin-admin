@@ -100,6 +100,8 @@ interface BackendUserItem {
   userName: string;
   userGender: number;
   nickName: string;
+  /** 头像鉴权预览路径（/v1/system/file/preview/{id}），未设置时为空 */
+  avatar?: string;
   userPhone: string;
   userEmail: string;
   userRoles: string[];
@@ -163,7 +165,7 @@ export async function fetchGetUserList(params?: Api.SystemManage.UserSearchParam
 
 export type UserModel = Pick<
   Api.SystemManage.User,
-  'userName' | 'userGender' | 'nickName' | 'userPhone' | 'userEmail' | 'userRoles' | 'status'
+  'userName' | 'userGender' | 'nickName' | 'userPhone' | 'userEmail' | 'userRoles' | 'deptId' | 'status'
 >;
 
 /** add user */
@@ -297,6 +299,7 @@ interface BackendConfigItem {
   status: number;
   remark: string;
   createTime: string;
+  updateTime?: string;
 }
 
 function adaptConfigItem(item: BackendConfigItem): Api.SystemManage.SystemConfig {
@@ -310,7 +313,7 @@ function adaptConfigItem(item: BackendConfigItem): Api.SystemManage.SystemConfig
     remark: item.remark,
     createTime: item.createTime,
     createBy: '',
-    updateTime: '',
+    updateTime: item.updateTime ?? item.createTime,
     updateBy: ''
   };
 }
@@ -510,6 +513,7 @@ interface BackendDictTypeItem {
   status: number;
   remark: string;
   createTime: string;
+  updateTime?: string;
 }
 
 interface BackendDictOptionItem {
@@ -534,7 +538,7 @@ function adaptDictTypeItem(item: BackendDictTypeItem): Api.SystemManage.DictType
     remark: item.remark,
     createTime: item.createTime,
     createBy: '',
-    updateTime: '',
+    updateTime: item.updateTime ?? item.createTime,
     updateBy: ''
   };
 }
@@ -875,7 +879,9 @@ export function fetchGetLoginLogList(params?: Api.SystemManage.LoginLogSearchPar
         size: params?.size ?? 10,
         userName: params?.userName ?? '',
         ipaddr: params?.ipaddr ?? '',
-        status: params?.status ? Number(params.status) : undefined
+        status: params?.status ? Number(params.status) : undefined,
+        beginTime: params?.beginTime ?? undefined,
+        endTime: params?.endTime ?? undefined
       }
     )
     .then(res => ({
@@ -923,7 +929,9 @@ export function fetchGetOperateLogList(params?: Api.SystemManage.OperateLogSearc
         size: params?.size ?? 10,
         userName: params?.userName ?? '',
         title: params?.title ?? '',
-        businessType: params?.businessType ? Number(params.businessType) : undefined
+        businessType: params?.businessType ? Number(params.businessType) : undefined,
+        beginTime: params?.beginTime ?? undefined,
+        endTime: params?.endTime ?? undefined
       }
     )
     .then(res => ({
@@ -981,36 +989,25 @@ export function clearOperateLog() {
 // ---------------- online user ----------------
 
 /**
- * Keep only active sessions. IAM normally returns refreshExpiresAt/revokedAt;
- * older responses omit those fields, so retain the documented one-hour fallback.
+ * 在线会话列表。后端 /v1/iam/session/page 只返回未撤销、refresh 未过期且
+ * 最近仍活动的会话并给出准确 total，前端不再二次过滤或改写总数，
+ * 否则分页导航会与真实数据不一致。
  */
-function isOnlineSessionActive(session: Api.SystemManage.OnlineUser) {
-  if (session.revokedAt) return false;
-  const expiresAt = session.refreshExpiresAt ? Date.parse(session.refreshExpiresAt) : Number.NaN;
-  const loginAt = Date.parse(session.loginTime.replace(' ', 'T'));
-  const effectiveExpiresAt = Number.isNaN(expiresAt)
-    ? Number.isNaN(loginAt)
-      ? Number.POSITIVE_INFINITY
-      : loginAt + 60 * 60 * 1000
-    : expiresAt;
-  return effectiveExpiresAt > Date.now();
-}
-
 export function fetchGetOnlineUserList(params?: Api.SystemManage.OnlineUserSearchParams) {
-  return alova
-    .Post<Api.SystemManage.OnlineUserList>('/v1/iam/session/page', {
-      current: params?.current ?? 1,
-      size: params?.size ?? 10,
-      userName: params?.userName ?? '',
-      ipaddr: params?.ipaddr ?? ''
-    })
-    .then(res => {
-      const records = res.records.filter(isOnlineSessionActive);
-      return { ...res, records, total: records.length };
-    });
+  return alova.Post<Api.SystemManage.OnlineUserList>('/v1/iam/session/page', {
+    current: params?.current ?? 1,
+    size: params?.size ?? 10,
+    userName: params?.userName ?? '',
+    ipaddr: params?.ipaddr ?? ''
+  });
 }
 
 /** force logout online users */
 export function forceLogout(ids: string[]) {
   return Promise.all(ids.map(id => alova.Delete<null>(`/v1/iam/session/${id}`))).then(() => null);
+}
+
+/** revoke all sessions of a user（管理员强制下线，用户需重新登录） */
+export function revokeUserSessions(userId: string) {
+  return alova.Delete<null>(`/v1/iam/session/user/${userId}`);
 }

@@ -1,5 +1,5 @@
 <script setup lang="tsx">
-import { ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { NButton, NPopconfirm, NTag } from 'naive-ui';
 import { enableStatusRecord } from '@/constants/business';
 import { yesOrNoRecord } from '@/constants/common';
@@ -19,9 +19,18 @@ const appStore = useAppStore();
 const historyVisible = ref(false);
 const history = ref<ConfigHistoryItem[]>([]);
 
+/** 行内“历史”按 configId 过滤；表头按钮查看全局历史 */
+const historyConfigId = ref('');
+const historyTitle = computed(() => (historyConfigId.value ? '参数变更历史（当前参数）' : '参数变更历史'));
+
+function openHistory(configId?: string) {
+  historyConfigId.value = configId ?? '';
+  historyVisible.value = true;
+}
+
 watch(historyVisible, async visible => {
   if (visible) {
-    const result = await fetchConfigHistory();
+    const result = await fetchConfigHistory({ configId: historyConfigId.value || undefined });
     history.value = result.records;
   }
 });
@@ -131,11 +140,14 @@ const { columns, columnChecks, data, getData, getDataByPage, loading, mobilePagi
       key: 'operate',
       title: $t('common.operate'),
       align: 'center',
-      width: 130,
+      width: 175,
       render: row => (
         <div class="flex-center gap-8px">
           <NButton type="primary" ghost size="small" onClick={() => edit(row.id)}>
             {$t('common.edit')}
+          </NButton>
+          <NButton size="small" quaternary onClick={() => openHistory(row.id)}>
+            历史
           </NButton>
           <NPopconfirm onPositiveClick={() => handleDelete(row.id)}>
             {{
@@ -184,7 +196,7 @@ async function handleDelete(id: string) {
     <ConfigSearch v-model:model="searchParams" @search="getDataByPage" />
     <NCard :title="$t('page.manage.config.title')" :bordered="false" size="small" class="card-wrapper sm:flex-1-hidden">
       <template #header-extra>
-        <NButton size="small" secondary class="mr-8px" @click="historyVisible = true">
+        <NButton size="small" secondary class="mr-8px" @click="openHistory()">
           <template #icon><icon-mdi-history /></template>
           变更历史
         </NButton>
@@ -216,13 +228,13 @@ async function handleDelete(id: string) {
         :row-data="editingData"
         @submitted="getDataByPage"
       />
-      <NModal v-model:show="historyVisible" preset="card" title="参数变更历史" class="w-900px">
+      <NModal v-model:show="historyVisible" preset="card" :title="historyTitle" class="w-900px">
         <NDataTable
           :data="history"
           :pagination="false"
           size="small"
           :columns="[
-            { key: 'configName', title: '参数名称', minWidth: 150 },
+            { key: 'paramName', title: '参数名称', minWidth: 150 },
             { key: 'paramKey', title: '参数键', minWidth: 180 },
             { key: 'beforeValue', title: '修改前', minWidth: 120 },
             { key: 'afterValue', title: '修改后', minWidth: 120 },

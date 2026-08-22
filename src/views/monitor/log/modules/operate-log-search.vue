@@ -27,14 +27,29 @@ function resetModel() {
   Object.assign(model.value, defaultModel);
 }
 
+/** 时间范围选择器是本地状态，搜索/重置时同步进请求参数（"YYYY-MM-DD HH:mm:ss"） */
+function syncDateRange() {
+  const [begin, end] = dateRange.value ?? [null, null];
+  model.value.beginTime = begin ? formatTimestamp(begin) : null;
+  model.value.endTime = end ? formatTimestamp(end) : null;
+}
+
+function formatTimestamp(value: number) {
+  const date = new Date(value);
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+}
+
 async function reset() {
   await restoreValidation();
   resetModel();
   dateRange.value = null;
+  syncDateRange();
 }
 
 async function search() {
   await validate();
+  syncDateRange();
   emit('search');
 }
 </script>

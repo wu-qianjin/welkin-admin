@@ -1,5 +1,5 @@
 <script setup lang="tsx">
-import { computed, h, onMounted, ref } from 'vue';
+import { computed, h, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { NButton, NPopconfirm, NTag, NSwitch } from 'naive-ui';
 import {
   acknowledgeMonitorAlert,
@@ -24,23 +24,92 @@ type AlertRow = Omit<MonitorAlertItem, 'level' | 'status'> & {
   status: '待处理' | '处理中' | '已恢复';
 };
 const alerts = ref<AlertRow[]>([]);
+const alertTotal = ref(0);
+const alertLoading = ref(false);
 const keyword = ref('');
-const level = ref<string | null>(null);
-const status = ref<string | null>(null);
+const level = ref<number | null>(null);
+const status = ref<number | null>(null);
+const pagination = ref({ page: 1, pageSize: 10 });
+const stats = ref({ pending: 0, processing: 0, recovered: 0 });
 const detailVisible = ref(false);
 const detail = ref<AlertRow | null>(null);
 const ruleVisible = ref(false);
 type AlertRuleRow = Omit<MonitorAlertRuleItem, 'level'> & { level: '严重' | '警告' | '提示' };
 const rules = ref<AlertRuleRow[]>([]);
 
-const filteredAlerts = computed(() =>
-  alerts.value.filter(item => {
-    const matchesKeyword = !keyword.value || `${item.title}${item.target}`.includes(keyword.value);
-    return (
-      matchesKeyword && (!level.value || item.level === level.value) && (!status.value || item.status === status.value)
-    );
-  })
-);
+/**
+ * 后端等级约定与规则编辑器一致：1=提示、2=警告、3=严重；
+ * 状态：1=待处理、2=处理中、3=已恢复。
+ */
+function adaptAlertItem(item: MonitorAlertItem): AlertRow {
+  return {
+    ...item,
+    level: item.level >= 3 ? '严重' : item.level === 2 ? '警告' : '提示',
+    status: item.status === 1 ? '待处理' : item.status === 2 ? '处理中' : '已恢复'
+  };
+}
+
+async function loadAlerts() {
+  alertLoading.value = true;
+  try {
+    const result = await fetchMonitorAlertList({
+      current: pagination.value.page,
+      size: pagination.value.pageSize,
+      keyword: keyword.value || undefined,
+      level: level.value ?? undefined,
+      status: status.value ?? undefined
+    });
+    alerts.value = result.records.map(adaptAlertItem);
+    alertTotal.value = result.total;
+  } finally {
+    alertLoading.value = false;
+  }
+}
+
+/** 统计卡取各状态的过滤总数，避免只统计当前页 */
+async function loadStats() {
+  const [pending, processing, recovered] = await Promise.all([
+    fetchMonitorAlertList({ current: 1, size: 1, status: 1 }).catch(() => null),
+    fetchMonitorAlertList({ current: 1, size: 1, status: 2 }).catch(() => null),
+    fetchMonitorAlertList({ current: 1, size: 1, status: 3 }).catch(() => null)
+  ]);
+  stats.value = {
+    pending: pending?.total ?? 0,
+    processing: processing?.total ?? 0,
+    recovered: recovered?.total ?? 0
+  };
+}
+
+function resetPageAndReload() {
+  pagination.value.page = 1;
+  void loadAlerts();
+  void loadStats();
+}
+
+let keywordTimer: number | undefined;
+watch(keyword, () => {
+  window.clearTimeout(keywordTimer);
+  keywordTimer = window.setTimeout(resetPageAndReload, 300);
+});
+watch([level, status], resetPageAndReload);
+onBeforeUnmount(() => window.clearTimeout(keywordTimer));
+
+const paginationProps = computed(() => ({
+  page: pagination.value.page,
+  pageSize: pagination.value.pageSize,
+  itemCount: alertTotal.value,
+  showSizePicker: true,
+  pageSizes: [10, 20, 50],
+  onChange: (page: number) => {
+    pagination.value.page = page;
+    void loadAlerts();
+  },
+  onUpdatePageSize: (pageSize: number) => {
+    pagination.value.pageSize = pageSize;
+    pagination.value.page = 1;
+    void loadAlerts();
+  }
+}));
 
 const alertColumns = computed<NaiveUI.TableColumn<AlertRow>[]>(() => [
   {
@@ -111,17 +180,17 @@ async function acknowledge(row: AlertRow) {
   } else {
     await acknowledgeMonitorAlert(row.id);
   }
-  row.status = row.status === '待处理' ? '处理中' : '已恢复';
-  window.$message?.success(row.status === '处理中' ? '告警已确认，进入处理中' : '告警已标记为恢复');
+  await Promise.all([loadAlerts(), loadStats()]);
+  window.$message?.success(row.status === '待处理' ? '告警已确认，进入处理中' : '告警已标记为恢复');
 }
 
 async function removeAlert(row: AlertRow) {
   await deleteMonitorAlerts([row.id]);
-  alerts.value = alerts.value.filter(item => item.id !== row.id);
   if (detail.value?.id === row.id) {
     detailVisible.value = false;
     detail.value = null;
   }
+  await Promise.all([loadAlerts(), loadStats()]);
   window.$message?.success('告警已删除');
 }
 
@@ -190,15 +259,6 @@ async function removeRule(row: AlertRuleRow) {
   window.$message?.success('告警规则已删除');
 }
 
-async function loadAlerts() {
-  const result = await fetchMonitorAlertList({ current: 1, size: 100 });
-  alerts.value = result.records.map(item => ({
-    ...item,
-    level: item.level === 1 ? '严重' : item.level === 2 ? '警告' : '提示',
-    status: item.status === 1 ? '待处理' : item.status === 2 ? '处理中' : '已恢复'
-  }));
-}
-
 async function loadRules() {
   const result = await fetchMonitorAlertRuleList();
   rules.value = result.records.map(item => ({
@@ -208,7 +268,7 @@ async function loadRules() {
 }
 
 onMounted(async () => {
-  await Promise.all([loadAlerts(), loadRules()]);
+  await Promise.all([loadAlerts(), loadStats(), loadRules()]);
 });
 </script>
 
@@ -221,7 +281,14 @@ onMounted(async () => {
           <div class="mt-6px text-13px text-gray-5">统一查看、确认和追踪系统异常，记录来自 api-monitor。</div>
         </div>
         <NSpace>
-          <NButton @click="loadAlerts">
+          <NButton
+            @click="
+              () => {
+                void loadAlerts();
+                void loadStats();
+              }
+            "
+          >
             <template #icon><icon-mdi-refresh /></template>
             刷新
           </NButton>
@@ -236,21 +303,21 @@ onMounted(async () => {
     <NGrid cols="1 s:3" responsive="screen" :x-gap="12" :y-gap="12">
       <NGi>
         <NCard :bordered="false" class="card-wrapper">
-          <NStatistic label="待处理" :value="alerts.filter(item => item.status === '待处理').length">
+          <NStatistic label="待处理" :value="stats.pending">
             <template #prefix><icon-mdi-bell-alert-outline class="text-error" /></template>
           </NStatistic>
         </NCard>
       </NGi>
       <NGi>
         <NCard :bordered="false" class="card-wrapper">
-          <NStatistic label="处理中" :value="alerts.filter(item => item.status === '处理中').length">
+          <NStatistic label="处理中" :value="stats.processing">
             <template #prefix><icon-mdi-progress-alert class="text-warning" /></template>
           </NStatistic>
         </NCard>
       </NGi>
       <NGi>
         <NCard :bordered="false" class="card-wrapper">
-          <NStatistic label="今日已恢复" :value="alerts.filter(item => item.status === '已恢复').length">
+          <NStatistic label="已恢复" :value="stats.recovered">
             <template #prefix><icon-mdi-check-circle-outline class="text-success" /></template>
           </NStatistic>
         </NCard>
@@ -266,9 +333,9 @@ onMounted(async () => {
             clearable
             placeholder="告警级别"
             :options="[
-              { label: '严重', value: '严重' },
-              { label: '警告', value: '警告' },
-              { label: '提示', value: '提示' }
+              { label: '严重', value: 3 },
+              { label: '警告', value: 2 },
+              { label: '提示', value: 1 }
             ]"
             class="w-120px"
           />
@@ -277,9 +344,9 @@ onMounted(async () => {
             clearable
             placeholder="处理状态"
             :options="[
-              { label: '待处理', value: '待处理' },
-              { label: '处理中', value: '处理中' },
-              { label: '已恢复', value: '已恢复' }
+              { label: '待处理', value: 1 },
+              { label: '处理中', value: 2 },
+              { label: '已恢复', value: 3 }
             ]"
             class="w-120px"
           />
@@ -287,8 +354,10 @@ onMounted(async () => {
       </template>
       <NDataTable
         :columns="alertColumns"
-        :data="filteredAlerts"
-        :pagination="{ pageSize: 10 }"
+        :data="alerts"
+        remote
+        :pagination="paginationProps"
+        :loading="alertLoading"
         :scroll-x="1100"
         size="small"
       />

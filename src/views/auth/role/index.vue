@@ -190,6 +190,7 @@ async function handleSubmitted() {
         v-model:visible="authorizationVisible"
         :role-id="authorizationRole.id"
         :role-name="authorizationRole.roleName"
+        :role-code="authorizationRole.roleCode"
       />
     </NCard>
   </div>

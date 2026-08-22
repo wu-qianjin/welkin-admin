@@ -75,6 +75,19 @@ export interface MockConfig {
   [key: string]: unknown;
 }
 
+/** 参数配置变更历史（供 /v1/system/config/history/page 回看） */
+export interface MockConfigHistory {
+  id: number;
+  configId: number;
+  paramName: string;
+  paramKey: string;
+  beforeValue: string;
+  afterValue: string;
+  operator: string;
+  operatedAt: string;
+  reason: string;
+}
+
 export interface MockFile {
   id: number;
   fileName: string;
@@ -202,6 +215,7 @@ export const store = {
   roles: readDb<PaginatingRecord<MockRole>>('sm-role-list').records,
   menus: readDb<PaginatingRecord<MockMenu>>('sm-menu-list').records,
   configs: readDb<PaginatingRecord<MockConfig>>('sm-configs').records,
+  configHistories: readDb<PaginatingRecord<MockConfigHistory>>('sm-config-histories').records,
   files: readDb<PaginatingRecord<MockFile>>('sm-files').records,
   notices: readDb<PaginatingRecord<MockNotice>>('sm-notices').records,
   dictTypes: readDb<PaginatingRecord<MockDictType>>('sm-dict-types').records,

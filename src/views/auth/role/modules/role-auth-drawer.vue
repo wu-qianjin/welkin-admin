@@ -9,12 +9,16 @@ import {
   updateRolePermissions
 } from '@/service/api';
 import { $t } from '@/locales';
+import { fetchAllPages } from '@/utils/common';
+import { useAuthStore } from '@/store/modules/auth';
+import { useRouteStore } from '@/store/modules/route';
 
 defineOptions({ name: 'RoleAuthDrawer' });
 
 interface Props {
   roleId: string;
   roleName?: string;
+  roleCode?: string;
 }
 
 interface MenuOption {
@@ -177,23 +181,24 @@ async function loadAuthorization() {
       menus = [];
     }
     if (!menus.length) {
-      const menuPage = await fetchGetMenuList({ current: 1, size: 100 });
-      menus = mapMenuList(menuPage.records);
+      const menuRecords = await fetchAllPages((current, size) => fetchGetMenuList({ current, size }));
+      menus = mapMenuList(menuRecords);
     }
 
     menuTree.value = mapMenuTree(menus);
     expandedMenuGroups.value = menuGroups.value.map(group => group.key);
 
-    const [permissions, apiPage, buttonPage] = await Promise.all([
+    // 后端分页 size 上限 100，资源需全量拉齐，否则第 100 条之后无法授权
+    const [permissions, apiRecords, buttonRecords] = await Promise.all([
       fetchRolePermissions(props.roleId),
-      fetchGetApiList({ current: 1, size: 100 }),
-      fetchGetButtonList({ current: 1, size: 100 })
+      fetchAllPages((current, size) => fetchGetApiList({ current, size })),
+      fetchAllPages((current, size) => fetchGetButtonList({ current, size }))
     ]);
     menuIds.value = [...permissions.menuIds];
     apiIds.value = [...permissions.apiIds];
     buttonIds.value = [...permissions.buttonIds];
-    apiGroups.value = groupBy(apiPage.records, item => item.apiModule);
-    buttonGroups.value = groupBy(buttonPage.records, item => item.menuName);
+    apiGroups.value = groupBy(apiRecords, item => item.apiModule);
+    buttonGroups.value = groupBy(buttonRecords, item => item.menuName);
     menuPattern.value = '';
   } catch {
     loadError.value = '授权数据加载失败，请刷新页面后重试。';
@@ -213,9 +218,20 @@ async function submit() {
     });
     window.$message?.success('角色授权已保存');
     visible.value = false;
+    await refreshSelfIfAffected();
   } finally {
     saving.value = false;
   }
+}
+
+/** 当前登录用户持有该角色时，热刷新其权限与菜单，避免改动需重新登录才生效 */
+async function refreshSelfIfAffected() {
+  const authStore = useAuthStore();
+  if (!props.roleCode || !authStore.userInfo.roles.includes(props.roleCode)) return;
+
+  const routeStore = useRouteStore();
+  await Promise.all([authStore.refreshUserInfo(), routeStore.refreshAuthRoute()]);
+  window.$message?.success('当前账号持有该角色，权限与菜单已刷新');
 }
 
 watch(

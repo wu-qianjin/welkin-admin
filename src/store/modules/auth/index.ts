@@ -24,6 +24,7 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
   const userInfo: Api.Auth.UserInfo = reactive({
     userId: '',
     userName: '',
+    avatar: '',
     roles: [],
     buttons: []
   });
@@ -204,6 +205,12 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
     }
   }
 
+  /** 权限变更后热刷新当前用户信息（roles/buttons），不重置登录态 */
+  async function refreshUserInfo() {
+    if (!token.value) return;
+    await getUserInfo();
+  }
+
   return {
     token,
     userInfo,
@@ -214,6 +221,7 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
     login,
     loginByPhone,
     loginByScan,
-    initUserInfo
+    initUserInfo,
+    refreshUserInfo
   };
 });

@@ -18,7 +18,7 @@ import {
   store,
   updateUser
 } from './db';
-import type { MockDept, MockMenu } from './db';
+import type { MockConfig, MockConfigHistory, MockDept, MockFile, MockMenu, MockNotice } from './db';
 import { customMockRoutes } from './custom';
 import { monitorRoutes } from './monitor';
 import { sendData, sendError } from './response';
@@ -75,6 +75,14 @@ function equals(value: unknown, expected: unknown): boolean {
   return String(value ?? '') === String(expected);
 }
 
+/** 时间范围过滤："YYYY-MM-DD HH:mm:ss" 文本可直接按字典序比较，条件缺省时不过滤 */
+function withinTimeRange(value: unknown, beginTime: unknown, endTime: unknown): boolean {
+  const text = String(value ?? '');
+  if (!noCondition(beginTime) && text < String(beginTime)) return false;
+  if (!noCondition(endTime) && text > String(endTime)) return false;
+  return true;
+}
+
 function paginate<T>(records: T[], query: URLSearchParams) {
   const current = Math.max(1, Number(query.get('current') || 1));
   const size = Math.max(1, Number(query.get('size') || 10));
@@ -85,6 +93,58 @@ function paginate<T>(records: T[], query: URLSearchParams) {
     size,
     total: records.length
   };
+}
+
+/** "YYYY-MM-DD HH:mm:ss" 文本，与 fixtures 中的时间格式保持一致 */
+function nowText() {
+  return new Date().toLocaleString('sv-SE').replace('T', ' ');
+}
+
+/** mock 库记录 → 网关 /v1 契约：status 转 0/1、id 转字符串、补齐 updateTime */
+function toBackendConfig(config: MockConfig) {
+  return {
+    id: String(config.id),
+    paramName: config.paramName,
+    paramKey: config.paramKey,
+    paramValue: config.paramValue,
+    builtIn: config.builtIn,
+    status: String(config.status) === '1' ? 1 : 0,
+    remark: String(config.remark ?? ''),
+    createTime: String(config.createTime ?? ''),
+    updateTime: String(config.updateTime ?? config.createTime ?? '')
+  };
+}
+
+function toBackendNotice(notice: MockNotice) {
+  return {
+    id: String(notice.id),
+    title: notice.title,
+    noticeType: Number(notice.noticeType),
+    noticeStatus: Number(notice.noticeStatus),
+    isTop: Boolean(notice.isTop),
+    content: notice.content,
+    author: String(notice.createBy ?? ''),
+    createTime: String(notice.createTime ?? ''),
+    updateTime: String(notice.updateTime ?? notice.createTime ?? '')
+  };
+}
+
+function toBackendFile(file: MockFile) {
+  return {
+    id: String(file.id),
+    fileName: file.fileName,
+    fileType: Number(file.fileType),
+    fileSize: file.fileSize,
+    bizType: file.bizType ?? '',
+    createBy: file.createBy,
+    createTime: file.createTime
+  };
+}
+
+/** 追加一条参数变更历史，供“变更记录”抽屉回看 */
+function addConfigHistory(record: Omit<MockConfigHistory, 'id'>) {
+  const id = store.configHistories.length ? Math.max(...store.configHistories.map(item => item.id)) + 1 : 1;
+  store.configHistories.unshift({ ...record, id });
 }
 
 /** a menu matches when itself or any descendant matches every provided condition */
@@ -519,7 +579,8 @@ const v1AuditRoutes: MockRoute[] = [
           (body?.status === undefined ||
             body?.status === null ||
             body?.status === '' ||
-            Number(log.status) === Number(body.status))
+            Number(log.status) === Number(body.status)) &&
+          withinTimeRange(log.loginTime, body?.beginTime, body?.endTime)
       );
       sendData(
         res,
@@ -555,7 +616,8 @@ const v1AuditRoutes: MockRoute[] = [
           (body?.businessType === undefined ||
             body?.businessType === null ||
             body?.businessType === '' ||
-            Number(log.businessType) === Number(body.businessType))
+            Number(log.businessType) === Number(body.businessType)) &&
+          withinTimeRange(log.operateTime, body?.beginTime, body?.endTime)
       );
       sendData(
         res,
@@ -1016,6 +1078,194 @@ const routes: MockRoute[] = [
     }
   },
 
+  // ---------------- v1 system config ----------------
+  {
+    method: 'POST',
+    path: '/v1/system/config/page',
+    handler({ res, body }) {
+      const configs = store.configs.filter(
+        config =>
+          contains(config.paramName, body?.paramName) &&
+          contains(config.paramKey, body?.paramKey) &&
+          (body?.status === undefined ||
+            body?.status === null ||
+            body?.status === '' ||
+            (Number(body.status) === 1 ? String(config.status) === '1' : String(config.status) === '2'))
+      );
+      const query = new URLSearchParams({ current: String(body?.current ?? 1), size: String(body?.size ?? 10) });
+      sendData(res, paginate(configs.map(toBackendConfig), query));
+    }
+  },
+  {
+    method: 'POST',
+    path: '/v1/system/config/create',
+    handler({ res, body }) {
+      if (store.configs.some(config => config.paramKey === body?.paramKey)) {
+        sendError(res, '1001', `参数键 ${body?.paramKey} 已存在`);
+        return;
+      }
+      const record = configCrud.add({
+        paramName: body?.paramName ?? '',
+        paramKey: body?.paramKey ?? '',
+        paramValue: body?.paramValue ?? '',
+        builtIn: body?.builtIn === 'Y' ? 'Y' : 'N',
+        remark: body?.remark ?? '',
+        status: Number(body?.status) === 0 ? '2' : '1'
+      });
+      sendData(res, { id: String(record.id) });
+    }
+  },
+  {
+    method: 'PUT',
+    path: '/v1/system/config/update/:id',
+    handler({ res, body, url }) {
+      const id = Number(url.pathname.split('/').pop());
+      const config = store.configs.find(item => item.id === id);
+      if (!config) {
+        sendError(res, '1003', '参数配置不存在');
+        return;
+      }
+      const conflict = store.configs.find(item => item.paramKey === body?.paramKey && item.id !== id);
+      if (conflict) {
+        sendError(res, '1001', `参数键 ${body?.paramKey} 已存在`);
+        return;
+      }
+      const beforeValue = String(config.paramValue);
+      const afterValue = String(body?.paramValue ?? beforeValue);
+      configCrud.update({
+        ...body,
+        id,
+        builtIn: body?.builtIn === 'Y' ? 'Y' : 'N',
+        status: Number(body?.status) === 0 ? '2' : '1'
+      });
+      // 参数值变化时追加一条变更历史，供“变更记录”抽屉回看
+      if (afterValue !== beforeValue) {
+        addConfigHistory({
+          configId: id,
+          paramName: String(body?.paramName ?? config.paramName),
+          paramKey: String(body?.paramKey ?? config.paramKey),
+          beforeValue,
+          afterValue,
+          operator: 'Super',
+          operatedAt: nowText(),
+          reason: '管理端修改参数值'
+        });
+      }
+      sendData(res, null);
+    }
+  },
+  {
+    method: 'DELETE',
+    path: '/v1/system/config/delete',
+    handler({ res, body }) {
+      const ids = (body?.ids || []).map((id: string | number) => Number(id));
+      const hasBuiltIn = store.configs.some(config => ids.includes(config.id) && config.builtIn === 'Y');
+      if (hasBuiltIn) {
+        sendError(res, '1002', '包含内置参数，内置参数不允许删除');
+        return;
+      }
+      configCrud.batchRemove(ids);
+      sendData(res, null);
+    }
+  },
+  {
+    method: 'POST',
+    path: '/v1/system/config/history/page',
+    handler({ res, body }) {
+      const configId = noCondition(body?.configId) ? null : Number(body.configId);
+      const histories = store.configHistories
+        .filter(item => configId === null || item.configId === configId)
+        .sort((a, b) => b.operatedAt.localeCompare(a.operatedAt))
+        .map(({ configId: _configId, ...rest }) => ({ ...rest, id: String(rest.id) }));
+      const query = new URLSearchParams({ current: String(body?.current ?? 1), size: String(body?.size ?? 100) });
+      sendData(res, paginate(histories, query));
+    }
+  },
+
+  // ---------------- v1 system notice ----------------
+  {
+    method: 'POST',
+    path: '/v1/system/notice/page',
+    handler({ res, body }) {
+      const notices = store.notices
+        .filter(
+          notice =>
+            contains(notice.title, body?.title) &&
+            (body?.noticeType === undefined ||
+              body?.noticeType === null ||
+              body?.noticeType === '' ||
+              Number(notice.noticeType) === Number(body.noticeType)) &&
+            (body?.noticeStatus === undefined ||
+              body?.noticeStatus === null ||
+              body?.noticeStatus === '' ||
+              Number(notice.noticeStatus) === Number(body.noticeStatus))
+        )
+        .map(toBackendNotice);
+      const query = new URLSearchParams({ current: String(body?.current ?? 1), size: String(body?.size ?? 10) });
+      sendData(res, paginate(notices, query));
+    }
+  },
+  {
+    method: 'POST',
+    path: '/v1/system/notice/create',
+    handler({ res, body }) {
+      const record = noticeCrud.add({
+        title: body?.title ?? '',
+        noticeType: String(body?.noticeType ?? '1'),
+        noticeStatus: String(body?.noticeStatus ?? '1'),
+        isTop: Boolean(body?.isTop),
+        content: body?.content ?? '',
+        status: '1'
+      });
+      sendData(res, { id: String(record.id) });
+    }
+  },
+  {
+    method: 'PUT',
+    path: '/v1/system/notice/update/:id',
+    handler({ res, body, url }) {
+      const id = Number(url.pathname.split('/').pop());
+      // 发布/撤回由前端通过本接口携带新的 noticeStatus 完成
+      noticeCrud.update({
+        ...body,
+        id,
+        noticeType: String(body?.noticeType ?? '1'),
+        noticeStatus: String(body?.noticeStatus ?? '1'),
+        isTop: Boolean(body?.isTop)
+      });
+      sendData(res, null);
+    }
+  },
+  {
+    method: 'DELETE',
+    path: '/v1/system/notice/delete',
+    handler({ res, body }) {
+      noticeCrud.batchRemove((body?.ids || []).map((id: string | number) => Number(id)));
+      sendData(res, null);
+    }
+  },
+
+  // ---------------- v1 system file ----------------
+  // 仅实现元数据列表；upload/preview/download 涉及二进制流，不匹配时回落到真实后端
+  {
+    method: 'POST',
+    path: '/v1/system/file/page',
+    handler({ res, body }) {
+      const files = store.files
+        .filter(
+          file =>
+            contains(file.fileName, body?.fileName) &&
+            (body?.fileType === undefined ||
+              body?.fileType === null ||
+              body?.fileType === '' ||
+              Number(file.fileType) === Number(body.fileType))
+        )
+        .map(toBackendFile);
+      const query = new URLSearchParams({ current: String(body?.current ?? 1), size: String(body?.size ?? 10) });
+      sendData(res, paginate(files, query));
+    }
+  },
+
   // ---------------- v1 dict ----------------
   {
     method: 'POST',
@@ -1032,6 +1282,17 @@ const routes: MockRoute[] = [
       );
       const query = new URLSearchParams({ current: String(body?.current ?? 1), size: String(body?.size ?? 10) });
       sendData(res, paginate(types, query));
+    }
+  },
+  {
+    method: 'GET',
+    path: '/v1/system/dictType/modules',
+    handler({ res }) {
+      // 去重并过滤空模块，供字典管理页的“所属模块”筛选项使用
+      const modules = Array.from(
+        new Set(store.dictTypes.map(type => String(type.module ?? '').trim()).filter(module => module.length > 0))
+      );
+      sendData(res, modules);
     }
   },
   {
