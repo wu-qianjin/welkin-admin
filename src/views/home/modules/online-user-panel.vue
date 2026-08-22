@@ -37,9 +37,12 @@ defineExpose({ reload: loadUsers });
       <span class="text-15px font-600">{{ $t('page.home.onlineUsers') }}</span>
     </template>
     <template #header-extra>
-      <NBadge :value="users.length" :max="99" type="success">
+      <div class="flex-y-center gap-8px">
+        <NTag v-if="users.length" size="small" round type="success">
+          {{ users.length > 99 ? '99+' : users.length }}
+        </NTag>
         <NButton text type="primary" size="small" @click="goOnlineCenter">{{ $t('page.home.logAll') }}</NButton>
-      </NBadge>
+      </div>
     </template>
     <NSpin :show="loading" class="flex-1">
       <div v-if="users.length" class="h-full flex flex-col justify-evenly gap-10px">

@@ -92,9 +92,10 @@ const todos = computed<TodoItem[]>(() => {
       <span class="text-15px font-600">{{ $t('page.home.todoPanel') }}</span>
     </template>
     <template #header-extra>
-      <NBadge :value="todos.length" :max="9" type="warning" show-zero>
+      <div class="flex-y-center gap-6px">
         <span class="text-12px text-gray-5">{{ $t('page.home.heroTodo') }}</span>
-      </NBadge>
+        <NTag v-if="todos.length" size="small" round type="warning">{{ todos.length > 9 ? '9+' : todos.length }}</NTag>
+      </div>
     </template>
     <div class="flex-1 flex flex-col justify-evenly gap-12px">
       <div

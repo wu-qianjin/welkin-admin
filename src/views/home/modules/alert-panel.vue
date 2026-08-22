@@ -35,9 +35,12 @@ function goAlertCenter() {
       <span class="text-15px font-600">{{ $t('page.home.alertPanel') }}</span>
     </template>
     <template #header-extra>
-      <NBadge :value="pending.length" :max="9">
+      <div class="flex-y-center gap-8px">
+        <NTag v-if="pending.length" size="small" round type="error">
+          {{ pending.length > 9 ? '9+' : pending.length }}
+        </NTag>
         <NButton text type="primary" size="small" @click="goAlertCenter">{{ $t('page.home.alertAll') }}</NButton>
-      </NBadge>
+      </div>
     </template>
     <div class="flex-1 flex flex-col justify-evenly gap-10px">
       <div
