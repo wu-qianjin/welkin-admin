@@ -241,17 +241,6 @@ const local: App.I18n.Schema = {
     document_alova: 'Alova Document',
     'user-center': 'User Center',
     about: 'About',
-    alova: 'Alova Example',
-    alova_request: 'Alova Request',
-    alova_scenes: 'Scenario Request',
-    'pro-naive': 'Pro Naive Example',
-    'pro-naive_form': 'Form',
-    'pro-naive_form_basic': 'Basic Form',
-    'pro-naive_form_query': 'Query Form',
-    'pro-naive_form_step': 'Step Form',
-    'pro-naive_table': 'Table',
-    'pro-naive_table_remote': 'Remote',
-    'pro-naive_table_row-edit': 'Row Edit',
     auth: 'Authentication & Authorization',
     auth_user: 'User Management',
     auth_dept: 'Department Management',
@@ -269,31 +258,7 @@ const local: App.I18n.Schema = {
     system_config: 'Parameter Configuration',
     system_dict: 'Dictionary Management',
     system_notice: 'Announcements',
-    system_file: 'File Management',
-    plugin: 'Plugin',
-    plugin_copy: 'Copy',
-    plugin_charts: 'Charts',
-    plugin_charts_echarts: 'ECharts',
-    plugin_charts_antv: 'AntV',
-    plugin_charts_vchart: 'VChart',
-    plugin_editor: 'Editor',
-    plugin_editor_quill: 'Quill',
-    plugin_editor_markdown: 'Markdown',
-    plugin_icon: 'Icon',
-    plugin_map: 'Map',
-    plugin_print: 'Print',
-    plugin_swiper: 'Swiper',
-    plugin_video: 'Video',
-    plugin_barcode: 'Barcode',
-    plugin_pinyin: 'pinyin',
-    plugin_excel: 'Excel',
-    plugin_pdf: 'PDF preview',
-    plugin_gantt: 'Gantt Chart',
-    plugin_gantt_dhtmlx: 'dhtmlxGantt',
-    plugin_gantt_vtable: 'VTableGantt',
-    plugin_typeit: 'Typeit',
-    plugin_tables: 'Tables',
-    plugin_tables_vtable: 'VTable'
+    system_file: 'File Management'
   },
   page: {
     login: {
@@ -478,96 +443,6 @@ const local: App.I18n.Schema = {
         repeatedError: 'Repeated Request Error',
         repeatedErrorMsg1: 'Custom Request Error 1',
         repeatedErrorMsg2: 'Custom Request Error 2'
-      }
-    },
-    alova: {
-      scenes: {
-        captchaSend: 'Captcha Send',
-        autoRequest: 'Auto Request',
-        visibilityRequestTips: 'Automatically request when switching browser window',
-        pollingRequestTips: 'It will request every 3 seconds',
-        networkRequestTips: 'Automatically request after network reconnecting',
-        refreshTime: 'Refresh Time',
-        startRequest: 'Start Request',
-        stopRequest: 'Stop Request',
-        requestCrossComponent: 'Request Cross Component',
-        triggerAllRequest: 'Manually Trigger All Automated Requests'
-      }
-    },
-    proNaive: {
-      form: {
-        basic: {
-          title: 'Basic Example',
-          appName: 'ApplicationName',
-          appStatus: 'ApplicationStatus',
-          createTime: 'CreateTime',
-          responseDate: 'ResponseDate',
-          specificationInfo: 'SpecificationInfo',
-          specificate: 'Specificate',
-          specificationName: 'SpecificationName',
-          specificationValue: 'SpecificationValue',
-          specificationColorRed: 'Red',
-          specificationColorOrange: 'Orange',
-          addSpecificateItem: 'Add Specificate Item',
-          fillValue: 'FillValue',
-          reset: 'Reset',
-          submit: 'Submit',
-          add: 'Add',
-          delete: 'Delete',
-          color: 'Color',
-          normal: 'Normal',
-          anomaly: 'Anomaly'
-        },
-        query: {
-          title1: 'Query Example, which expands by default',
-          title2: 'Query Example, which fold by default, and two lines are retained when folding',
-          appName: 'ApplicationName',
-          appStatus: 'ApplicationStatus',
-          createTime: 'CreateTime',
-          responseDate: 'ResponseDate',
-          endDate: 'EndDate',
-          field: 'Field'
-        },
-        step: {
-          title: 'Step Form',
-          step1: {
-            title: 'Form 1',
-            field: 'Form 1 field',
-            nextStep: 'Next Step'
-          },
-          step2: {
-            title: 'Form 2',
-            field: 'Form 2 field',
-            prevStep: 'Prev Step',
-            submit: 'Submit'
-          }
-        }
-      },
-      table: {
-        remote: {
-          filterCondition: 'Filter Condition',
-          name: 'Name',
-          createTime: 'CreateTime',
-          responseTime: 'ResponseTime',
-          title: 'Remote Loading',
-          replicableText: 'Replicable Text',
-          tags: 'Tags',
-          dateFormatting: 'Date Formatting',
-          image: 'Image'
-        },
-        rowEdit: {
-          title: 'Edit Table',
-          reset: 'Reset',
-          submit: 'Submit',
-          edit: 'Edit',
-          delete: 'Delete',
-          save: 'Save',
-          task: 'Task',
-          score: 'Score',
-          time: 'Time',
-          name: 'Name',
-          action: 'Action'
-        }
       }
     },
     manage: {

@@ -237,17 +237,6 @@ const local: App.I18n.Schema = {
     document_alova: 'Alova文档',
     'user-center': '个人中心',
     about: '关于',
-    alova: 'alova示例',
-    alova_request: 'alova请求',
-    alova_scenes: '场景化请求',
-    'pro-naive': 'Pro Naive UI 示例',
-    'pro-naive_form': '表单',
-    'pro-naive_form_basic': '基础表单',
-    'pro-naive_form_query': '查询表单',
-    'pro-naive_form_step': '分步表单',
-    'pro-naive_table': '表格',
-    'pro-naive_table_remote': '远程加载',
-    'pro-naive_table_row-edit': '行编辑',
     auth: '认证授权',
     auth_user: '用户管理',
     auth_dept: '部门管理',
@@ -265,31 +254,7 @@ const local: App.I18n.Schema = {
     system_config: '参数配置',
     system_dict: '字典管理',
     system_notice: '通知公告',
-    system_file: '文件管理',
-    plugin: '插件示例',
-    plugin_copy: '剪贴板',
-    plugin_charts: '图表',
-    plugin_charts_echarts: 'ECharts',
-    plugin_charts_antv: 'AntV',
-    plugin_charts_vchart: 'VChart',
-    plugin_editor: '编辑器',
-    plugin_editor_quill: '富文本编辑器',
-    plugin_editor_markdown: 'MD 编辑器',
-    plugin_icon: '图标',
-    plugin_map: '地图',
-    plugin_print: '打印',
-    plugin_swiper: 'Swiper',
-    plugin_video: '视频',
-    plugin_barcode: '条形码',
-    plugin_pinyin: '拼音',
-    plugin_excel: 'Excel',
-    plugin_pdf: 'PDF 预览',
-    plugin_gantt: '甘特图',
-    plugin_gantt_dhtmlx: 'dhtmlxGantt',
-    plugin_gantt_vtable: 'VTableGantt',
-    plugin_typeit: '打字机',
-    plugin_tables: '表格',
-    plugin_tables_vtable: 'VTable'
+    system_file: '文件管理'
   },
   page: {
     login: {
@@ -474,96 +439,6 @@ const local: App.I18n.Schema = {
         repeatedError: '重复请求错误',
         repeatedErrorMsg1: '自定义请求错误 1',
         repeatedErrorMsg2: '自定义请求错误 2'
-      }
-    },
-    alova: {
-      scenes: {
-        captchaSend: '发送验证码',
-        autoRequest: '自动请求',
-        visibilityRequestTips: '浏览器窗口切换自动请求数据',
-        pollingRequestTips: '每3秒自动请求一次',
-        networkRequestTips: '网络重连后自动请求',
-        refreshTime: '更新时间',
-        startRequest: '开始请求',
-        stopRequest: '停止请求',
-        requestCrossComponent: '跨组件触发请求',
-        triggerAllRequest: '手动触发所有自动请求'
-      }
-    },
-    proNaive: {
-      form: {
-        basic: {
-          title: '基础示例',
-          appName: '应用名称',
-          appStatus: '应用状态',
-          createTime: '创建时间',
-          responseDate: '响应日期',
-          specificationInfo: '规格信息',
-          specificate: '规格',
-          specificationName: '规格名',
-          specificationValue: '规格值',
-          specificationColorRed: '红',
-          specificationColorOrange: '橙',
-          addSpecificateItem: '添加规格项',
-          fillValue: '填充值',
-          reset: '重置',
-          submit: '提交',
-          add: '新建',
-          delete: '删除',
-          color: '颜色',
-          normal: '正常',
-          anomaly: '异常'
-        },
-        query: {
-          title1: '查询表单，默认展开',
-          title2: '查询表单，默认折叠，折叠时保留2行',
-          appName: '应用名称',
-          appStatus: '应用状态',
-          createTime: '创建时间',
-          responseDate: '响应日期',
-          endDate: '结束日期',
-          field: '字段'
-        },
-        step: {
-          title: '分步表单',
-          step1: {
-            title: '表单1',
-            field: '表单1字段',
-            nextStep: '下一步'
-          },
-          step2: {
-            title: '表单2',
-            field: '表单2字段',
-            prevStep: '上一步',
-            submit: '提交'
-          }
-        }
-      },
-      table: {
-        remote: {
-          filterCondition: '筛选条件',
-          name: '名称',
-          createTime: '创建时间',
-          responseTime: '响应时间',
-          title: '远程加载',
-          replicableText: '可复制文本',
-          tags: 'tags',
-          dateFormatting: '日期格式化',
-          image: '图片'
-        },
-        rowEdit: {
-          title: '编辑表格',
-          reset: '重置',
-          submit: '提交',
-          edit: '编辑',
-          delete: '删除',
-          save: '保存',
-          task: '任务',
-          score: '评分',
-          time: '时间',
-          name: '名称',
-          action: '操作'
-        }
       }
     },
     manage: {
