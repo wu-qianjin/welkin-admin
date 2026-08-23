@@ -46,7 +46,7 @@ function goAlertCenter() {
       <div
         v-for="alert in pending"
         :key="alert.id"
-        class="cursor-pointer rounded-8px bg-gray-1 px-12px py-10px transition-colors hover:bg-primary:8 dark:bg-dark"
+        class="cursor-pointer rounded-8px px-12px py-10px transition-colors hover:bg-primary:8"
         @click="goAlertCenter"
       >
         <div class="flex-y-center gap-8px">

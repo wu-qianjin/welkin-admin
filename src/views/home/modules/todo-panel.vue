@@ -98,11 +98,7 @@ const todos = computed<TodoItem[]>(() => {
       </div>
     </template>
     <div class="flex-1 flex flex-col justify-evenly gap-12px">
-      <div
-        v-for="todo in todos"
-        :key="todo.key"
-        class="flex-y-center gap-12px rounded-8px bg-gray-1 px-12px py-12px dark:bg-dark"
-      >
+      <div v-for="todo in todos" :key="todo.key" class="flex-y-center gap-12px rounded-8px px-12px py-12px">
         <div
           class="size-36px flex-center shrink-0 rounded-8px text-20px"
           :style="{ color: todo.color, backgroundColor: `${todo.color}1f` }"

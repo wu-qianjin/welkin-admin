@@ -46,7 +46,7 @@ async function onMarkAllRead() {
       <div
         v-for="notice in latest"
         :key="notice.id"
-        class="cursor-pointer rounded-8px bg-gray-1 px-12px py-10px transition-colors hover:bg-primary:8 dark:bg-dark"
+        class="cursor-pointer rounded-8px px-12px py-10px transition-colors hover:bg-primary:8"
         @click="notice.read ? goMessageCenter() : markRead(notice.id)"
       >
         <div class="flex-y-center gap-8px">

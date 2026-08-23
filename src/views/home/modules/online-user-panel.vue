@@ -46,11 +46,7 @@ defineExpose({ reload: loadUsers });
     </template>
     <NSpin :show="loading" class="flex-1">
       <div v-if="users.length" class="h-full flex flex-col justify-evenly gap-10px">
-        <div
-          v-for="user in users.slice(0, 8)"
-          :key="user.id"
-          class="flex-y-center gap-12px rounded-8px bg-gray-1 px-12px py-8px dark:bg-dark"
-        >
+        <div v-for="user in users.slice(0, 8)" :key="user.id" class="flex-y-center gap-12px rounded-8px px-12px py-8px">
           <div class="size-32px flex-center shrink-0 rounded-full bg-primary:12 text-13px font-600 text-primary">
             {{ user.userName.slice(0, 1).toUpperCase() }}
           </div>

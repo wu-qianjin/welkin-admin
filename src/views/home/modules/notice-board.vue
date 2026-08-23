@@ -47,7 +47,7 @@ function tagType(noticeType: Api.SystemManage.NoticeType) {
       <div
         v-for="notice in props.notices"
         :key="notice.id"
-        class="cursor-pointer rounded-8px bg-gray-1 px-12px py-10px transition-colors hover:bg-primary:8 dark:bg-dark"
+        class="cursor-pointer rounded-8px px-12px py-10px transition-colors hover:bg-primary:8"
         @click="openDetail(notice)"
       >
         <div class="flex-y-center gap-8px">
