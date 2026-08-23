@@ -36,9 +36,6 @@ export function setupElegantRouter() {
     },
     customRoutes: {
       names: [
-        'exception_403',
-        'exception_404',
-        'exception_500',
         'document_vue',
         'document_vite',
         'document_unocss',

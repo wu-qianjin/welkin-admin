@@ -17,10 +17,6 @@ declare module "@elegant-router/types" {
   export type RouteMap = {
     "root": "/";
     "not-found": "/:pathMatch(.*)*";
-    "exception": "/exception";
-    "exception_403": "/exception/403";
-    "exception_404": "/exception/404";
-    "exception_500": "/exception/500";
     "document": "/document";
     "document_vue": "/document/vue";
     "document_vite": "/document/vite";
@@ -42,16 +38,6 @@ declare module "@elegant-router/types" {
     "auth_resource": "/auth/resource";
     "auth_role": "/auth/role";
     "auth_user": "/auth/user";
-    "function": "/function";
-    "function_hide-child": "/function/hide-child";
-    "function_hide-child_one": "/function/hide-child/one";
-    "function_hide-child_three": "/function/hide-child/three";
-    "function_hide-child_two": "/function/hide-child/two";
-    "function_multi-tab": "/function/multi-tab";
-    "function_request": "/function/request";
-    "function_super-page": "/function/super-page";
-    "function_tab": "/function/tab";
-    "function_toggle-auth": "/function/toggle-auth";
     "home": "/home";
     "iframe-page": "/iframe-page/:url";
     "login": "/login/:module(pwd-login|code-login|register|reset-pwd|bind-wechat)?";
@@ -62,12 +48,6 @@ declare module "@elegant-router/types" {
     "monitor_log": "/monitor/log";
     "monitor_online": "/monitor/online";
     "monitor_overview": "/monitor/overview";
-    "multi-menu": "/multi-menu";
-    "multi-menu_first": "/multi-menu/first";
-    "multi-menu_first_child": "/multi-menu/first/child";
-    "multi-menu_second": "/multi-menu/second";
-    "multi-menu_second_child": "/multi-menu/second/child";
-    "multi-menu_second_child_home": "/multi-menu/second/child/home";
     "plugin": "/plugin";
     "plugin_barcode": "/plugin/barcode";
     "plugin_charts": "/plugin/charts";
@@ -125,10 +105,6 @@ declare module "@elegant-router/types" {
     RouteKey,
     | "root"
     | "not-found"
-    | "exception"
-    | "exception_403"
-    | "exception_404"
-    | "exception_500"
     | "document"
     | "document_vue"
     | "document_vite"
@@ -155,13 +131,11 @@ declare module "@elegant-router/types" {
     | "about"
     | "alova"
     | "auth"
-    | "function"
     | "home"
     | "iframe-page"
     | "login"
     | "message"
     | "monitor"
-    | "multi-menu"
     | "plugin"
     | "pro-naive"
     | "system"
@@ -175,7 +149,6 @@ declare module "@elegant-router/types" {
     CustomRouteKey,
     | "root"
     | "not-found"
-    | "exception"
     | "document"
   >;
 
@@ -197,14 +170,6 @@ declare module "@elegant-router/types" {
     | "auth_resource"
     | "auth_role"
     | "auth_user"
-    | "function_hide-child_one"
-    | "function_hide-child_three"
-    | "function_hide-child_two"
-    | "function_multi-tab"
-    | "function_request"
-    | "function_super-page"
-    | "function_tab"
-    | "function_toggle-auth"
     | "home"
     | "message"
     | "monitor_alert"
@@ -212,8 +177,6 @@ declare module "@elegant-router/types" {
     | "monitor_log"
     | "monitor_online"
     | "monitor_overview"
-    | "multi-menu_first_child"
-    | "multi-menu_second_child_home"
     | "plugin_barcode"
     | "plugin_charts_antv"
     | "plugin_charts_echarts"
@@ -252,9 +215,6 @@ declare module "@elegant-router/types" {
     CustomRouteKey,
     | "root"
     | "not-found"
-    | "exception_403"
-    | "exception_404"
-    | "exception_500"
     | "document_vue"
     | "document_vite"
     | "document_unocss"
