@@ -28,5 +28,6 @@
   "monitor_gateway",
   "monitor_alert",
   "monitor_log",
-  "monitor_online"
+  "monitor_online",
+  "user-center"
 ]

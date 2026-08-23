@@ -255,6 +255,43 @@ function idFromPath(url: URL): string {
   return segments[segments.length - 1] ?? '';
 }
 
+/** decode the userName embedded in the mock JWT payload (no signature check, mock only) */
+function decodeTokenUser(authorization: string | undefined): string | null {
+  if (!authorization) return null;
+  const parts = authorization.replace(/^Bearer\s+/i, '').split('.');
+  if (parts.length !== 3) return null;
+  try {
+    const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString('utf-8'));
+    return payload?.data?.[0]?.userName ?? payload?.userName ?? payload?.sub ?? null;
+  } catch {
+    return null;
+  }
+}
+
+function findUserByToken(authorization: string | undefined): V1User | null {
+  const userName = decodeTokenUser(authorization);
+  if (!userName) return null;
+  const existing = users.find(user => user.userName === userName);
+  if (existing) return existing;
+  // mock login accounts (Super/Admin/User) are not part of the captured user table —
+  // register them on first access so their own profile is available
+  const created: V1User = {
+    id: String(900_000 + nextUserId++),
+    userName,
+    userGender: 1,
+    nickName: userName === 'Super' ? '超级管理员' : userName,
+    avatar: '',
+    userPhone: '13800000000',
+    userEmail: `${userName.toLowerCase()}@welkin.com`,
+    userRoles: [userName === 'Super' ? 'R_SUPER' : 'R_USER'],
+    deptId: deptIds[0] ?? '100',
+    status: 1,
+    createTime: nowText()
+  };
+  users.push(created);
+  return created;
+}
+
 export const authMockRoutes: MockRoute[] = [
   // ---------------- user ----------------
   {
@@ -722,6 +759,112 @@ export const authMockRoutes: MockRoute[] = [
     path: '/v1/iam/buttonResource/delete',
     handler({ res, body }) {
       removeByIds(buttons, body?.ids ?? []);
+      sendData(res, null);
+    }
+  },
+
+  // ---------------- profile (user center) ----------------
+  {
+    method: 'GET',
+    path: '/v1/iam/profile',
+    handler({ req, res }) {
+      const user = findUserByToken(req.headers.authorization);
+      if (!user) {
+        sendError(res, '3333', '用户已失效或不存在');
+        return;
+      }
+      const dept = depts.find(item => item.id === user.deptId);
+      sendData(res, {
+        userId: user.id,
+        userName: user.userName,
+        nickName: user.nickName,
+        avatar: user.avatar,
+        phone: user.userPhone,
+        email: user.userEmail,
+        gender: user.userGender,
+        roles: user.userRoles,
+        deptId: user.deptId,
+        department: dept?.deptName ?? '',
+        lastLoginAt: nowText(),
+        lastLoginIp: '192.168.1.8'
+      });
+    }
+  },
+  {
+    method: 'PUT',
+    path: '/v1/iam/profile',
+    handler({ req, res, body }) {
+      const user = findUserByToken(req.headers.authorization);
+      if (user) {
+        Object.assign(user, {
+          nickName: body?.nickName ?? user.nickName,
+          userPhone: body?.phone ?? user.userPhone,
+          userEmail: body?.email ?? user.userEmail,
+          userGender: body?.gender ?? user.userGender,
+          avatar: body?.avatar ?? user.avatar,
+          deptId: body?.deptId ? String(body.deptId) : user.deptId
+        });
+      }
+      sendData(res, null);
+    }
+  },
+  {
+    method: 'PUT',
+    path: '/v1/iam/profile/password',
+    handler({ res, body }) {
+      if (body?.currentPassword && body.currentPassword !== '123456') {
+        sendError(res, '1000', '当前密码不正确（Mock，默认 123456）');
+        return;
+      }
+      sendData(res, null);
+    }
+  },
+  {
+    method: 'GET',
+    path: '/v1/iam/profile/sessions',
+    handler({ req, res }) {
+      const user = findUserByToken(req.headers.authorization) ?? users[0];
+      const future = (days: number) => {
+        const date = new Date(Date.now() + days * 86_400_000);
+        return date.toLocaleString('sv-SE').replace('T', ' ');
+      };
+      const past = (days: number) => future(-days);
+      sendData(res, [
+        {
+          id: `${user.id}-1`,
+          userName: user.userName,
+          loginType: 1,
+          ip: '192.168.1.8',
+          userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/140.0',
+          refreshExpiresAt: future(6),
+          createdAt: past(1)
+        },
+        {
+          id: `${user.id}-2`,
+          userName: user.userName,
+          loginType: 1,
+          ip: '10.20.30.12',
+          userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) Safari/18.0',
+          refreshExpiresAt: future(12),
+          createdAt: past(4)
+        },
+        {
+          id: `${user.id}-3`,
+          userName: user.userName,
+          loginType: 1,
+          ip: '172.16.4.55',
+          userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Edge/140.0',
+          refreshExpiresAt: past(2),
+          revokedAt: past(2),
+          createdAt: past(9)
+        }
+      ]);
+    }
+  },
+  {
+    method: 'DELETE',
+    path: '/v1/iam/profile/sessions/:id',
+    handler({ res }) {
       sendData(res, null);
     }
   }
