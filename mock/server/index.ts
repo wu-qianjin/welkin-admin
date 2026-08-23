@@ -21,6 +21,7 @@ import {
 import type { MockConfig, MockConfigHistory, MockDept, MockFile, MockMenu, MockNotice } from './db';
 import { customMockRoutes } from './custom';
 import { monitorRoutes } from './monitor';
+import { authMockRoutes } from './auth';
 import { sendData, sendError } from './response';
 import type { MockRoute } from './types';
 
@@ -672,6 +673,7 @@ const routes: MockRoute[] = [
   ...v1MessageRoutes,
   ...v1AuthRoutes,
   ...v1AuditRoutes,
+  ...authMockRoutes,
   ...customMockRoutes,
   ...monitorRoutes,
   // ---------------- auth ----------------
